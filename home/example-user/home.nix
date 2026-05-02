@@ -13,6 +13,7 @@
     ../../modules/home-manager/git.nix
     ../../modules/home-manager/packages.nix
     ../../modules/home-manager/development.nix
+    ../../modules/home-manager/codex.nix
   ];
 
   home = {
@@ -32,6 +33,16 @@
       python = true;
       node = false;
     };
+  };
+
+  # OpenAI Codex CLI. Run `codex login` once after activation.
+  modules.codex = {
+    enable = true;
+    model = "gpt-5-codex";
+    approvalPolicy = "on-request";
+    sandboxMode = "workspace-write";
+    networkAccess = true;
+    fileOpener = "cursor";
   };
 
   # Override the placeholder identity from modules/home-manager/git.nix.

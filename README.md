@@ -154,6 +154,31 @@ let sources = import ./nix/sources.nix; in
 
 See [`nix/README.md`](./nix/README.md) for details.
 
+## OpenAI Codex CLI
+
+The `codex` home-manager module installs `pkgs.codex` (native Rust binary,
+no Node required) and writes `~/.codex/config.toml` declaratively. Toggle
+it on in your `home.nix`:
+
+```nix
+modules.codex = {
+  enable = true;
+  model = "gpt-5-codex";
+  approvalPolicy = "on-request";   # untrusted | on-request | never
+  sandboxMode = "workspace-write"; # read-only | workspace-write | danger-full-access
+  networkAccess = true;
+  fileOpener = "cursor";           # vscode | vscode-insiders | windsurf | cursor | none
+};
+```
+
+After `home-manager switch`, authenticate once with `codex login` (opens a
+browser; cached to `~/.codex/auth.json`). To pull a newer Codex than the
+pinned channel ships, override the package with the unstable input:
+
+```nix
+modules.codex.package = unstable.codex;
+```
+
 ## Adding a new host
 
 1. `cp -r hosts/example-host hosts/laptop`
