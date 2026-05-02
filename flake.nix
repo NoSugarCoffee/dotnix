@@ -186,7 +186,7 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.extraSpecialArgs = mkSpecialArgs "x86_64-linux";
-              home-manager.users.alice = import ./home/example-user/home.nix;
+              home-manager.users.liangliangdai = import ./home/liangliangdai/home.nix;
             }
           ];
         };
@@ -194,12 +194,12 @@
         ########################################################################
         # Standalone home-manager configurations (no NixOS required).          #
         # Build & switch with:                                                  #
-        #   home-manager switch --flake .#alice@example-host                    #
+        #   home-manager switch --flake .#liangliangdai@example-host             #
         ########################################################################
-        homeConfigurations."alice@example-host" = home-manager.lib.homeManagerConfiguration {
+        homeConfigurations."liangliangdai@example-host" = home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs "x86_64-linux";
           extraSpecialArgs = mkSpecialArgs "x86_64-linux";
-          modules = [ ./home/example-user/home.nix ];
+          modules = [ ./home/liangliangdai/home.nix ];
         };
 
         ########################################################################

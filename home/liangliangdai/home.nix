@@ -1,5 +1,5 @@
 # Example home-manager user. Reuse from inside a NixOS host or use standalone:
-#   home-manager switch --flake .#alice@example-host
+#   home-manager switch --flake .#liangliangdai@example-host
 {
   config,
   lib,
@@ -17,8 +17,8 @@
   ];
 
   home = {
-    username = "alice";
-    homeDirectory = "/home/alice";
+    username = "liangliangdai";
+    homeDirectory = "/home/liangliangdai";
 
     # Pin to the home-manager release you initially installed; do not bump
     # without reading the release notes.
@@ -46,8 +46,9 @@
   };
 
   # Override the placeholder identity from modules/home-manager/git.nix.
-  programs.git.userName = "Alice Example";
-  programs.git.userEmail = "alice@example.com";
+  # TODO: replace with your real git identity.
+  programs.git.userName = "liangliangdai";
+  programs.git.userEmail = "1353025854@qq.com";
 
   # Let home-manager manage itself.
   programs.home-manager.enable = true;

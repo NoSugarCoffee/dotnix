@@ -15,7 +15,7 @@ under five minutes.
 - **`modules/home-manager/`** — per-user modules (`shell`, `git`, `packages`,
   `development`).
 - **`hosts/example-host/`** — example machine wiring the NixOS modules.
-- **`home/example-user/`** — example user wiring the home-manager modules.
+- **`home/liangliangdai/`** — example user wiring the home-manager modules.
 - **`overlays/`, `pkgs/`, `lib/`** — places to add your own packages and
   helpers.
 - **`devshell`** — `nix develop` gives you `niv`, `nixpkgs-fmt`, `nixfmt`,
@@ -50,7 +50,7 @@ under five minutes.
 │       ├── configuration.nix
 │       └── hardware-configuration.nix
 ├── home/
-│   └── example-user/
+│   └── liangliangdai/
 │       └── home.nix
 ├── overlays/                  # nixpkgs overlays
 ├── pkgs/                      # custom packages
@@ -100,12 +100,12 @@ nix flake update
   `networking.hostName` in `configuration.nix`.
 - Replace `hosts/example-host/hardware-configuration.nix` with the file
   produced by `nixos-generate-config` on the target machine.
-- Rename `home/example-user/` to your username; update `home.username` and
+- Rename `home/liangliangdai/` to your username; update `home.username` and
   `home.homeDirectory`.
 - Set `users.users.<you>.hashedPassword` (generate via `mkpasswd -m sha-512`)
   and add your SSH public key in `modules/nixos/users.nix`.
 - Update `programs.git.userName` / `userEmail` in
-  `home/example-user/home.nix`.
+  `home/liangliangdai/home.nix`.
 - Adjust the host attribute in `flake.nix`
   (`nixosConfigurations.<name> = ...`) to match.
 
@@ -122,9 +122,9 @@ just rebuild HOST=example-host
 Standalone home-manager (any Linux):
 
 ```sh
-home-manager switch --flake .#alice@example-host
+home-manager switch --flake .#liangliangdai@example-host
 # or:
-just hm USER=alice HOST=example-host
+just hm USER=liangliangdai HOST=example-host
 ```
 
 ## Updating
@@ -201,7 +201,7 @@ modules.codex.package = unstable.codex;
 
 ## Adding a new user
 
-1. `cp -r home/example-user home/bob`
+1. `cp -r home/liangliangdai home/bob`
 2. Update `home.username` / `home.homeDirectory`.
 3. Add to `flake.nix`:
 
@@ -229,7 +229,7 @@ modules.codex.package = unstable.codex;
 ## Conventions
 
 - **State versions** in `modules/nixos/base.nix` and
-  `home/example-user/home.nix` are pinned to `25.11`. Don't bump them
+  `home/liangliangdai/home.nix` are pinned to `25.11`. Don't bump them
   without reading the relevant release notes.
 - Modules expose feature flags via `options.modules.<name>.enable` so hosts
   opt in to functionality (`modules.desktop.enable = true;` etc.).

@@ -1,5 +1,5 @@
-# Declarative user accounts. Replace `alice` with your own username and add
-# your SSH public key(s) below.
+# Declarative user accounts. Only used when you build this flake as a
+# NixOS system; ignored for standalone home-manager.
 {
   config,
   lib,
@@ -9,9 +9,9 @@
 {
   users.mutableUsers = false;
 
-  users.users.alice = {
+  users.users.liangliangdai = {
     isNormalUser = true;
-    description = "Alice Example";
+    description = "liangliangdai";
     shell = pkgs.zsh;
     extraGroups = [
       "wheel"

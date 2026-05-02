@@ -6,7 +6,7 @@
 set shell := ["bash", "-cu"]
 
 HOST := env_var_or_default("HOST", "example-host")
-USER := env_var_or_default("USER", "alice")
+USER := env_var_or_default("USER", "liangliangdai")
 
 default:
     @just --list
