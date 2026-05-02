@@ -1,0 +1,30 @@
+# --- Nix build outputs ---------------------------------------------------
+# These are symlinks into /nix/store and must never be committed.
+result
+result-*
+**/result
+**/result-*
+
+# --- Nix evaluation / direnv state ---------------------------------------
+.direnv/
+.envrc.local
+.pre-commit-config.local.yaml
+
+# --- Local secrets -------------------------------------------------------
+secrets/
+*.age
+*.key
+!*.pub
+
+# --- Editor / OS noise ---------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Misc ----------------------------------------------------------------
+*.log
+.cache/
+node_modules/
