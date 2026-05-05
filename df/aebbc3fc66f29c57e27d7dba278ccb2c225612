@@ -1,0 +1,24 @@
+README.md
+  e0e5773e916af7a9 8,15-18,20,26,28-31,33,35,38,41,44-45,47-48,52,57,61-63,66,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "dfaebbc3fc66f29c57e27d7dba278ccb2c225612",
+  "prompts": {
+    "e0e5773e916af7a9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2cd445bc-ff25-43ac-ac6d-484295d2622e",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "NoSugarCoffee",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 55,
+      "accepted_lines": 26,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/354179930829ac2c560d2eecdda0235c76127764c62f5adec400976038bce9be"
+    }
+  }
+}
