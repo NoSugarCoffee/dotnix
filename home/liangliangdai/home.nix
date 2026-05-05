@@ -1,13 +1,13 @@
 { lib, pkgs, ... }:
+let
+  homeDirectory = if pkgs.stdenv.isDarwin then "/Users/liangliangdai" else "/home/liangliangdai";
+in
 {
   home = {
     username = "liangliangdai";
-    homeDirectory = "/home/liangliangdai";
+    inherit homeDirectory;
     stateVersion = "25.11";
-    packages = [
-      pkgs.codex
-      pkgs.copyq
-    ];
+    packages = [ pkgs.codex ] ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ];
     file.".codex/config.toml" = {
       force = true;
       text = ''

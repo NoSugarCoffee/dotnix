@@ -16,25 +16,46 @@
       ...
     }:
     let
-      system = "x86_64-linux";
-      pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
-      };
-      homeManagerApp = {
-        type = "app";
-        program = "${home-manager.packages.${system}.default}/bin/home-manager";
-      };
+      lib = nixpkgs.lib;
+      systems = [
+        "x86_64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
+      forAllSystems = lib.genAttrs systems;
+      mkPkgs =
+        system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+      mkHomeConfiguration =
+        system:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = mkPkgs system;
+          modules = [ ./home/liangliangdai/home.nix ];
+        };
     in
     {
-      apps.${system} = {
-        default = homeManagerApp;
-        home-manager = homeManagerApp;
-      };
+      apps = forAllSystems (
+        system:
+        let
+          homeManagerApp = {
+            type = "app";
+            program = "${home-manager.packages.${system}.default}/bin/home-manager";
+          };
+        in
+        {
+          default = homeManagerApp;
+          home-manager = homeManagerApp;
+        }
+      );
 
-      homeConfigurations.liangliangdai = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        modules = [ ./home/liangliangdai/home.nix ];
+      homeConfigurations = {
+        liangliangdai = mkHomeConfiguration "x86_64-linux";
+        liangliangdai-x86_64-linux = mkHomeConfiguration "x86_64-linux";
+        liangliangdai-aarch64-darwin = mkHomeConfiguration "aarch64-darwin";
+        liangliangdai-x86_64-darwin = mkHomeConfiguration "x86_64-darwin";
       };
     };
 }

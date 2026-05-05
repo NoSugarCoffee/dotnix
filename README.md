@@ -5,7 +5,7 @@
   [![home-manager](https://img.shields.io/badge/home--manager-25.11-5277C3?logo=nixos&logoColor=white)](https://github.com/nix-community/home-manager/tree/release-25.11)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-  **❄️ Personal NixOS Home Manager dotfiles — reproducible, declarative, zero drift 🏠**
+  **❄️ Personal Home Manager dotfiles for Linux + macOS — reproducible, declarative, zero drift 🏠**
 </div>
 
 ---
@@ -16,7 +16,15 @@
 
 **The Solution:** A Home Manager flake that declares your entire home environment as code — packages, dotfiles, and tool configs all version-controlled in one place.
 
-**The Result:** One command to apply a fully reproducible home setup on any NixOS machine.
+**The Result:** One command to apply a fully reproducible home setup on Linux and macOS.
+
+## 🖥️ Supported systems
+
+- `x86_64-linux`
+- `aarch64-darwin`
+- `x86_64-darwin`
+
+`copyq` is enabled on Linux only. `codex` is enabled on all configured systems.
 
 ## 📦 What's included
 
@@ -44,11 +52,25 @@
 nix run .#home-manager -- switch --flake .#liangliangdai
 ```
 
+For Darwin targets, use:
+
+```sh
+nix run .#home-manager -- switch --flake .#liangliangdai-aarch64-darwin
+```
+
+or
+
+```sh
+nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
+```
+
 **Subsequent runs** (after activation enables the `home-manager` command):
 
 ```sh
 home-manager switch --flake .#liangliangdai
 ```
+
+For Darwin targets, use the same command with the matching target name.
 
 **Or with `just`:**
 
@@ -70,6 +92,8 @@ just switch
 ```sh
 nix build .#homeConfigurations.liangliangdai.activationPackage
 ```
+
+For Darwin targets, build `homeConfigurations.liangliangdai-aarch64-darwin.activationPackage` or `homeConfigurations.liangliangdai-x86_64-darwin.activationPackage`.
 
 ## 📄 License
 
