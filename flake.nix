@@ -57,5 +57,17 @@
         liangliangdai-aarch64-darwin = mkHomeConfiguration "aarch64-darwin";
         liangliangdai-x86_64-darwin = mkHomeConfiguration "x86_64-darwin";
       };
+
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = mkPkgs system;
+        in
+        {
+          default = pkgs.mkShell {
+            packages = [ pkgs.just ];
+          };
+        }
+      );
     };
 }
