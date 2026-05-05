@@ -10,7 +10,7 @@
 
 ---
 
-## Overview
+## 📖 Overview
 
 Keeping a home environment consistent across machines means scattered configs, manual installs,
 and "works on my machine" drift. This flake declares the entire home environment as code —
