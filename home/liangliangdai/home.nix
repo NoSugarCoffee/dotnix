@@ -4,7 +4,10 @@
     username = "liangliangdai";
     homeDirectory = "/home/liangliangdai";
     stateVersion = "25.11";
-    packages = [ pkgs.codex ];
+    packages = [
+      pkgs.codex
+      pkgs.copyq
+    ];
     file.".codex/config.toml" = {
       force = true;
       text = ''

@@ -1,5 +1,5 @@
 {
-  description = "Home Manager configuration that installs Codex CLI.";
+  description = "Home Manager configuration for personal desktop tools and CLI.";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";

@@ -24,9 +24,9 @@
 - **`home/<user>/home.nix`** — per-user package list and dotfile configuration
 - **`justfile`** — `switch`, `build`, `show`, and `update` shortcuts
 
-### Currently managed: Codex CLI
+### Currently managed: Codex CLI and CopyQ
 
-`home/liangliangdai/home.nix` installs `pkgs.codex` and writes `~/.codex/config.toml`:
+`home/liangliangdai/home.nix` installs `pkgs.codex` and `pkgs.copyq`, and writes `~/.codex/config.toml`:
 
 | Setting | Value |
 |---------|-------|
@@ -70,16 +70,6 @@ just switch
 ```sh
 nix build .#homeConfigurations.liangliangdai.activationPackage
 ```
-
-## ✅ After activation
-
-Authenticate Codex once:
-
-```sh
-codex login
-```
-
-> Authentication files are intentionally not managed by this repository.
 
 ## 📄 License
 
