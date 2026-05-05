@@ -17,13 +17,13 @@ and "works on my machine" drift. This flake declares the entire home environment
 packages, dotfiles, and tool configs all version-controlled in one place — so one command
 applies a fully reproducible setup on any supported machine.
 
-## Supported systems
+## 🖥️ Supported systems
 
 - `x86_64-linux`
 - `aarch64-darwin`
 - `x86_64-darwin`
 
-## Managed packages
+## 📦 Managed packages
 
 | Package | Linux | macOS |
 |---------|-------|-------|
@@ -32,7 +32,7 @@ applies a fully reproducible setup on any supported machine.
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
 
-## Quick start
+## 🚀 Quick start
 
 ```sh
 just switch
@@ -49,7 +49,7 @@ nix run .#home-manager -- switch --flake .#liangliangdai-aarch64-darwin
 nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
 ```
 
-## Commands
+## 🔧 Commands
 
 | Command | Description |
 |---------|-------------|
@@ -58,7 +58,7 @@ nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
 | `just show` | Show flake outputs |
 | `just update` | Update flake inputs |
 
-## Dev shell
+## 🐚 Dev shell
 
 `just` is available in a repo-local dev shell — no Home Manager needed:
 
@@ -66,6 +66,6 @@ nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
 nix develop
 ```
 
-## License
+## 📄 License
 
 MIT — see [LICENSE](LICENSE).
