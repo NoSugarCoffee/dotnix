@@ -8,11 +8,20 @@
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    flake-utils.url = "github:numtide/flake-utils";
+
+    claude-desktop = {
+      url = "github:k3d3/claude-desktop-linux-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
   };
   outputs =
     {
       nixpkgs,
       home-manager,
+      claude-desktop,
       ...
     }:
     let
@@ -31,8 +40,21 @@
         };
       mkHomeConfiguration =
         system:
+        let
+          isLinux = lib.elem system [ "x86_64-linux" "aarch64-linux" ];
+          claudeDesktopPackage = if
+            (
+              isLinux
+              && builtins.hasAttr system claude-desktop.packages
+            )
+          then claude-desktop.packages.${system}.claude-desktop
+          else null;
+        in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
+          extraSpecialArgs = {
+            inherit claudeDesktopPackage;
+          };
           modules = [ ./home/liangliangdai/home.nix ];
         };
     in
