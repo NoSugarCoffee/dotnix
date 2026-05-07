@@ -1,0 +1,22 @@
+home/liangliangdai/home.nix
+  s_03787b41024314::t_c63bcdd1ed27cb 1,10-13
+flake.nix
+  s_03787b41024314::t_e76ea30e722903 44,47
+  s_03787b41024314::t_744c032c720400 11-18,24,43,45-46,48-52,55-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.1",
+  "base_commit_sha": "0c8aad3da760896df98a6b3dcbb7656d463042de",
+  "prompts": {},
+  "sessions": {
+    "s_03787b41024314": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "60d4f157-80bd-44c4-b94f-1acefc6aab37",
+        "model": "gpt-5.3-codex-spark"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
