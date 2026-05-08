@@ -1,0 +1,26 @@
+home/liangliangdai/home.nix
+  s_01be67680ae119::t_da3116dab79b78 1
+  s_01be67680ae119::t_e3ba191804312e 11
+pkgs/browser-use/pyproject.toml
+  s_01be67680ae119::t_f4db2fd01ba094 1-9
+flake.nix
+  s_01be67680ae119::t_3b85a9c11f5478 43-45,62-75,77-81
+  s_01be67680ae119::t_f1649c93b4964a 94,99
+  s_01be67680ae119::t_9cafa2916b5bde 19-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.1",
+  "base_commit_sha": "6b99ba1fb546a21cabf9af4d6dc476ae40f2200a",
+  "prompts": {},
+  "sessions": {
+    "s_01be67680ae119": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5d57bc5a-c69f-4e68-9186-9e4fe8850d7d",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
