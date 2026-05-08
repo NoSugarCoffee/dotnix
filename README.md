@@ -28,9 +28,14 @@ applies a fully reproducible setup on any supported machine.
 | Package | Linux | macOS |
 |---------|-------|-------|
 | [codex](https://github.com/openai/codex) | yes | yes |
+| [browser-use](https://browser-use.com/) | yes | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
+
+`browser-use` is exposed as a normal command in your profile. During `home-manager switch`,
+a pinned upstream installer script is executed automatically and idempotently to provision
+`~/.browser-use-env` on first setup (or when the pinned installer hash changes).
 
 ## 🚀 Quick start
 
@@ -54,6 +59,7 @@ nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
 | Command | Description |
 |---------|-------------|
 | `just switch` | Apply the configuration |
+| `just generations` | Show all Home Manager generations |
 | `just build` | Build without switching |
 | `just show` | Show flake outputs |
 | `just update` | Update flake inputs |
