@@ -9,6 +9,10 @@ default:
 switch:
     nix run .#home-manager -- switch --flake .#{{USER}}
 
+# Show all Home Manager generations.
+generations:
+    nix run .#home-manager -- generations
+
 # Build the Home Manager activation package without switching.
 build:
     nix build .#homeConfigurations.{{USER}}.activationPackage
