@@ -1,0 +1,21 @@
+flake.nix
+  s_976fd5b92d86fc::t_4359563020c0cf 82
+home/liangliangdai/home.nix
+  s_976fd5b92d86fc::t_8cdf6731326f99 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "c18dc489dc4b596465721ce16986f45dff792a79",
+  "prompts": {},
+  "sessions": {
+    "s_976fd5b92d86fc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd493b74-b9d6-41c5-9994-4f7cf00a90b2",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
