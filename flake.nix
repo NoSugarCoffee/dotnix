@@ -9,14 +9,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    flake-utils.url = "github:numtide/flake-utils";
-
-    claude-desktop = {
-      url = "github:k3d3/claude-desktop-linux-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
-    };
-
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,7 +31,6 @@
     {
       nixpkgs,
       home-manager,
-      claude-desktop,
       uv2nix,
       pyproject-nix,
       pyproject-build-systems,
@@ -83,20 +74,12 @@
       mkHomeConfiguration =
         system:
         let
-          isLinux = lib.elem system [ "x86_64-linux" "aarch64-linux" ];
-          claudeDesktopPackage = if
-            (
-              isLinux
-              && builtins.hasAttr system claude-desktop.packages
-            )
-          then claude-desktop.packages.${system}.claude-desktop
-          else null;
           browserUsePackage = mkBrowserUsePackage system;
         in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
           extraSpecialArgs = {
-            inherit claudeDesktopPackage browserUsePackage;
+            inherit browserUsePackage;
           };
           modules = [ ./home/liangliangdai/home.nix ];
         };

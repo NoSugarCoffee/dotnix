@@ -1,4 +1,4 @@
-{ claudeDesktopPackage, browserUsePackage, lib, pkgs, ... }:
+{ browserUsePackage, lib, pkgs, ... }:
 let
   homeDirectory = if pkgs.stdenv.isDarwin then "/Users/liangliangdai" else "/home/liangliangdai";
 in
@@ -9,7 +9,6 @@ in
     stateVersion = "25.11";
     packages =
       [ pkgs.codex browserUsePackage ]
-      ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ];
     file.".codex/config.toml" = {
       force = true;
