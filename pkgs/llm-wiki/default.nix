@@ -12,6 +12,7 @@
   libayatana-appindicator,
   openssl,
   nodejs_22,
+  nixGLIntel,
 }:
 let
   version = "0.6.9";
@@ -77,6 +78,13 @@ stdenv.mkDerivation {
       "''${gappsWrapperArgs[@]}" \
       --prefix PATH : ${lib.makeBinPath [ nodejs_22 ]} \
       --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libayatana-appindicator ]}
+
+    # On non-NixOS the host GPU drivers live outside the store, so this build's
+    # libglvnd resolves no EGL vendor ICD and WebKit aborts with
+    # EGL_BAD_PARAMETER. nixGL supplies the host driver paths.
+    mv $out/bin/llm-wiki $out/bin/.llm-wiki-gl
+    makeWrapper ${lib.getExe nixGLIntel} $out/bin/llm-wiki \
+      --add-flags $out/bin/.llm-wiki-gl
   '';
 
   meta = {
