@@ -1,0 +1,19 @@
+home/liangliangdai/home.nix
+  s_b44a2b45b69979::t_d5fc6f258c7b18 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "647d2d1f18d7852cbabad674e9998b4b424b94b2",
+  "prompts": {},
+  "sessions": {
+    "s_b44a2b45b69979": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "01cb9411-1e31-4489-9746-893501d1c44a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
