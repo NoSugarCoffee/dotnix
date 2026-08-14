@@ -1,0 +1,26 @@
+flake.nix
+  s_acbcd4b6f23a61::t_e40d25377b6c49 20-25
+  s_acbcd4b6f23a61::t_b3dd9c32a85647 49
+  s_acbcd4b6f23a61::t_4593f72d0d0108 64-66
+pkgs/llm-wiki/default.nix
+  s_acbcd4b6f23a61::t_0c1b1fac458a59 15
+  s_acbcd4b6f23a61::t_042f5b994f4322 81-87
+flake.lock
+  s_acbcd4b6f23a61::t_9f78a48fd45002 65-87,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "196b462b769dc10dd1e7308a2f80620dbf6e37f1",
+  "prompts": {},
+  "sessions": {
+    "s_acbcd4b6f23a61": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6fa0fa58-b716-4743-9df0-661081c8788a",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
