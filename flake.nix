@@ -17,12 +17,6 @@
       inputs.flake-utils.follows = "flake-utils";
     };
 
-    nixgl = {
-      url = "github:nix-community/nixGL";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
-    };
-
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,7 +40,6 @@
       nixpkgs,
       home-manager,
       claude-desktop,
-      nixgl,
       uv2nix,
       pyproject-nix,
       pyproject-build-systems,
@@ -60,17 +53,11 @@
         "x86_64-darwin"
       ];
       forAllSystems = lib.genAttrs systems;
-      localPackagesOverlay = final: _prev: {
-        llm-wiki = final.callPackage ./pkgs/llm-wiki {
-          inherit (nixgl.packages.${final.stdenv.hostPlatform.system}) nixGLIntel;
-        };
-      };
       mkPkgs =
         system:
         import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [ localPackagesOverlay ];
         };
       mkBrowserUsePackage =
         system:
