@@ -30,12 +30,16 @@ applies a fully reproducible setup on any supported machine.
 | [codex](https://github.com/openai/codex) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
+| [llm-wiki](https://github.com/nashsu/llm_wiki) | yes | — |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
 
 `browser-use` is exposed as a normal command in your profile. During `home-manager switch`,
 a pinned upstream installer script is executed automatically and idempotently to provision
 `~/.browser-use-env` on first setup (or when the pinned installer hash changes).
+
+`llm-wiki` repackages the upstream Tauri `.deb` release — the source build is not practical to
+reproduce in Nix — so it is pinned to a release version and is Linux-only.
 
 ## 🚀 Quick start
 
