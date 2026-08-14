@@ -53,11 +53,15 @@
         "x86_64-darwin"
       ];
       forAllSystems = lib.genAttrs systems;
+      localPackagesOverlay = final: _prev: {
+        llm-wiki = final.callPackage ./pkgs/llm-wiki { };
+      };
       mkPkgs =
         system:
         import nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          overlays = [ localPackagesOverlay ];
         };
       mkBrowserUsePackage =
         system:
