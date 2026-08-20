@@ -8,7 +8,7 @@ in
     inherit homeDirectory;
     stateVersion = "25.11";
     packages =
-      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git browserUsePackage ]
+      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ]
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome ];
@@ -111,6 +111,19 @@ in
       install_latest nodejs
       install_latest python
       install_latest java temurin
+
+      # The Lark/Feishu CLI is an npm package with no nixpkgs derivation, so
+      # it rides on the asdf-managed Node: npm puts the binary inside the
+      # active Node version and `asdf reshim` exposes it via ~/.asdf/shims
+      # (already on PATH). Same tracking-latest, best-effort model as above.
+      npm="$ASDF_DATA_DIR/shims/npm"
+      if [ -x "$npm" ]; then
+        $DRY_RUN_CMD "$npm" install --global @larksuite/cli \
+          && $DRY_RUN_CMD "$asdf" reshim nodejs \
+          || echo "warning: asdfLanguages: npm install @larksuite/cli failed" >&2
+      else
+        echo "warning: asdfLanguages: npm shim missing, skipping @larksuite/cli" >&2
+      fi
       true # this subshell's own exit status must always be 0
     )
   '';
