@@ -50,5 +50,77 @@ in
     $DRY_RUN_CMD mkdir -p $HOME/.codex
     $DRY_RUN_CMD chmod 700 $HOME/.codex
   '';
+  # Keeps Go/Node/Python/Java at whatever asdf considers "latest" (Java
+  # pinned to the Temurin build, since asdf-java's versions are vendor-
+  # prefixed rather than plain semver). Re-checks on every switch, so the
+  # active toolchain can silently move forward when upstream releases land --
+  # that's the point of tracking "latest" rather than a pinned nixpkgs
+  # version. Each install is best-effort: a network hiccup or (on a bare
+  # Mac without Xcode Command Line Tools) a failed Python source build logs
+  # a warning instead of aborting the whole `home-manager switch`.
+  home.activation.asdfLanguages = lib.hm.dag.entryAfter [ "installPackages" ] ''
+    ( # Subshell: everything in here, including the PATH override, is scoped
+      # to this block. Activation steps all run in the same parent shell
+      # otherwise, and a later step (linkGeneration) needs the nix-provided
+      # bash this script itself is running under -- not macOS's ancient
+      # system bash that /usr/bin:/bin would shadow it with if exported here.
+      set +e
+
+      export ASDF_DATA_DIR="$HOME/.asdf"
+      # asdf's plugin/install scripts shell out to a bunch of ordinary POSIX
+      # tools (git, awk, sed, curl, tar, the asdf binary itself, ...). The
+      # activation script's own $PATH is a minimal nix-store-only one (it
+      # reflects the pre-activation shell, not any profile installPackages
+      # just built), so anything these scripts need must be listed
+      # explicitly. /usr/bin:/bin is appended as a fallback for macOS-native
+      # tools nixpkgs doesn't (and shouldn't) reimplement -- e.g.
+      # python-build's use of `sw_vers`, or `shasum` for checksum verification.
+      export PATH="${
+        lib.makeBinPath [
+          pkgs.asdf-vm
+          pkgs.git
+          pkgs.gawk
+          pkgs.gnused
+          pkgs.gnugrep
+          pkgs.curl
+          pkgs.gnutar
+          pkgs.gzip
+          pkgs.xz
+          pkgs.bzip2
+          pkgs.unzip
+          pkgs.coreutils
+          pkgs.which
+        ]
+      }:/usr/bin:/bin:$PATH"
+      asdf="${pkgs.asdf-vm}/bin/asdf"
+
+      install_latest() {
+        plugin="$1"
+        query="''${2:-}"
+        "$asdf" plugin add "$plugin"
+
+        version=$("$asdf" latest "$plugin" "$query") || {
+          echo "warning: asdfLanguages: could not resolve latest $plugin $query" >&2
+          return
+        }
+
+        if ! $DRY_RUN_CMD "$asdf" install "$plugin" "$version"; then
+          echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
+          return
+        fi
+        $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
+      }
+
+      install_latest golang
+      install_latest nodejs
+      install_latest python
+      install_latest java temurin
+      true # this subshell's own exit status must always be 0
+    )
+  '';
+  # asdf itself comes from home.packages; this exposes the shims it installs
+  # into (~/.asdf/shims) so `go`/`node`/`python`/`java` resolve without
+  # extra shell config.
+  home.sessionPath = [ "${homeDirectory}/.asdf/shims" ];
   programs.home-manager.enable = true;
 }
