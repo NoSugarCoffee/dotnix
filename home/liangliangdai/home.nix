@@ -8,7 +8,7 @@ in
     inherit homeDirectory;
     stateVersion = "25.11";
     packages =
-      [ pkgs.codex browserUsePackage ]
+      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ]
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome ];
