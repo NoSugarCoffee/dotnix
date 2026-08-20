@@ -1,0 +1,22 @@
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_58b5d7b9b455de 128-130
+  s_846eec72b373dd::t_937f0247aaa728 66-72
+scripts/bootstrap-macos.sh
+  s_846eec72b373dd::t_d4169d5ed754f9 29-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "2b4f869c4460bd9617471d595b8a3d3f0f2ef56b",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
