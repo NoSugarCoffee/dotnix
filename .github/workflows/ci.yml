@@ -66,3 +66,19 @@ jobs:
           test -n "$codex_bin"
           test -n "$browser_use_bin"
           test -n "$chrome_app"
+
+      # The activation log proving a tool installed says nothing about a real
+      # terminal finding it: sessionPath only reaches PATH if the managed
+      # ~/.zshrc sources home-manager's session vars. Simulate what a user
+      # actually gets -- an interactive zsh -- and require the asdf shims to
+      # resolve there (this caught "command not found: npm" on a real Mac).
+      - name: Smoke-test PATH in an interactive zsh
+        run: |
+          set -euo pipefail
+          export HOME=/Users/liangliangdai
+          npm_path=$(/bin/zsh -i -c 'command -v npm' 2>/dev/null | tail -1 || true)
+          lark_path=$(/bin/zsh -i -c 'command -v lark-cli' 2>/dev/null | tail -1 || true)
+          echo "npm:      ${npm_path:-NOT FOUND}"
+          echo "lark-cli: ${lark_path:-NOT FOUND}"
+          [ "$npm_path" = "$HOME/.asdf/shims/npm" ]
+          [ "$lark_path" = "$HOME/.asdf/shims/lark-cli" ]

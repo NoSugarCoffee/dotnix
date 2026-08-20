@@ -45,6 +45,18 @@ Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval
 a pinned upstream installer script is executed automatically and idempotently to provision
 `~/.browser-use-env` on first setup (or when the pinned installer hash changes).
 
+### 🐚 Shell integration (zsh)
+
+`~/.zshrc` is managed (`programs.zsh.enable`) so that home-manager's session variables — most
+importantly `home.sessionPath`, which puts `~/.asdf/shims` on `PATH` — actually reach a real
+terminal. Without this, tools like `npm`/`lark-cli` install fine but come back
+`command not found` in an interactive shell. CI verifies this by resolving them through an
+interactive `/bin/zsh` on the macOS runner, not just checking the files exist.
+
+First switch on a machine with a hand-written `~/.zshrc`: home-manager refuses to overwrite it,
+so move it aside (`mv ~/.zshrc ~/.zshrc.backup`) and fold anything worth keeping into
+`programs.zsh.initContent` in `home.nix`.
+
 ### 🌐 Faster downloads from mainland China
 
 `scripts/bootstrap-macos.sh` writes `extra-substituters` pointing at the SJTU, TUNA, and USTC

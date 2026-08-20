@@ -143,5 +143,12 @@ in
   # into (~/.asdf/shims) so `go`/`node`/`python`/`java` resolve without
   # extra shell config.
   home.sessionPath = [ "${homeDirectory}/.asdf/shims" ];
+  # home.sessionPath / sessionVariables only reach a real terminal if the
+  # shell sources home-manager's session-vars file; a stock macOS zsh never
+  # does, leaving the asdf shims silently off PATH. Managing zsh makes the
+  # generated ~/.zshrc do that sourcing. A pre-existing hand-written
+  # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
+  # fold its content into programs.zsh.initContent if it should be kept.
+  programs.zsh.enable = true;
   programs.home-manager.enable = true;
 }
