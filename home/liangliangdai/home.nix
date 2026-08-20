@@ -8,7 +8,11 @@ in
     inherit homeDirectory;
     stateVersion = "25.11";
     packages =
-      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab browserUsePackage ]
+      # Grouped for readability only -- order carries no meaning in Nix:
+      # home.packages is a set merged into one profile, and runtime
+      # dependencies (like the asdf activation script needing git) are
+      # expressed as explicit ${pkgs.*} references, never as list position.
+      [ pkgs.git pkgs.gh pkgs.glab pkgs.asdf-vm pkgs.codex pkgs.claude-code browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ]
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome ];
