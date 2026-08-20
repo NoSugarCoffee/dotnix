@@ -1,0 +1,23 @@
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_34c395f2477e68 143-149
+README.md
+  s_846eec72b373dd::t_811a118ff7a055 47-58
+.github/workflows/ci.yml
+  s_846eec72b373dd::t_05cab79639768c 69-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "88faf8df6e0d955b54ccdeb87584fdd2537c8f94",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
