@@ -1,0 +1,26 @@
+README.md
+  s_846eec72b373dd::t_c88dc709b43f1f 32
+  s_846eec72b373dd::t_6a760a446c079c 59,66-67,69-71,73,80
+  s_846eec72b373dd::t_dc92d5d674f2d6 58,60-65,68,72,74-79
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_6167305d5b18eb 13-14
+scripts/bootstrap-macos.sh
+  s_846eec72b373dd::t_9b9807b64092ca 1-3,6,9-10,13-31,33-34,36,38-41,44
+  s_846eec72b373dd::t_961de418fa8f61 4-5,7-8,11-12,32,35,37,42-43,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e2d980aba9b046b7564070d64d174acdd760f69c",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
