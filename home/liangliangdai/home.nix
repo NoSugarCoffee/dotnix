@@ -63,6 +63,13 @@ in
       set +e
 
       export ASDF_DATA_DIR="$HOME/.asdf"
+      # Plugin repos are cloned over plain https. A user gitconfig with
+      # url.insteadOf rewrites (e.g. https://github.com/ -> git@github.com:)
+      # would silently reroute those clones through SSH and fail on any
+      # machine whose key isn't registered yet -- activation must not depend
+      # on the user's git identity, so user/system git config is masked here.
+      export GIT_CONFIG_GLOBAL=/dev/null
+      export GIT_CONFIG_SYSTEM=/dev/null
       # asdf's plugin/install scripts shell out to a bunch of ordinary POSIX
       # tools (git, awk, sed, curl, tar, the asdf binary itself, ...). The
       # activation script's own $PATH is a minimal nix-store-only one (it
@@ -118,7 +125,9 @@ in
       # (already on PATH). Same tracking-latest, best-effort model as above.
       npm="$ASDF_DATA_DIR/shims/npm"
       if [ -x "$npm" ]; then
-        $DRY_RUN_CMD "$npm" install --global @larksuite/cli \
+        # --allow-scripts: npm >= 11.19 blocks postinstall scripts of global
+        # installs by default, and this package needs its postinstall step.
+        $DRY_RUN_CMD "$npm" install --global --allow-scripts=@larksuite/cli @larksuite/cli \
           && $DRY_RUN_CMD "$asdf" reshim nodejs \
           || echo "warning: asdfLanguages: npm install @larksuite/cli failed" >&2
       else
