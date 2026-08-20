@@ -50,6 +50,10 @@ in
   # a warning instead of aborting the whole `home-manager switch`.
   home.activation.asdfLanguages = lib.hm.dag.entryAfter [ "installPackages" ] ''
     export ASDF_DATA_DIR="$HOME/.asdf"
+    # asdf's plugin machinery shells out to `git`; the activation script's
+    # own $PATH still reflects the pre-activation shell, not the profile
+    # `installPackages` just installed git into, so it must be added here.
+    export PATH="${pkgs.git}/bin:$PATH"
     asdf="${pkgs.asdf-vm}/bin/asdf"
 
     install_latest() {
