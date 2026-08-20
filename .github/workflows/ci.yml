@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Catches nixpkgs channel drift (e.g. an unfree fetch like google-chrome
+    # breaking) even on weeks with no commits to this repo.
+    - cron: "17 4 * * 1"
+  workflow_dispatch: {}
 
 jobs:
   build-linux:
@@ -28,3 +33,22 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
       - run: nix build .#homeConfigurations.liangliangdai-aarch64-darwin.activationPackage
+
+      # Building the derivation only proves it evaluates and fetches/compiles.
+      # A new Mac needs the activation *scripts* to also run cleanly, so
+      # actually run them here against a throwaway home directory that
+      # matches home.nix's hardcoded username/homeDirectory for Darwin.
+      - name: Activate the configuration end-to-end
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /Users/liangliangdai
+          sudo chown "$(id -u):$(id -g)" /Users/liangliangdai
+          HOME=/Users/liangliangdai USER=liangliangdai LOGNAME=liangliangdai "$(readlink -f result)/activate"
+
+      - name: Smoke-test the activated profile
+        run: |
+          set -euo pipefail
+          export HOME=/Users/liangliangdai
+          test -x "$HOME/.nix-profile/bin/codex"
+          test -x "$HOME/.nix-profile/bin/browser-use"
+          find "$HOME/.nix-profile" -maxdepth 4 -iname "Google Chrome.app" -print -quit | grep -q .
