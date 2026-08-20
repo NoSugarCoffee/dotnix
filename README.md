@@ -31,6 +31,9 @@ applies a fully reproducible setup on any supported machine.
 | [claude-code](https://github.com/anthropics/claude-code) | yes | yes |
 | [asdf](https://asdf-vm.com/) | yes | yes |
 | [git](https://git-scm.com/) | yes | yes |
+| [gh](https://cli.github.com/) | yes | yes |
+| [glab](https://gitlab.com/gitlab-org/cli) | yes | yes |
+| [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
@@ -77,6 +80,10 @@ Line Tools) a failed Python source build, logs a warning instead of failing the 
 To pin a specific project to an older version instead of whatever's currently global, add a
 `.tool-versions` file in that project (standard asdf behavior, e.g. `python 3.11.9`) — asdf's
 shims (already on `PATH` via `home.sessionPath`) pick it up automatically per-directory.
+
+`lark-cli` (the Feishu/Lark CLI, npm `@larksuite/cli`) has no nixpkgs package, so the same
+activation step installs it globally into the asdf-managed Node and reshims — it surfaces as
+`lark-cli` through the same shims directory.
 
 On a brand-new Mac, install Xcode Command Line Tools first (`xcode-select --install`) so the
 Python build succeeds on first activation.
