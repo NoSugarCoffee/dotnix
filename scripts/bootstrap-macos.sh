@@ -39,20 +39,24 @@ EOF
   exit 0
 fi
 
-# home.nix's extra-substituters only take effect for a trusted Nix user
-# (Determinate Nix's default trusted-users is just `root`). Determinate Nix
-# specifically supports /etc/nix/nix.custom.conf for this kind of
-# customization -- editing /etc/nix/nix.conf directly gets reverted, since
-# Determinate's tooling manages that file itself. Idempotent: only appends
-# if this user isn't already listed.
+# Mirrors of cache.nixos.org that are much faster to reach from mainland
+# China (1:1 mirrors, same signing key, so no extra-trusted-public-keys
+# needed; extra-substituters only appends, cache.nixos.org stays as the
+# fallback). This must be system-level daemon config so it takes effect for
+# the very first switch's downloads -- per-user ~/.config/nix/nix.conf is
+# both written too late (only after a switch completes) and ignored for
+# non-trusted users. Determinate Nix supports /etc/nix/nix.custom.conf for
+# exactly this kind of customization; editing /etc/nix/nix.conf directly
+# gets reverted, since Determinate's tooling manages that file itself.
+# Idempotent: only appends if not already present.
 custom_conf="/etc/nix/nix.custom.conf"
-current_user="$(id -un)"
-if ! sudo grep -qsE "(^|[[:space:]])extra-trusted-users(.*[[:space:]])?${current_user}([[:space:]]|$)" "$custom_conf" 2>/dev/null; then
-  echo "==> Adding ${current_user} to Nix's trusted-users (via ${custom_conf}) so extra-substituters take effect..."
-  printf 'extra-trusted-users = %s\n' "$current_user" | sudo tee -a "$custom_conf" >/dev/null
+mirrors="https://mirror.sjtu.edu.cn/nix-channels/store https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirrors.ustc.edu.cn/nix-channels/store"
+if ! sudo grep -qsF "$mirrors" "$custom_conf" 2>/dev/null; then
+  echo "==> Adding mainland China binary cache mirrors to ${custom_conf}..."
+  printf 'extra-substituters = %s\n' "$mirrors" | sudo tee -a "$custom_conf" >/dev/null
   sudo pkill -x nix-daemon 2>/dev/null || true
 else
-  echo "==> ${current_user} is already a trusted Nix user."
+  echo "==> Binary cache mirrors already configured."
 fi
 
 echo "==> Applying Home Manager configuration for ${flake_target} from ${flake_repo}..."
