@@ -1,0 +1,21 @@
+README.md
+  s_846eec72b373dd::t_0db05d7dfbc52a 31-33
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_717952bfcb8193 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "221d1d4e4d70e3efde9870986c66278f669a307c",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
