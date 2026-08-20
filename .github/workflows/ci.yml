@@ -45,10 +45,24 @@ jobs:
           sudo chown "$(id -u):$(id -g)" /Users/liangliangdai
           HOME=/Users/liangliangdai USER=liangliangdai LOGNAME=liangliangdai "$(readlink -f result)/activate"
 
+      # Standalone Home Manager (no nix-darwin) keeps its profile at
+      # ~/.local/state/nix/profiles/home-manager, not ~/.nix-profile -- so
+      # search rather than assume an exact nesting under it.
       - name: Smoke-test the activated profile
         run: |
           set -euo pipefail
           export HOME=/Users/liangliangdai
-          test -x "$HOME/.nix-profile/bin/codex"
-          test -x "$HOME/.nix-profile/bin/browser-use"
-          find "$HOME/.nix-profile" -maxdepth 4 -iname "Google Chrome.app" -print -quit | grep -q .
+          echo "== $HOME layout (depth 4) =="
+          find -L "$HOME" -maxdepth 4 | sort
+
+          codex_bin=$(find -L "$HOME/.local/state/nix/profiles" -maxdepth 4 -type f -name codex -perm -111 -print -quit)
+          browser_use_bin=$(find -L "$HOME/.local/state/nix/profiles" -maxdepth 4 -type f -name browser-use -perm -111 -print -quit)
+          chrome_app=$(find -L "$HOME/Applications" -maxdepth 4 -iname "Google Chrome.app" -print -quit)
+
+          echo "codex:       ${codex_bin:-NOT FOUND}"
+          echo "browser-use: ${browser_use_bin:-NOT FOUND}"
+          echo "chrome:      ${chrome_app:-NOT FOUND}"
+
+          test -n "$codex_bin"
+          test -n "$browser_use_bin"
+          test -n "$chrome_app"
