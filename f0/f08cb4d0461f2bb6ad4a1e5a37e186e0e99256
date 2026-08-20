@@ -1,0 +1,19 @@
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_1d1c9af83dacbf 54-60,63,77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f0f08cb4d0461f2bb6ad4a1e5a37e186e0e99256",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
