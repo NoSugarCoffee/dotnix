@@ -43,26 +43,22 @@ a pinned upstream installer script is executed automatically and idempotently to
 
 ### 🌐 Faster downloads from mainland China
 
-`~/.config/nix/nix.conf` is written with `extra-substituters` pointing at the SJTU, TUNA, and
-USTC mirrors of `cache.nixos.org` — all 1:1 mirrors of the official cache (same signing key), so
-they're only ever an addition: `cache.nixos.org` stays as the automatic fallback for anything a
-mirror doesn't have.
+`scripts/bootstrap-macos.sh` writes `extra-substituters` pointing at the SJTU, TUNA, and USTC
+mirrors of `cache.nixos.org` into `/etc/nix/nix.custom.conf` (the Determinate-supported
+customization file — hand-editing `/etc/nix/nix.conf` gets reverted, since Determinate's own
+tooling manages that file) and restarts the daemon, *before* running the switch. All three are
+1:1 mirrors of the official cache (same signing key), so they're only ever an addition:
+`cache.nixos.org` stays as the automatic fallback for anything a mirror doesn't have.
 
-This only takes effect if your user is a `trusted-user` for the Nix daemon — and Determinate
-Nix's default there is just `root`, so on a stock install your regular user usually isn't
-trusted, and the daemon silently ignores these extra-substituters (downloads still go straight
-to the official cache, just slower).
-
-`scripts/bootstrap-macos.sh` fixes this automatically: it adds your user to `trusted-users` via
-`/etc/nix/nix.custom.conf` (the Determinate-supported way to customize this — hand-editing
-`/etc/nix/nix.conf` directly gets reverted, since Determinate's own tooling manages that file)
-and restarts the daemon so it takes effect immediately. It's idempotent, so re-running it is
-safe on a Mac that's already set up.
+System-level config is deliberate: a per-user `~/.config/nix/nix.conf` would only be written at
+the *end* of a successful switch (too late for the downloads the switch itself does) and is
+silently ignored by the daemon for non-`trusted-users` anyway. The step is idempotent, so
+re-running the script on an already-set-up Mac is safe.
 
 To check whether it's actually active, look at Nix's *effective* config rather than guessing:
 
 ```sh
-nix show-config | grep -i substitut
+nix config show | grep -i substitut
 ```
 
 ### 🧰 Go / Node / Python / Java via asdf
