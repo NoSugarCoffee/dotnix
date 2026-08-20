@@ -26,16 +26,6 @@ esac
 
 flake_target="liangliangdai-${system}"
 
-# Python is built from source by the asdf step and needs a C toolchain;
-# without CLT that build fails late with a confusing openssl error, so
-# check up front. The switch itself continues fine either way (the python
-# install is best-effort), so this only warns and triggers the installer.
-if ! xcode-select -p >/dev/null 2>&1; then
-  echo "==> Xcode Command Line Tools not found; requesting install (needed for the Python build)..."
-  xcode-select --install || true
-  echo "==> Continuing -- if the Python install fails below, re-run this script after the CLT install finishes."
-fi
-
 if ! command -v nix >/dev/null 2>&1; then
   echo "==> Nix not found, installing via the Determinate Systems installer..."
   curl -fsSL https://install.determinate.systems/nix | sh -s -- install --no-confirm
