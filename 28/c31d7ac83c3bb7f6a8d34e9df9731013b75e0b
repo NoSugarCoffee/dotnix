@@ -1,0 +1,21 @@
+scripts/bootstrap-macos.sh
+  s_846eec72b373dd::t_2afccf976053b9 42-57
+README.md
+  s_846eec72b373dd::t_a4d18f8a291abf 51-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "28c31d7ac83c3bb7f6a8d34e9df9731013b75e0b",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
