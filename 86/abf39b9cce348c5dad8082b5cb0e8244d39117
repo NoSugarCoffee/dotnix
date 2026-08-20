@@ -1,0 +1,22 @@
+README.md
+  s_846eec72b373dd::t_3a4452882520ee 68,70-75,79-80,83,86-93
+  s_846eec72b373dd::t_7cc546dfb26a4c 36
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_fdd25644b3ed5c 11-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "86abf39b9cce348c5dad8082b5cb0e8244d39117",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
