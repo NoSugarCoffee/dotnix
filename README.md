@@ -41,6 +41,26 @@ Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval
 a pinned upstream installer script is executed automatically and idempotently to provision
 `~/.browser-use-env` on first setup (or when the pinned installer hash changes).
 
+### 🧰 Go / Node / Python / Java via asdf
+
+Rather than pinning these to whatever version nixpkgs currently ships, `home-manager switch`
+installs `asdf` itself, then runs its own activation step
+(`home.activation.asdfLanguages` in `home.nix`) that plugs in `golang`, `nodejs`, `python`, and
+`java` (pinned to the [Temurin](https://adoptium.net/) build, since asdf-java's versions are
+vendor-prefixed rather than plain semver) and sets each to whatever asdf resolves as latest.
+
+This re-checks on every switch, so the active toolchain can move forward silently as upstream
+releases land — that's the tradeoff for tracking "latest" instead of a version pinned in this
+repo. Each install is best-effort: a network hiccup, or (on a bare Mac without Xcode Command
+Line Tools) a failed Python source build, logs a warning instead of failing the whole switch.
+
+To pin a specific project to an older version instead of whatever's currently global, add a
+`.tool-versions` file in that project (standard asdf behavior, e.g. `python 3.11.9`) — asdf's
+shims (already on `PATH` via `home.sessionPath`) pick it up automatically per-directory.
+
+On a brand-new Mac, install Xcode Command Line Tools first (`xcode-select --install`) so the
+Python build succeeds on first activation.
+
 ## 🚀 Quick start
 
 ```sh
