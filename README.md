@@ -28,6 +28,9 @@ applies a fully reproducible setup on any supported machine.
 | Package | Linux | macOS |
 |---------|-------|-------|
 | [codex](https://github.com/openai/codex) | yes | yes |
+| [claude-code](https://github.com/anthropics/claude-code) | yes | yes |
+| [asdf](https://asdf-vm.com/) | yes | yes |
+| [git](https://git-scm.com/) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
