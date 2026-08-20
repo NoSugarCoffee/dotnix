@@ -55,9 +55,9 @@ in
     install_latest() {
       plugin="$1"
       query="''${2:-}"
-      "$asdf" plugin add "$plugin" >/dev/null 2>&1 || true
+      "$asdf" plugin add "$plugin" || true
 
-      version=$("$asdf" latest "$plugin" "$query" 2>/dev/null) || {
+      version=$("$asdf" latest "$plugin" "$query") || {
         echo "warning: asdfLanguages: could not resolve latest $plugin $query" >&2
         return
       }
