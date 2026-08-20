@@ -48,10 +48,22 @@ USTC mirrors of `cache.nixos.org` — all 1:1 mirrors of the official cache (sam
 they're only ever an addition: `cache.nixos.org` stays as the automatic fallback for anything a
 mirror doesn't have.
 
-This only takes effect if your user is listed as a `trusted-user` in `/etc/nix/nix.conf` (the
-Determinate Systems installer adds the installing user by default) — otherwise the Nix daemon
-silently ignores user-supplied substituters and downloads still go straight to the official
-cache. If switches still feel slow, check `trusted-users` in `/etc/nix/nix.conf`.
+This only takes effect if your user is a `trusted-user` for the Nix daemon — and Determinate
+Nix's default there is just `root`, so on a stock install your regular user usually isn't
+trusted, and the daemon silently ignores these extra-substituters (downloads still go straight
+to the official cache, just slower).
+
+`scripts/bootstrap-macos.sh` fixes this automatically: it adds your user to `trusted-users` via
+`/etc/nix/nix.custom.conf` (the Determinate-supported way to customize this — hand-editing
+`/etc/nix/nix.conf` directly gets reverted, since Determinate's own tooling manages that file)
+and restarts the daemon so it takes effect immediately. It's idempotent, so re-running it is
+safe on a Mac that's already set up.
+
+To check whether it's actually active, look at Nix's *effective* config rather than guessing:
+
+```sh
+nix show-config | grep -i substitut
+```
 
 ### 🧰 Go / Node / Python / Java via asdf
 
