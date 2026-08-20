@@ -51,12 +51,16 @@ in
   home.activation.asdfLanguages = lib.hm.dag.entryAfter [ "installPackages" ] ''
     export ASDF_DATA_DIR="$HOME/.asdf"
     # asdf's plugin/install scripts shell out to a bunch of ordinary POSIX
-    # tools (git, awk, sed, curl, tar, ...). The activation script's own
-    # $PATH is a minimal nix-store-only one (it reflects the pre-activation
-    # shell, not any profile installPackages just built), so anything these
-    # scripts need must be listed explicitly here rather than assumed.
+    # tools (git, awk, sed, curl, tar, the asdf binary itself, ...). The
+    # activation script's own $PATH is a minimal nix-store-only one (it
+    # reflects the pre-activation shell, not any profile installPackages
+    # just built), so anything these scripts need must be listed explicitly.
+    # /usr/bin:/bin is appended as a fallback for macOS-native tools nixpkgs
+    # doesn't (and shouldn't) reimplement -- e.g. python-build's use of
+    # `sw_vers`, or `shasum` for checksum verification.
     export PATH="${
       lib.makeBinPath [
+        pkgs.asdf-vm
         pkgs.git
         pkgs.gawk
         pkgs.gnused
@@ -70,7 +74,7 @@ in
         pkgs.coreutils
         pkgs.which
       ]
-    }:$PATH"
+    }:/usr/bin:/bin:$PATH"
     asdf="${pkgs.asdf-vm}/bin/asdf"
 
     install_latest() {
