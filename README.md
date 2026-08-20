@@ -33,6 +33,7 @@ applies a fully reproducible setup on any supported machine.
 | [git](https://git-scm.com/) | yes | yes |
 | [gh](https://cli.github.com/) | yes | yes |
 | [glab](https://gitlab.com/gitlab-org/cli) | yes | yes |
+| [python3](https://www.python.org/) | yes | yes |
 | [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
@@ -64,29 +65,34 @@ To check whether it's actually active, look at Nix's *effective* config rather t
 nix config show | grep -i substitut
 ```
 
-### 🧰 Go / Node / Python / Java via asdf
+### 🧰 Go / Node / Java via asdf, Python via nixpkgs
 
-Rather than pinning these to whatever version nixpkgs currently ships, `home-manager switch`
-installs `asdf` itself, then runs its own activation step
-(`home.activation.asdfLanguages` in `home.nix`) that plugs in `golang`, `nodejs`, `python`, and
-`java` (pinned to the [Temurin](https://adoptium.net/) build, since asdf-java's versions are
-vendor-prefixed rather than plain semver) and sets each to whatever asdf resolves as latest.
+Go, Node, and Java aren't pinned to whatever nixpkgs ships: `home-manager switch` installs
+`asdf` itself, then runs its own activation step (`home.activation.asdfLanguages` in `home.nix`)
+that plugs in `golang`, `nodejs`, and `java` (pinned to the [Temurin](https://adoptium.net/)
+build, since asdf-java's versions are vendor-prefixed rather than plain semver) and sets each
+to whatever asdf resolves as latest. These all install prebuilt binaries — nothing compiles, so
+no Xcode Command Line Tools are needed.
 
 This re-checks on every switch, so the active toolchain can move forward silently as upstream
 releases land — that's the tradeoff for tracking "latest" instead of a version pinned in this
-repo. Each install is best-effort: a network hiccup, or (on a bare Mac without Xcode Command
-Line Tools) a failed Python source build, logs a warning instead of failing the whole switch.
+repo. Each install is best-effort: a network hiccup logs a warning instead of failing the
+whole switch.
 
 To pin a specific project to an older version instead of whatever's currently global, add a
-`.tool-versions` file in that project (standard asdf behavior, e.g. `python 3.11.9`) — asdf's
+`.tool-versions` file in that project (standard asdf behavior, e.g. `nodejs 20.11.0`) — asdf's
 shims (already on `PATH` via `home.sessionPath`) pick it up automatically per-directory.
 
-`lark-cli` (the Feishu/Lark CLI, npm `@larksuite/cli`) has no nixpkgs package, so the same
+Python deliberately comes from nixpkgs instead (`pkgs.python3`, prebuilt from the cache):
+asdf's python plugin compiles CPython from source, which requires Xcode CLT on macOS and takes
+minutes, and its "latest" resolution picks the experimental free-threaded `t` variant. To
+switch major version, swap `pkgs.python3` for `pkgs.python312`/`python313`/`python314` in
+`home.nix` and re-switch; for a one-off shell with a different version,
+`nix shell nixpkgs#python312` works without touching the config.
+
+`lark-cli` (the Feishu/Lark CLI, npm `@larksuite/cli`) has no nixpkgs package, so the asdf
 activation step installs it globally into the asdf-managed Node and reshims — it surfaces as
 `lark-cli` through the same shims directory.
-
-On a brand-new Mac, install Xcode Command Line Tools first (`xcode-select --install`) so the
-Python build succeeds on first activation.
 
 ## 🚀 Quick start
 

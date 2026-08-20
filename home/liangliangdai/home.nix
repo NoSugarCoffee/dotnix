@@ -8,7 +8,11 @@ in
     inherit homeDirectory;
     stateVersion = "25.11";
     packages =
-      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab browserUsePackage ]
+      # Python comes prebuilt from nixpkgs rather than asdf: asdf's python
+      # plugin compiles from source and needs Xcode CLT on macOS, and its
+      # "latest" resolution picks the free-threaded 3.14t variant. Switch
+      # major version by swapping this for pkgs.python312/313/314.
+      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab pkgs.python3 browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ]
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome ];
@@ -116,7 +120,6 @@ in
 
       install_latest golang
       install_latest nodejs
-      install_latest python
       install_latest java temurin
 
       # The Lark/Feishu CLI is an npm package with no nixpkgs derivation, so
