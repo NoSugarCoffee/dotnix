@@ -29,6 +29,7 @@ applies a fully reproducible setup on any supported machine.
 |---------|-------|-------|
 | [codex](https://github.com/openai/codex) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
+| [google-chrome](https://www.google.com/chrome/) | — | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
@@ -52,6 +53,29 @@ nix run .#home-manager -- switch --flake .#liangliangdai
 # macOS (pick your arch)
 nix run .#home-manager -- switch --flake .#liangliangdai-aarch64-darwin
 nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
+```
+
+### 🍎 New Mac, zero Nix (or even git) installed
+
+No local clone needed — Nix fetches flakes straight from GitHub via its own
+tarball fetcher, `git` CLI not required. `scripts/bootstrap-macos.sh` chains
+the two steps: installs Nix (via the
+[Determinate Systems installer](https://install.determinate.systems/)) if
+it's missing, then applies this flake's Home Manager configuration for your
+Mac's architecture directly from `github:NoSugarCoffee/dotnix`.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
+```
+
+If Nix wasn't already installed, open a new terminal after the installer
+finishes (so `PATH` picks up `nix`) and re-run the same command to apply the
+configuration.
+
+Equivalent manual command, if you'd rather not pipe a script into `bash`:
+
+```sh
+nix run github:NoSugarCoffee/dotnix#home-manager -- switch --flake github:NoSugarCoffee/dotnix#liangliangdai-aarch64-darwin
 ```
 
 ## 🔧 Commands

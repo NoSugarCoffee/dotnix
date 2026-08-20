@@ -10,7 +10,8 @@ in
     packages =
       [ pkgs.codex browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ];
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ]
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
