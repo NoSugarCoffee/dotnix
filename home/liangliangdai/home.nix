@@ -58,7 +58,13 @@ in
   # version. Each install is best-effort: a network hiccup or (on a bare
   # Mac without Xcode Command Line Tools) a failed Python source build logs
   # a warning instead of aborting the whole `home-manager switch`.
-  home.activation.asdfLanguages = lib.hm.dag.entryAfter [ "installPackages" ] ''
+  #
+  # Runs after linkGeneration (not just installPackages) on purpose: these
+  # downloads can be slow (a full Python source build, or any of them over a
+  # slow connection), and linkGeneration is what actually creates file links
+  # like ~/.config/nix/nix.conf and ~/.codex/config.toml. Running asdf first
+  # would block those files from existing until the slowest download finishes.
+  home.activation.asdfLanguages = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     ( # Subshell: everything in here, including the PATH override, is scoped
       # to this block. Activation steps all run in the same parent shell
       # otherwise, and a later step (linkGeneration) needs the nix-provided
