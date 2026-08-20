@@ -41,6 +41,18 @@ Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval
 a pinned upstream installer script is executed automatically and idempotently to provision
 `~/.browser-use-env` on first setup (or when the pinned installer hash changes).
 
+### 🌐 Faster downloads from mainland China
+
+`~/.config/nix/nix.conf` is written with `extra-substituters` pointing at the SJTU, TUNA, and
+USTC mirrors of `cache.nixos.org` — all 1:1 mirrors of the official cache (same signing key), so
+they're only ever an addition: `cache.nixos.org` stays as the automatic fallback for anything a
+mirror doesn't have.
+
+This only takes effect if your user is listed as a `trusted-user` in `/etc/nix/nix.conf` (the
+Determinate Systems installer adds the installing user by default) — otherwise the Nix daemon
+silently ignores user-supplied substituters and downloads still go straight to the official
+cache. If switches still feel slow, check `trusted-users` in `/etc/nix/nix.conf`.
+
 ## 🚀 Quick start
 
 ```sh
