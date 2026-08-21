@@ -1,0 +1,25 @@
+flake.nix
+  s_846eec72b373dd::t_aaadfa1b8143c4 56-58,64
+pkgs/clash-verge-rev-darwin/default.nix
+  s_846eec72b373dd::t_aa99ef3e53300d 1-55
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_9734a1abeef4c7 29-31,35
+README.md
+  s_846eec72b373dd::t_641976fc57c61a 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "b1ef98eb7080e9323236a757180a1e17a685467a",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
