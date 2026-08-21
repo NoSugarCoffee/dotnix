@@ -207,7 +207,6 @@ in
         "https://git.dev.sh.ctripcorp.com/"
         "http://git.dev.sh.ctripcorp.com/"
       ];
-      url."git@bitbucket.org:xivart/".insteadOf = "https://bitbucket.org/xivart/";
     };
     # Repos whose remote points at the internal GitLab use the work identity
     # instead of the GitHub one above; matching is by remote URL, so no
