@@ -200,27 +200,29 @@ in
     };
     # Repos whose remote points at the internal GitLab use the work identity
     # instead of the GitHub one above; matching is by remote URL, so no
-    # per-repo setup is needed. The address here is a placeholder -- swap in
-    # the real internal email locally before switching. The three patterns
-    # cover the URL shapes remotes take (ssh://, scp-style, https).
+    # per-repo setup is needed. The identity itself lives in an untracked
+    # per-machine file so it never enters this public repo and can't be
+    # reverted by syncing it -- create it once per machine:
+    #   printf '[user]\n\temail = you@work.example\n' > ~/.gitconfig-work
+    # Git silently skips includes whose target file doesn't exist, so
+    # machines without the file simply keep the default identity. The three
+    # patterns cover the URL shapes remotes take (ssh://, scp-style, https).
     includes =
       let
-        workIdentity = {
-          user.email = "foo@bar.com";
-        };
+        workIdentityPath = "${homeDirectory}/.gitconfig-work";
       in
       [
         {
           condition = "hasconfig:remote.*.url:ssh://git@git.dev.sh.ctripcorp.com:*/**";
-          contents = workIdentity;
+          path = workIdentityPath;
         }
         {
           condition = "hasconfig:remote.*.url:git@git.dev.sh.ctripcorp.com:*/**";
-          contents = workIdentity;
+          path = workIdentityPath;
         }
         {
           condition = "hasconfig:remote.*.url:https://git.dev.sh.ctripcorp.com/**";
-          contents = workIdentity;
+          path = workIdentityPath;
         }
       ];
   };
