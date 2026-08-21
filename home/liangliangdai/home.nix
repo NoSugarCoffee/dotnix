@@ -198,6 +198,31 @@ in
       core.editor = "vim";
       init.defaultBranch = "main";
     };
+    # Repos whose remote points at the internal GitLab use the work identity
+    # instead of the GitHub one above; matching is by remote URL, so no
+    # per-repo setup is needed. The address here is a placeholder -- swap in
+    # the real internal email locally before switching. The three patterns
+    # cover the URL shapes remotes take (ssh://, scp-style, https).
+    includes =
+      let
+        workIdentity = {
+          user.email = "foo@bar.com";
+        };
+      in
+      [
+        {
+          condition = "hasconfig:remote.*.url:ssh://git@git.dev.sh.ctripcorp.com:*/**";
+          contents = workIdentity;
+        }
+        {
+          condition = "hasconfig:remote.*.url:git@git.dev.sh.ctripcorp.com:*/**";
+          contents = workIdentity;
+        }
+        {
+          condition = "hasconfig:remote.*.url:https://git.dev.sh.ctripcorp.com/**";
+          contents = workIdentity;
+        }
+      ];
   };
   programs.home-manager.enable = true;
 }
