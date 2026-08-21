@@ -197,6 +197,17 @@ in
       };
       core.editor = "vim";
       init.defaultBranch = "main";
+      # Route https clones through SSH. On a machine whose SSH key isn't
+      # registered with the host yet, these make https clones fail with
+      # "Permission denied (publickey)" -- set up keys (gh auth login)
+      # before cloning. Activation scripts are immune: they mask user git
+      # config (see asdfLanguages).
+      url."git@github.com:".insteadOf = "https://github.com/";
+      url."git@git.dev.sh.ctripcorp.com:".insteadOf = [
+        "https://git.dev.sh.ctripcorp.com/"
+        "http://git.dev.sh.ctripcorp.com/"
+      ];
+      url."git@bitbucket.org:xivart/".insteadOf = "https://bitbucket.org/xivart/";
     };
     # Repos whose remote points at the internal GitLab use the work identity
     # instead of the GitHub one above; matching is by remote URL, so no
