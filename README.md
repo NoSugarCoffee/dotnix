@@ -38,7 +38,7 @@ applies a fully reproducible setup on any supported machine.
 | [intellij-idea-ultimate](https://www.jetbrains.com/idea/) | yes | yes |
 | [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
-| [clash-verge-rev](https://www.clashverge.dev/) | yes | — |
+| [clash-verge-rev](https://www.clashverge.dev/) | yes | yes |
 | [ghostty](https://ghostty.org/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
