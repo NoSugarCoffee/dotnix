@@ -12,7 +12,7 @@ in
       # plugin compiles from source and needs Xcode CLT on macOS, and its
       # "latest" resolution picks the free-threaded 3.14t variant. Switch
       # major version by swapping this for pkgs.python312/313/314.
-      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab pkgs.python3 browserUsePackage ]
+      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab pkgs.python3 pkgs.clash-verge-rev browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.ghostty ]
       # ghostty-bin on darwin: the official prebuilt .app bundle; the source
