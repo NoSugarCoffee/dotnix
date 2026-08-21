@@ -12,7 +12,19 @@ in
       # plugin compiles from source and needs Xcode CLT on macOS, and its
       # "latest" resolution picks the free-threaded 3.14t variant. Switch
       # major version by swapping this for pkgs.python312/313/314.
-      [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab pkgs.python3 browserUsePackage ]
+      [
+        pkgs.codex
+        pkgs.claude-code
+        pkgs.asdf-vm
+        pkgs.git
+        pkgs.gh
+        pkgs.glab
+        pkgs.python3
+        pkgs.zellij
+        # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
+        pkgs.jetbrains.idea
+        browserUsePackage
+      ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       # clash-verge-rev is Linux-only in nixpkgs (meta.platforms has no
       # darwin); on macOS install the official DMG from clashverge.dev.

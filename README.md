@@ -34,6 +34,8 @@ applies a fully reproducible setup on any supported machine.
 | [gh](https://cli.github.com/) | yes | yes |
 | [glab](https://gitlab.com/gitlab-org/cli) | yes | yes |
 | [python3](https://www.python.org/) | yes | yes |
+| [zellij](https://zellij.dev/) | yes | yes |
+| [intellij-idea-ultimate](https://www.jetbrains.com/idea/) | yes | yes |
 | [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [clash-verge-rev](https://www.clashverge.dev/) | yes | — |
