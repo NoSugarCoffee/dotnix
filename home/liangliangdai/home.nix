@@ -181,6 +181,17 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
+  # Bounds generation history so the store can't fill the disk again (a
+  # full root disk once broke everything on the Linux box): a weekly timer
+  # (systemd on Linux, launchd on macOS) deletes generations older than two
+  # weeks and garbage-collects what they referenced. Time-bounded because
+  # Nix has no "keep at most N generations" -- rollback still works within
+  # the 14-day window.
+  nix.gc = {
+    automatic = true;
+    frequency = "weekly";
+    options = "--delete-older-than 14d";
+  };
   # Installs git and writes ~/.config/git/config. Deliberately minimal:
   # only portable identity/editor settings live here -- work-internal URL
   # rewrites and machine-specific credential helpers stay out of this
