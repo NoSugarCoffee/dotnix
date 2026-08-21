@@ -26,12 +26,13 @@ in
         browserUsePackage
       ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
-      # clash-verge-rev is Linux-only in nixpkgs (meta.platforms has no
-      # darwin); on macOS install the official DMG from clashverge.dev.
+      # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
+      # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
+      # the official prebuilt DMG instead.
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.ghostty pkgs.clash-verge-rev ]
       # ghostty-bin on darwin: the official prebuilt .app bundle; the source
       # ghostty package would compile the whole thing with zig instead.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.ghostty-bin ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.ghostty-bin pkgs.clash-verge-rev-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
