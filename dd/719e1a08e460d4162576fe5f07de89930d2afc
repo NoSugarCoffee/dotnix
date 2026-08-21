@@ -1,0 +1,19 @@
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_80fed97dfe871d 186-201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "dd719e1a08e460d4162576fe5f07de89930d2afc",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
