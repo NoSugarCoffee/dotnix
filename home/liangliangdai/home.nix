@@ -14,7 +14,9 @@ in
       # major version by swapping this for pkgs.python312/313/314.
       [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab pkgs.python3 browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.ghostty ]
+      # clash-verge-rev is Linux-only in nixpkgs (meta.platforms has no
+      # darwin); on macOS install the official DMG from clashverge.dev.
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.ghostty pkgs.clash-verge-rev ]
       # ghostty-bin on darwin: the official prebuilt .app bundle; the source
       # ghostty package would compile the whole thing with zig instead.
       ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.ghostty-bin ];
