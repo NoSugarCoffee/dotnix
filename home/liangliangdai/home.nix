@@ -16,7 +16,6 @@ in
         pkgs.codex
         pkgs.claude-code
         pkgs.asdf-vm
-        pkgs.git
         pkgs.gh
         pkgs.glab
         pkgs.python3
@@ -184,5 +183,21 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
+  # Installs git and writes ~/.config/git/config. Deliberately minimal:
+  # only portable identity/editor settings live here -- work-internal URL
+  # rewrites and machine-specific credential helpers stay out of this
+  # public repo and belong in ~/.gitconfig, which git reads on top of the
+  # managed file (and which wins on conflicting single-valued keys).
+  programs.git = {
+    enable = true;
+    settings = {
+      user = {
+        name = "light(liangliang.dai)";
+        email = "1353025854@qq.com";
+      };
+      core.editor = "vim";
+      init.defaultBranch = "main";
+    };
+  };
   programs.home-manager.enable = true;
 }
