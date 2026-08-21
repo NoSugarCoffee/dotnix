@@ -28,10 +28,8 @@ in
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.ghostty pkgs.clash-verge-rev ]
-      # ghostty-bin on darwin: the official prebuilt .app bundle; the source
-      # ghostty package would compile the whole thing with zig instead.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.ghostty-bin pkgs.clash-verge-rev-darwin ];
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -183,6 +181,17 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
+  # Bounds generation history so the store can't fill the disk again (a
+  # full root disk once broke everything on the Linux box): a weekly timer
+  # (systemd on Linux, launchd on macOS) deletes generations older than two
+  # weeks and garbage-collects what they referenced. Time-bounded because
+  # Nix has no "keep at most N generations" -- rollback still works within
+  # the 14-day window.
+  nix.gc = {
+    automatic = true;
+    frequency = "weekly";
+    options = "--delete-older-than 14d";
+  };
   # Installs git and writes ~/.config/git/config. Deliberately minimal:
   # only portable identity/editor settings live here -- work-internal URL
   # rewrites and machine-specific credential helpers stay out of this
@@ -197,6 +206,16 @@ in
       };
       core.editor = "vim";
       init.defaultBranch = "main";
+      # Route https clones through SSH. On a machine whose SSH key isn't
+      # registered with the host yet, these make https clones fail with
+      # "Permission denied (publickey)" -- set up keys (gh auth login)
+      # before cloning. Activation scripts are immune: they mask user git
+      # config (see asdfLanguages).
+      url."git@github.com:".insteadOf = "https://github.com/";
+      url."git@git.dev.sh.ctripcorp.com:".insteadOf = [
+        "https://git.dev.sh.ctripcorp.com/"
+        "http://git.dev.sh.ctripcorp.com/"
+      ];
     };
     # Repos whose remote points at the internal GitLab use the work identity
     # instead of the GitHub one above; matching is by remote URL, so no
