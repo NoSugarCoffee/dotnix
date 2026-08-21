@@ -14,8 +14,10 @@ in
       # major version by swapping this for pkgs.python312/313/314.
       [ pkgs.codex pkgs.claude-code pkgs.asdf-vm pkgs.git pkgs.gh pkgs.glab pkgs.python3 browserUsePackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq ]
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome ];
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.ghostty ]
+      # ghostty-bin on darwin: the official prebuilt .app bundle; the source
+      # ghostty package would compile the whole thing with zig instead.
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.ghostty-bin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''

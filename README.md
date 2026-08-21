@@ -36,6 +36,7 @@ applies a fully reproducible setup on any supported machine.
 | [python3](https://www.python.org/) | yes | yes |
 | [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
+| [ghostty](https://ghostty.org/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
 
