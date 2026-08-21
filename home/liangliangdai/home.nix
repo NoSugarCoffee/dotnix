@@ -192,7 +192,7 @@ in
     enable = true;
     settings = {
       user = {
-        name = "light(liangliang.dai)";
+        name = "NoSugarCoffee";
         email = "1353025854@qq.com";
       };
       core.editor = "vim";
