@@ -16,7 +16,6 @@ in
         pkgs.codex
         pkgs.claude-code
         pkgs.asdf-vm
-        pkgs.git
         pkgs.gh
         pkgs.glab
         pkgs.python3
@@ -184,5 +183,48 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
+  # Installs git and writes ~/.config/git/config. Deliberately minimal:
+  # only portable identity/editor settings live here -- work-internal URL
+  # rewrites and machine-specific credential helpers stay out of this
+  # public repo and belong in ~/.gitconfig, which git reads on top of the
+  # managed file (and which wins on conflicting single-valued keys).
+  programs.git = {
+    enable = true;
+    settings = {
+      user = {
+        name = "NoSugarCoffee";
+        email = "1353025854@qq.com";
+      };
+      core.editor = "vim";
+      init.defaultBranch = "main";
+    };
+    # Repos whose remote points at the internal GitLab use the work identity
+    # instead of the GitHub one above; matching is by remote URL, so no
+    # per-repo setup is needed. The identity itself lives in an untracked
+    # per-machine file so it never enters this public repo and can't be
+    # reverted by syncing it -- create it once per machine:
+    #   printf '[user]\n\temail = you@work.example\n' > ~/.gitconfig-work
+    # Git silently skips includes whose target file doesn't exist, so
+    # machines without the file simply keep the default identity. The three
+    # patterns cover the URL shapes remotes take (ssh://, scp-style, https).
+    includes =
+      let
+        workIdentityPath = "${homeDirectory}/.gitconfig-work";
+      in
+      [
+        {
+          condition = "hasconfig:remote.*.url:ssh://git@git.dev.sh.ctripcorp.com:*/**";
+          path = workIdentityPath;
+        }
+        {
+          condition = "hasconfig:remote.*.url:git@git.dev.sh.ctripcorp.com:*/**";
+          path = workIdentityPath;
+        }
+        {
+          condition = "hasconfig:remote.*.url:https://git.dev.sh.ctripcorp.com/**";
+          path = workIdentityPath;
+        }
+      ];
+  };
   programs.home-manager.enable = true;
 }
