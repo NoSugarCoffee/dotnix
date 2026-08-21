@@ -159,6 +159,23 @@ in
   # into (~/.asdf/shims) so `go`/`node`/`python`/`java` resolve without
   # extra shell config.
   home.sessionPath = [ "${homeDirectory}/.asdf/shims" ];
+  # Route shell tools through the local Clash Verge proxy (default mixed
+  # port 7890). Both spellings are set because tools disagree on which
+  # they read (curl honors lowercase, some Go/Java tools only uppercase).
+  # Reaches terminals via the managed zsh sourcing the session-vars file.
+  home.sessionVariables =
+    let
+      proxyUrl = "http://127.0.0.1:7890";
+      noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
+    in
+    {
+      HTTP_PROXY = proxyUrl;
+      HTTPS_PROXY = proxyUrl;
+      NO_PROXY = noProxy;
+      http_proxy = proxyUrl;
+      https_proxy = proxyUrl;
+      no_proxy = noProxy;
+    };
   # home.sessionPath / sessionVariables only reach a real terminal if the
   # shell sources home-manager's session-vars file; a stock macOS zsh never
   # does, leaving the asdf shims silently off PATH. Managing zsh makes the
