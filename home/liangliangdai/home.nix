@@ -241,6 +241,7 @@ in
   # the zellij keybindings work; it is ignored on Linux.
   programs.kitty = {
     enable = true;
+    themeFile = "Catppuccin-Mocha";
     settings = {
       macos_option_as_alt = "yes";
     };
