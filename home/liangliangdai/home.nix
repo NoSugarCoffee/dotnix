@@ -44,6 +44,7 @@ in
         pkgs.asdf-vm
         pkgs.gh
         pkgs.glab
+        pkgs.just
         pkgs.python3
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
         pkgs.jetbrains.idea
@@ -220,14 +221,29 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
-  # Installs zellij and writes its config. On macOS the default OSC52
+  # Installs zellij; the full config (a dump of the 0.43.1 defaults, kept
+  # in zellij/config.kdl for easy keybinding edits) is written directly as
+  # KDL rather than through programs.zellij.settings, whose nix-attrs form
+  # can't express the keybinds tree well. On macOS the default OSC52
   # clipboard escape doesn't reach the system clipboard from every
   # terminal, so selections are piped to pbcopy explicitly; Linux keeps
   # the OSC52 default, which its terminals handle.
-  programs.zellij = {
+  programs.zellij.enable = true;
+  xdg.configFile."zellij/config.kdl".text =
+    builtins.readFile ./zellij/config.kdl
+    + lib.optionalString pkgs.stdenv.isDarwin ''
+      copy_command "pbcopy"
+    '';
+  # kitty replaces Terminal.app as the terminal emulator: Terminal.app
+  # translates Option+arrows into Esc-prefixed sequences (e.g. Esc f) that
+  # collide with zellij's Alt bindings, and its settings live in a plist
+  # nix can't reliably own. macos_option_as_alt makes Option send Alt so
+  # the zellij keybindings work; it is ignored on Linux.
+  programs.kitty = {
     enable = true;
-    settings = lib.optionalAttrs pkgs.stdenv.isDarwin {
-      copy_command = "pbcopy";
+    themeFile = "Catppuccin-Mocha";
+    settings = {
+      macos_option_as_alt = "yes";
     };
   };
   # Bounds generation history so the store can't fill the disk again (a
