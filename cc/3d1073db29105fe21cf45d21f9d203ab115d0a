@@ -1,0 +1,25 @@
+flake.nix
+  s_846eec72b373dd::t_fcbb5295e6363a 58
+pkgs/copyq-darwin/default.nix
+  s_846eec72b373dd::t_74465195fb63ee 1-57
+README.md
+  s_846eec72b373dd::t_8bb202e874daac 43
+home/liangliangdai/home.nix
+  s_846eec72b373dd::t_63e109cd6c5b69 31-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.23",
+  "base_commit_sha": "cc3d1073db29105fe21cf45d21f9d203ab115d0a",
+  "prompts": {},
+  "sessions": {
+    "s_846eec72b373dd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086eec35-01ba-493a-9128-547106a21e88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "NoSugarCoffee <1353025854@qq.com>"
+    }
+  }
+}
