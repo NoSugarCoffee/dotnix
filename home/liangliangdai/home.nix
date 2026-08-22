@@ -1,6 +1,25 @@
 { claudeDesktopPackage, browserUsePackage, lib, pkgs, ... }:
 let
   homeDirectory = if pkgs.stdenv.isDarwin then "/Users/liangliangdai" else "/home/liangliangdai";
+  proxyUrl = "http://127.0.0.1:7890";
+  noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
+  # Only the portable subset of Claude Code settings is managed; hooks,
+  # plugins, and anything set via /config stay machine-owned (see the
+  # claudeCodeSettings activation below for the merge semantics).
+  claudeManagedSettings = pkgs.writeText "claude-managed-settings.json" (
+    builtins.toJSON {
+      "$schema" = "https://json.schemastore.org/claude-code-settings.json";
+      env = {
+        HTTP_PROXY = proxyUrl;
+        HTTPS_PROXY = proxyUrl;
+        NO_PROXY = noProxy;
+      };
+      permissions.deny = [ "Read(.env)" ];
+      model = "claude-fable-5[1m]";
+      theme = "dark";
+      tui = "fullscreen";
+    }
+  );
 in
 {
   home = {
@@ -58,6 +77,23 @@ in
   home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.codex
     $DRY_RUN_CMD chmod 700 $HOME/.codex
+  '';
+  # Claude Code writes settings.json itself (/config, plugin toggles), so it
+  # can't be a read-only store symlink. Instead the managed subset is merged
+  # in on every switch: managed keys reset to their declared values, every
+  # other key (hooks, plugins, /config tweaks) is preserved. The file stays
+  # a normal writable file owned by the machine.
+  home.activation.claudeCodeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    claudeSettings="$HOME/.claude/settings.json"
+    $DRY_RUN_CMD mkdir -p "$HOME/.claude"
+    if [ -f "$claudeSettings" ]; then
+      ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$claudeSettings" ${claudeManagedSettings} > "$claudeSettings.hm-tmp" \
+        && $DRY_RUN_CMD mv "$claudeSettings.hm-tmp" "$claudeSettings"
+      rm -f "$claudeSettings.hm-tmp"
+    else
+      $DRY_RUN_CMD cp ${claudeManagedSettings} "$claudeSettings"
+      $DRY_RUN_CMD chmod 644 "$claudeSettings"
+    fi
   '';
   # Keeps Go/Node/Python/Java at whatever asdf considers "latest" (Java
   # pinned to the Temurin build, since asdf-java's versions are vendor-
@@ -162,19 +198,14 @@ in
   # port 7890). Both spellings are set because tools disagree on which
   # they read (curl honors lowercase, some Go/Java tools only uppercase).
   # Reaches terminals via the managed zsh sourcing the session-vars file.
-  home.sessionVariables =
-    let
-      proxyUrl = "http://127.0.0.1:7890";
-      noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
-    in
-    {
-      HTTP_PROXY = proxyUrl;
-      HTTPS_PROXY = proxyUrl;
-      NO_PROXY = noProxy;
-      http_proxy = proxyUrl;
-      https_proxy = proxyUrl;
-      no_proxy = noProxy;
-    };
+  home.sessionVariables = {
+    HTTP_PROXY = proxyUrl;
+    HTTPS_PROXY = proxyUrl;
+    NO_PROXY = noProxy;
+    http_proxy = proxyUrl;
+    https_proxy = proxyUrl;
+    no_proxy = noProxy;
+  };
   # home.sessionPath / sessionVariables only reach a real terminal if the
   # shell sources home-manager's session-vars file; a stock macOS zsh never
   # does, leaving the asdf shims silently off PATH. Managing zsh makes the
