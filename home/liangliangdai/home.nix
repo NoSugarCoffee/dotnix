@@ -54,9 +54,7 @@ in
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
-      # copyq is likewise Linux-only in nixpkgs; pkgs/copyq-darwin repacks
-      # the official prebuilt DMG for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.copyq-darwin ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -241,58 +239,25 @@ in
     dates = "weekly";
     options = "--delete-older-than 14d";
   };
-  # Installs git and writes ~/.config/git/config. Deliberately minimal:
-  # only portable identity/editor settings live here -- work-internal URL
-  # rewrites and machine-specific credential helpers stay out of this
-  # public repo and belong in ~/.gitconfig, which git reads on top of the
-  # managed file (and which wins on conflicting single-valued keys).
+  # Installs git and writes ~/.config/git/config with portable settings.
+  # Machine-specific or work-internal config (URL rewrites, credential
+  # helpers, work identity) belongs in ~/.gitconfig-local, which is
+  # included unconditionally but silently skipped when absent.
   programs.git = {
     enable = true;
     settings = {
       user = {
         name = "NoSugarCoffee";
-        email = "1353025854@qq.com";
+        email = "25247325+NoSugarCoffee@users.noreply.github.com";
       };
       core.editor = "vim";
+      http.postBuffer = 524288000;
       init.defaultBranch = "main";
-      # Route https clones through SSH. On a machine whose SSH key isn't
-      # registered with the host yet, these make https clones fail with
-      # "Permission denied (publickey)" -- set up keys (gh auth login)
-      # before cloning. Activation scripts are immune: they mask user git
-      # config (see asdfLanguages).
       url."git@github.com:".insteadOf = "https://github.com/";
-      url."git@git.dev.sh.ctripcorp.com:".insteadOf = [
-        "https://git.dev.sh.ctripcorp.com/"
-        "http://git.dev.sh.ctripcorp.com/"
-      ];
     };
-    # Repos whose remote points at the internal GitLab use the work identity
-    # instead of the GitHub one above; matching is by remote URL, so no
-    # per-repo setup is needed. The identity itself lives in an untracked
-    # per-machine file so it never enters this public repo and can't be
-    # reverted by syncing it -- create it once per machine:
-    #   printf '[user]\n\temail = you@work.example\n' > ~/.gitconfig-work
-    # Git silently skips includes whose target file doesn't exist, so
-    # machines without the file simply keep the default identity. The three
-    # patterns cover the URL shapes remotes take (ssh://, scp-style, https).
-    includes =
-      let
-        workIdentityPath = "${homeDirectory}/.gitconfig-work";
-      in
-      [
-        {
-          condition = "hasconfig:remote.*.url:ssh://git@git.dev.sh.ctripcorp.com:*/**";
-          path = workIdentityPath;
-        }
-        {
-          condition = "hasconfig:remote.*.url:git@git.dev.sh.ctripcorp.com:*/**";
-          path = workIdentityPath;
-        }
-        {
-          condition = "hasconfig:remote.*.url:https://git.dev.sh.ctripcorp.com/**";
-          path = workIdentityPath;
-        }
-      ];
+    includes = [
+      { path = "${homeDirectory}/.gitconfig-local"; }
+    ];
   };
   programs.home-manager.enable = true;
 }
