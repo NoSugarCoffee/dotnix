@@ -76,13 +76,6 @@ the *end* of a successful switch (too late for the downloads the switch itself d
 silently ignored by the daemon for non-`trusted-users` anyway. The step is idempotent, so
 re-running the script on an already-set-up Mac is safe.
 
-On top of that, the Home Manager config manages the substituter *ordering* (mirrors before
-`cache.nixos.org`) via `nix.settings.substituters` in the per-user `~/.config/nix/nix.conf`,
-since `extra-substituters` can only append after the slow upstream. That per-user override
-requires the user to be in `trusted-users` — the bootstrap script ensures this on macOS; on
-other machines add `extra-trusted-users = <user>` to the system nix.conf manually, otherwise
-the ordering silently falls back to the system default.
-
 To check whether it's actually active, look at Nix's *effective* config rather than guessing:
 
 ```sh
