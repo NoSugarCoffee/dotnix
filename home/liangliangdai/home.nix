@@ -44,6 +44,7 @@ in
         pkgs.asdf-vm
         pkgs.gh
         pkgs.glab
+        pkgs.just
         pkgs.python3
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
         pkgs.jetbrains.idea
@@ -220,16 +221,19 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
-  # Installs zellij and writes its config. On macOS the default OSC52
+  # Installs zellij; the full config (a dump of the 0.43.1 defaults, kept
+  # in zellij/config.kdl for easy keybinding edits) is written directly as
+  # KDL rather than through programs.zellij.settings, whose nix-attrs form
+  # can't express the keybinds tree well. On macOS the default OSC52
   # clipboard escape doesn't reach the system clipboard from every
   # terminal, so selections are piped to pbcopy explicitly; Linux keeps
   # the OSC52 default, which its terminals handle.
-  programs.zellij = {
-    enable = true;
-    settings = lib.optionalAttrs pkgs.stdenv.isDarwin {
-      copy_command = "pbcopy";
-    };
-  };
+  programs.zellij.enable = true;
+  xdg.configFile."zellij/config.kdl".text =
+    builtins.readFile ./zellij/config.kdl
+    + lib.optionalString pkgs.stdenv.isDarwin ''
+      copy_command "pbcopy"
+    '';
   # Bounds generation history so the store can't fill the disk again (a
   # full root disk once broke everything on the Linux box): a weekly timer
   # (systemd on Linux, launchd on macOS) deletes generations older than two

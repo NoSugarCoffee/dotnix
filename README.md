@@ -33,6 +33,7 @@ applies a fully reproducible setup on any supported machine.
 | [git](https://git-scm.com/) | yes | yes |
 | [gh](https://cli.github.com/) | yes | yes |
 | [glab](https://gitlab.com/gitlab-org/cli) | yes | yes |
+| [just](https://just.systems/) | yes | yes |
 | [python3](https://www.python.org/) | yes | yes |
 | [zellij](https://zellij.dev/) | yes | yes |
 | [intellij-idea-ultimate](https://www.jetbrains.com/idea/) | yes | yes |
