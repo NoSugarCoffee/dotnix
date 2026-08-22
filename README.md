@@ -45,6 +45,7 @@ applies a fully reproducible setup on any supported machine.
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
 | [maccy](https://maccy.app/) | — | yes |
 | [claude-desktop](https://claude.ai/download) | yes | yes |
+| [raycast](https://www.raycast.com/) | — | yes |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
 

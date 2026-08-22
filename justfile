@@ -1,13 +1,15 @@
 set shell := ["bash", "-cu"]
 
 USER := env_var_or_default("USER", "liangliangdai")
+SYSTEM := arch() + "-" + (if os() == "macos" { "darwin" } else { "linux" })
+CONFIG := USER + "-" + SYSTEM
 
 default:
     @just --list
 
-# Apply the Codex-only Home Manager configuration.
+# Apply the Home Manager configuration for the current platform.
 switch:
-    nix run .#home-manager -- switch --flake .#{{USER}}
+    nix run .#home-manager -- switch --flake .#{{CONFIG}}
 
 # Show all Home Manager generations.
 generations:
@@ -15,7 +17,7 @@ generations:
 
 # Build the Home Manager activation package without switching.
 build:
-    nix build .#homeConfigurations.{{USER}}.activationPackage
+    nix build .#homeConfigurations.{{CONFIG}}.activationPackage
 
 # Show flake outputs.
 show:
