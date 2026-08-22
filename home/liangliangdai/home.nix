@@ -54,7 +54,9 @@ in
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy ];
+      # claude-desktop's flake input is Linux-only; pkgs/claude-desktop-darwin
+      # repacks the official DMG for macOS.
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -239,6 +241,24 @@ in
     dates = "weekly";
     options = "--delete-older-than 14d";
   };
+  # Prefer the China mirrors over cache.nixos.org: the system-level
+  # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
+  # the slow upstream is always tried first. This user-level list overrides
+  # the order; nix falls back per-path to later entries automatically.
+  # HARD PREREQUISITE: the daemon silently ignores user-level substituters
+  # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
+  # macOS; on other machines add it manually to the system nix.conf
+  # (e.g. `extra-trusted-users = liangliangdai`) or this list is a no-op
+  # and downloads just fall through to the system substituters.
+  # nix.package is required by home-manager to generate nix.conf; it only
+  # names the nix version used for config validation, nothing is installed.
+  nix.package = pkgs.nix;
+  nix.settings.substituters = [
+    "https://mirror.sjtu.edu.cn/nix-channels/store"
+    "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+    "https://mirrors.ustc.edu.cn/nix-channels/store"
+    "https://cache.nixos.org/"
+  ];
   # Installs git and writes ~/.config/git/config with portable settings.
   # Machine-specific or work-internal config (URL rewrites, credential
   # helpers, work identity) belongs in ~/.gitconfig-local, which is
