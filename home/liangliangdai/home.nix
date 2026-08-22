@@ -14,10 +14,17 @@ let
         HTTPS_PROXY = proxyUrl;
         NO_PROXY = noProxy;
       };
-      permissions.deny = [ "Read(.env)" ];
+      permissions = {
+        deny = [ "Read(.env)" ];
+        # Sessions start with no permission prompts at all.
+        defaultMode = "bypassPermissions";
+      };
+      # Skips the are-you-sure prompt bypassPermissions otherwise shows.
+      skipDangerousModePermissionPrompt = true;
       model = "claude-fable-5[1m]";
       theme = "dark";
       tui = "fullscreen";
+      remoteControlAtStartup = true;
     }
   );
 in
