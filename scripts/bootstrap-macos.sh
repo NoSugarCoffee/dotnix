@@ -51,12 +51,30 @@ fi
 # Idempotent: only appends if not already present.
 custom_conf="/etc/nix/nix.custom.conf"
 mirrors="https://mirror.sjtu.edu.cn/nix-channels/store https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirrors.ustc.edu.cn/nix-channels/store"
+restart_daemon=0
 if ! sudo grep -qsF "$mirrors" "$custom_conf" 2>/dev/null; then
   echo "==> Adding mainland China binary cache mirrors to ${custom_conf}..."
   printf 'extra-substituters = %s\n' "$mirrors" | sudo tee -a "$custom_conf" >/dev/null
-  sudo pkill -x nix-daemon 2>/dev/null || true
+  restart_daemon=1
 else
   echo "==> Binary cache mirrors already configured."
+fi
+
+# The Home Manager config manages per-user substituter *ordering* (mirrors
+# before cache.nixos.org) via ~/.config/nix/nix.conf, which the daemon
+# silently ignores unless the user is in trusted-users. The Determinate
+# installer only adds that when asked at install time, so ensure it here.
+# Idempotent: only appends if not already present.
+if ! sudo grep -qsE "^(extra-)?trusted-users( )*=.*\b${USER}\b" "$custom_conf" 2>/dev/null; then
+  echo "==> Adding ${USER} to extra-trusted-users in ${custom_conf}..."
+  printf 'extra-trusted-users = %s\n' "$USER" | sudo tee -a "$custom_conf" >/dev/null
+  restart_daemon=1
+else
+  echo "==> ${USER} already a trusted user."
+fi
+
+if [[ "$restart_daemon" == 1 ]]; then
+  sudo pkill -x nix-daemon 2>/dev/null || true
 fi
 
 echo "==> Applying Home Manager configuration for ${flake_target} from ${flake_repo}..."

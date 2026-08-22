@@ -245,7 +245,11 @@ in
   # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
   # the slow upstream is always tried first. This user-level list overrides
   # the order; nix falls back per-path to later entries automatically.
-  # Honored because the user is in trusted-users.
+  # HARD PREREQUISITE: the daemon silently ignores user-level substituters
+  # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
+  # macOS; on other machines add it manually to the system nix.conf
+  # (e.g. `extra-trusted-users = liangliangdai`) or this list is a no-op
+  # and downloads just fall through to the system substituters.
   # nix.package is required by home-manager to generate nix.conf; it only
   # names the nix version used for config validation, nothing is installed.
   nix.package = pkgs.nix;
