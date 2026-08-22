@@ -40,7 +40,7 @@ applies a fully reproducible setup on any supported machine.
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [clash-verge-rev](https://www.clashverge.dev/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
-| [copyq](https://hluk.github.io/CopyQ/) | yes | — |
+| [copyq](https://hluk.github.io/CopyQ/) | yes | yes |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
 
