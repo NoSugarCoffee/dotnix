@@ -55,7 +55,6 @@
       forAllSystems = lib.genAttrs systems;
       localPackagesOverlay = final: _prev: {
         clash-verge-rev-darwin = final.callPackage ./pkgs/clash-verge-rev-darwin { };
-        copyq-darwin = final.callPackage ./pkgs/copyq-darwin { };
       };
       mkPkgs =
         system:

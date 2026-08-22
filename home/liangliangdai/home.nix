@@ -28,9 +28,7 @@ in
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
-      # copyq is likewise Linux-only in nixpkgs; pkgs/copyq-darwin repacks
-      # the official prebuilt DMG for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.copyq-darwin ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
