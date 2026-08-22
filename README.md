@@ -42,6 +42,7 @@ applies a fully reproducible setup on any supported machine.
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
 | [copyq](https://hluk.github.io/CopyQ/) | yes | — |
 | [maccy](https://maccy.app/) | — | yes |
+| [claude-desktop](https://claude.ai/download) | yes | yes |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
 
