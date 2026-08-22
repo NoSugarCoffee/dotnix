@@ -241,6 +241,20 @@ in
     dates = "weekly";
     options = "--delete-older-than 14d";
   };
+  # Prefer the China mirrors over cache.nixos.org: the system-level
+  # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
+  # the slow upstream is always tried first. This user-level list overrides
+  # the order; nix falls back per-path to later entries automatically.
+  # Honored because the user is in trusted-users.
+  # nix.package is required by home-manager to generate nix.conf; it only
+  # names the nix version used for config validation, nothing is installed.
+  nix.package = pkgs.nix;
+  nix.settings.substituters = [
+    "https://mirror.sjtu.edu.cn/nix-channels/store"
+    "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+    "https://mirrors.ustc.edu.cn/nix-channels/store"
+    "https://cache.nixos.org/"
+  ];
   # Installs git and writes ~/.config/git/config with portable settings.
   # Machine-specific or work-internal config (URL rewrites, credential
   # helpers, work identity) belongs in ~/.gitconfig-local, which is
