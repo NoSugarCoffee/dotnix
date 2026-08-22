@@ -234,6 +234,17 @@ in
     + lib.optionalString pkgs.stdenv.isDarwin ''
       copy_command "pbcopy"
     '';
+  # kitty replaces Terminal.app as the terminal emulator: Terminal.app
+  # translates Option+arrows into Esc-prefixed sequences (e.g. Esc f) that
+  # collide with zellij's Alt bindings, and its settings live in a plist
+  # nix can't reliably own. macos_option_as_alt makes Option send Alt so
+  # the zellij keybindings work; it is ignored on Linux.
+  programs.kitty = {
+    enable = true;
+    settings = {
+      macos_option_as_alt = "yes";
+    };
+  };
   # Bounds generation history so the store can't fill the disk again (a
   # full root disk once broke everything on the Linux box): a weekly timer
   # (systemd on Linux, launchd on macOS) deletes generations older than two
