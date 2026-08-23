@@ -57,7 +57,7 @@ in
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
       # claude-desktop's flake input is Linux-only; pkgs/claude-desktop-darwin
       # repacks the official DMG for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.raycast pkgs.macshot ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.quicksilver-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -220,7 +220,17 @@ in
   # generated ~/.zshrc do that sourcing. A pre-existing hand-written
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    # Option+Left/Right jump by word. kitty's macos_option_as_alt makes
+    # Option send Alt, which arrives as CSI 1;3 arrow sequences; zsh only
+    # binds Alt-b/Alt-f out of the box. zellij is configured to pass
+    # Alt+Left/Right through (see zellij/config.kdl).
+    initContent = ''
+      bindkey "^[[1;3D" backward-word
+      bindkey "^[[1;3C" forward-word
+    '';
+  };
   # Smarter cd: tracks visited directories, jump with `z <fragment>`.
   # enableZshIntegration defaults to true, wiring the init hook into the
   # managed ~/.zshrc.
