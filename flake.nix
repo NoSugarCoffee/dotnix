@@ -4,6 +4,9 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
+    # For packages not yet in the stable release branch (e.g. macshot).
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -38,6 +41,7 @@
   outputs =
     {
       nixpkgs,
+      nixpkgs-unstable,
       home-manager,
       claude-desktop,
       uv2nix,
@@ -56,7 +60,14 @@
       localPackagesOverlay = final: _prev: {
         clash-verge-rev-darwin = final.callPackage ./pkgs/clash-verge-rev-darwin { };
         claude-desktop-darwin = final.callPackage ./pkgs/claude-desktop-darwin { };
+        macshot = (mkPkgsUnstable final.stdenv.hostPlatform.system).macshot;
       };
+      mkPkgsUnstable =
+        system:
+        import nixpkgs-unstable {
+          inherit system;
+          config.allowUnfree = true;
+        };
       mkPkgs =
         system:
         import nixpkgs {
