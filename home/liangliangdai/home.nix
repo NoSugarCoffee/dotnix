@@ -221,6 +221,10 @@ in
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh.enable = true;
+  # Smarter cd: tracks visited directories, jump with `z <fragment>`.
+  # enableZshIntegration defaults to true, wiring the init hook into the
+  # managed ~/.zshrc.
+  programs.zoxide.enable = true;
   # Installs zellij; the full config (a dump of the 0.43.1 defaults, kept
   # in zellij/config.kdl for easy keybinding edits) is written directly as
   # KDL rather than through programs.zellij.settings, whose nix-attrs form
