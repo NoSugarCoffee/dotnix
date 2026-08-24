@@ -1,5 +1,7 @@
-// If you'd like to override the default keybindings completely, be sure to change "keybinds" to "keybinds clear-defaults=true"
-keybinds {
+// clear-defaults=true so removed bindings (e.g. Alt Left/Right) actually
+// unbind instead of being merged back in from the built-in defaults; this
+// file is a full dump of the 0.43.1 defaults, so nothing else is lost.
+keybinds clear-defaults=true {
     normal {
         // uncomment this and adjust key if using copy_on_select=false
         // bind "Alt c" { Copy; }
