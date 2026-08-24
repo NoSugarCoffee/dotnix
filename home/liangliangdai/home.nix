@@ -45,6 +45,7 @@ in
         pkgs.gh
         pkgs.glab
         pkgs.just
+        pkgs.nix-zsh-completions
         pkgs.python3
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
         pkgs.jetbrains.idea

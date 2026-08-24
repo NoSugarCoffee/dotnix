@@ -48,6 +48,7 @@ applies a fully reproducible setup on any supported machine.
 | [macshot](https://github.com/sw33tLie/macshot) | — | yes |
 | [quicksilver](https://qsapp.com/) | — | yes |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | yes | yes |
+| [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | yes | yes |
 
 Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
 
