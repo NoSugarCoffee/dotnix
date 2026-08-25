@@ -21,7 +21,9 @@ let
       };
       # Skips the are-you-sure prompt bypassPermissions otherwise shows.
       skipDangerousModePermissionPrompt = true;
-      model = "claude-fable-5[1m]";
+      # "opus" is the rolling alias for the newest Opus model, so this
+      # tracks upgrades without pinning a dated model id.
+      model = "opus";
       theme = "dark";
       tui = "fullscreen";
       remoteControlAtStartup = true;
