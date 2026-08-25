@@ -184,6 +184,10 @@ in
       install_latest golang
       install_latest nodejs
       install_latest java temurin
+      # Rides the same asdf-managed Java: mvn resolves java via PATH (the
+      # asdf shims), so builds run under the temurin above rather than a
+      # separate nixpkgs JDK that pkgs.maven would pin.
+      install_latest maven
 
       # The Lark/Feishu CLI is an npm package with no nixpkgs derivation, so
       # it rides on the asdf-managed Node: npm puts the binary inside the
@@ -233,6 +237,11 @@ in
     initContent = ''
       bindkey "^[[1;3D" backward-word
       bindkey "^[[1;3C" forward-word
+      # mvn (and other JVM launchers) resolve Java through JAVA_HOME -- on
+      # macOS falling back to /usr/libexec/java_home, which knows nothing
+      # about asdf installs. asdf-java's hook keeps JAVA_HOME pointed at the
+      # active asdf java on every prompt.
+      [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
     '';
   };
   # Smarter cd: tracks visited directories, jump with `z <fragment>`.
