@@ -47,7 +47,6 @@ applies a fully reproducible setup on any supported machine.
 | [maccy](https://maccy.app/) | — | yes |
 | [claude-desktop](https://claude.ai/download) | yes | yes |
 | [macshot](https://github.com/sw33tLie/macshot) | — | yes |
-| [asyar](https://github.com/Xoshbin/asyar) | — | yes |
 | [pulsar](https://pulsar-edit.dev/) | — | yes |
 | [alfred](https://www.alfredapp.com/) | — | yes |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | yes | yes |
