@@ -40,6 +40,7 @@ applies a fully reproducible setup on any supported machine.
 | [kitty](https://sw.kovidgoyal.net/kitty/) | yes | yes |
 | [intellij-idea-ultimate](https://www.jetbrains.com/idea/) | yes | yes |
 | [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
+| [maven](https://maven.apache.org/) | yes | yes |
 | [browser-use](https://browser-use.com/) | yes | yes |
 | [clash-verge-rev](https://www.clashverge.dev/) | yes | yes |
 | [google-chrome](https://www.google.com/chrome/) | — | yes |
@@ -90,14 +91,16 @@ To check whether it's actually active, look at Nix's *effective* config rather t
 nix config show | grep -i substitut
 ```
 
-### 🧰 Go / Node / Java via asdf, Python via nixpkgs
+### 🧰 Go / Node / Java / Maven via asdf, Python via nixpkgs
 
-Go, Node, and Java aren't pinned to whatever nixpkgs ships: `home-manager switch` installs
-`asdf` itself, then runs its own activation step (`home.activation.asdfLanguages` in `home.nix`)
-that plugs in `golang`, `nodejs`, and `java` (pinned to the [Temurin](https://adoptium.net/)
-build, since asdf-java's versions are vendor-prefixed rather than plain semver) and sets each
-to whatever asdf resolves as latest. These all install prebuilt binaries — nothing compiles, so
-no Xcode Command Line Tools are needed.
+Go, Node, Java, and Maven aren't pinned to whatever nixpkgs ships: `home-manager switch`
+installs `asdf` itself, then runs its own activation step (`home.activation.asdfLanguages` in
+`home.nix`) that plugs in `golang`, `nodejs`, `java` (pinned to the
+[Temurin](https://adoptium.net/) build, since asdf-java's versions are vendor-prefixed rather
+than plain semver), and `maven` (which runs under that same asdf-managed Java via the shims on
+`PATH`, rather than a separate nixpkgs JDK) and sets each to whatever asdf resolves as latest.
+These all install prebuilt binaries — nothing compiles, so no Xcode Command Line Tools are
+needed.
 
 This re-checks on every switch, so the active toolchain can move forward silently as upstream
 releases land — that's the tradeoff for tracking "latest" instead of a version pinned in this
