@@ -48,6 +48,7 @@ applies a fully reproducible setup on any supported machine.
 | [macshot](https://github.com/sw33tLie/macshot) | — | yes |
 | [asyar](https://github.com/Xoshbin/asyar) | — | yes |
 | [pulsar](https://pulsar-edit.dev/) | — | yes |
+| [alfred](https://www.alfredapp.com/) | — | yes |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | yes | yes |
 | [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | yes | yes |
 
