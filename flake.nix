@@ -60,7 +60,6 @@
       localPackagesOverlay = final: _prev: {
         clash-verge-rev-darwin = final.callPackage ./pkgs/clash-verge-rev-darwin { };
         claude-desktop-darwin = final.callPackage ./pkgs/claude-desktop-darwin { };
-        asyar-darwin = final.callPackage ./pkgs/asyar-darwin { };
         pulsar-darwin = final.callPackage ./pkgs/pulsar-darwin { };
         alfred-darwin = final.callPackage ./pkgs/alfred-darwin { };
         macshot = (mkPkgsUnstable final.stdenv.hostPlatform.system).macshot;

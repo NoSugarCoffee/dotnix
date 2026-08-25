@@ -61,7 +61,7 @@ in
       # repacks the official DMG for macOS.
       # pulsar is Linux-only in nixpkgs; pkgs/pulsar-darwin repacks the
       # official prebuilt zip for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.asyar-darwin pkgs.pulsar-darwin pkgs.alfred-darwin ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.pulsar-darwin pkgs.alfred-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
