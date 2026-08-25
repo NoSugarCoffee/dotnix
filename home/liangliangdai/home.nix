@@ -58,7 +58,7 @@ in
       ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
       # claude-desktop's flake input is Linux-only; pkgs/claude-desktop-darwin
       # repacks the official DMG for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.quicksilver-darwin ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.asyar-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
