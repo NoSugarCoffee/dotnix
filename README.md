@@ -35,6 +35,7 @@ applies a fully reproducible setup on any supported machine.
 | [glab](https://gitlab.com/gitlab-org/cli) | yes | yes |
 | [just](https://just.systems/) | yes | yes |
 | [python3](https://www.python.org/) | yes | yes |
+| [ipython](https://ipython.org/) | yes | yes |
 | [zellij](https://zellij.dev/) | yes | yes |
 | [kitty](https://sw.kovidgoyal.net/kitty/) | yes | yes |
 | [intellij-idea-ultimate](https://www.jetbrains.com/idea/) | yes | yes |
