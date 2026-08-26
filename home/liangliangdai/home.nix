@@ -207,7 +207,7 @@ in
           echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
           return
         fi
-        $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
+        $DRY_RUN_CMD "$asdf" set -u "$plugin" "$version"
       }
 
       install_pinned() {
@@ -219,7 +219,7 @@ in
           echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
           return
         fi
-        $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
+        $DRY_RUN_CMD "$asdf" set -u "$plugin" "$version"
       }
 
       install_only() {

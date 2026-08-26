@@ -16,7 +16,10 @@
 
     claude-desktop = {
       url = "github:k3d3/claude-desktop-linux-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # Intentionally *not* following our nixpkgs: this flake's build recipe
+      # still references `nodePackages.asar`, which nixpkgs removed on
+      # 2026-03-03. Letting it use its own pinned (older) nixpkgs keeps the
+      # Linux build working at the cost of an extra nixpkgs in the closure.
       inputs.flake-utils.follows = "flake-utils";
     };
 
