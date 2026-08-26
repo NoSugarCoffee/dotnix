@@ -2,13 +2,13 @@
   description = "Home Manager configuration for personal desktop tools and CLI.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     # For packages not yet in the stable release branch (e.g. macshot).
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -16,7 +16,10 @@
 
     claude-desktop = {
       url = "github:k3d3/claude-desktop-linux-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
+      # Intentionally *not* following our nixpkgs: this flake's build recipe
+      # still references `nodePackages.asar`, which nixpkgs removed on
+      # 2026-03-03. Letting it use its own pinned (older) nixpkgs keeps the
+      # Linux build working at the cost of an extra nixpkgs in the closure.
       inputs.flake-utils.follows = "flake-utils";
     };
 

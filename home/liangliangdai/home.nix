@@ -207,7 +207,7 @@ in
           echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
           return
         fi
-        $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
+        $DRY_RUN_CMD "$asdf" set -u "$plugin" "$version"
       }
 
       install_pinned() {
@@ -219,7 +219,7 @@ in
           echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
           return
         fi
-        $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
+        $DRY_RUN_CMD "$asdf" set -u "$plugin" "$version"
       }
 
       install_only() {
@@ -256,9 +256,12 @@ in
       # (already on PATH). Same tracking-latest, best-effort model as above.
       npm="$ASDF_DATA_DIR/shims/npm"
       if [ -x "$npm" ]; then
+        # npm's internal scripts use `#!/usr/bin/env node`, so `node` must be
+        # resolvable in PATH -- not just via the explicit shim path we call
+        # here. The activation PATH above doesn't include the shims dir.
         # --allow-scripts: npm >= 11.19 blocks postinstall scripts of global
         # installs by default, and this package needs its postinstall step.
-        $DRY_RUN_CMD "$npm" install --global --allow-scripts=@larksuite/cli @larksuite/cli \
+        PATH="$ASDF_DATA_DIR/shims:$PATH" $DRY_RUN_CMD "$npm" install --global --allow-scripts=@larksuite/cli @larksuite/cli \
           && $DRY_RUN_CMD "$asdf" reshim nodejs \
           || echo "warning: asdfLanguages: npm install @larksuite/cli failed" >&2
       else
