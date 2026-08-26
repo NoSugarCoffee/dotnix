@@ -65,6 +65,15 @@
         # pkgs/albert-darwin's patches target (35.x)
         albert-darwin = (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin { };
         macshot = (mkPkgsUnstable final.stdenv.hostPlatform.system).macshot;
+        # nixpkgs' undmg leaves AppleDouble sidecars (._Foo) inside the app
+        # bundle. Those files are not in the Developer ID seal, so Gatekeeper
+        # rejects the bundle with "damaged." Deleting them restores the seal;
+        # no re-signing needed.
+        scroll-reverser = _prev.scroll-reverser.overrideAttrs (o: {
+          postFixup = (o.postFixup or "") + ''
+            find "$out/Applications/Scroll Reverser.app" -name '._*' -delete
+          '';
+        });
       };
       mkPkgsUnstable =
         system:

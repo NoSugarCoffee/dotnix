@@ -116,6 +116,32 @@ in
       /usr/bin/defaults write -g NSUserKeyEquivalents -dict-add "Quit *" "@~^\$q"
     ''
   );
+  # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
+  # Aqua session comes up -- the earliest legitimate hook for a GUI app.
+  launchd.agents.albert = {
+    enable = pkgs.stdenv.isDarwin;
+    config = {
+      ProgramArguments = [
+        "${pkgs.albert-darwin}/Applications/Albert.app/Contents/MacOS/Albert"
+      ];
+      RunAtLoad = true;
+      KeepAlive = false;
+      ProcessType = "Interactive";
+    };
+  };
+  # Scroll Reverser only reverses scroll direction while its process is
+  # running, so it has to come up with the login session.
+  launchd.agents.scroll-reverser = {
+    enable = pkgs.stdenv.isDarwin;
+    config = {
+      ProgramArguments = [
+        "${pkgs.scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
+      ];
+      RunAtLoad = true;
+      KeepAlive = false;
+      ProcessType = "Interactive";
+    };
+  };
   # Keeps Go/Node at whatever asdf considers "latest"; Java is pinned to
   # explicit Temurin builds instead, because the JVM ecosystem is picky about
   # majors and silent drift onto a new major (or from JDK to JRE) breaks
