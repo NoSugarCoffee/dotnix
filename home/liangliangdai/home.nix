@@ -186,6 +186,12 @@ in
       install_latest golang
       install_latest nodejs
       install_latest java temurin
+      # Temurin 21 LTS JDK kept alongside for projects that require the 21
+      # line -- install-only, does not change `asdf global`. Switch per
+      # project with `.tool-versions` or `asdf shell java temurin-21.0.12+101.0.LTS`.
+      # Bump this string manually when a new 21.x patch lands.
+      $DRY_RUN_CMD "$asdf" install java temurin-21.0.12+101.0.LTS \
+        || echo "warning: asdfLanguages: asdf install java temurin-21.0.12+101.0.LTS failed" >&2
       # Rides the same asdf-managed Java: mvn resolves java via PATH (the
       # asdf shims), so builds run under the temurin above rather than a
       # separate nixpkgs JDK that pkgs.maven would pin.
