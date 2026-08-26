@@ -109,14 +109,15 @@ in
       $DRY_RUN_CMD chmod 644 "$claudeSettings"
     fi
   '';
-  # Keeps Go/Node/Python/Java at whatever asdf considers "latest" (Java
-  # pinned to the Temurin build, since asdf-java's versions are vendor-
-  # prefixed rather than plain semver). Re-checks on every switch, so the
-  # active toolchain can silently move forward when upstream releases land --
-  # that's the point of tracking "latest" rather than a pinned nixpkgs
-  # version. Each install is best-effort: a network hiccup or (on a bare
-  # Mac without Xcode Command Line Tools) a failed Python source build logs
-  # a warning instead of aborting the whole `home-manager switch`.
+  # Keeps Go/Node at whatever asdf considers "latest"; Java is pinned to
+  # explicit Temurin builds instead, because the JVM ecosystem is picky about
+  # majors and silent drift onto a new major (or from JDK to JRE) breaks
+  # projects here. Re-checks on every switch, so Go/Node can silently move
+  # forward when upstream releases land -- that's the point of tracking
+  # "latest" rather than a pinned nixpkgs version. Each install is
+  # best-effort: a network hiccup or (on a bare Mac without Xcode Command
+  # Line Tools) a failed Python source build logs a warning instead of
+  # aborting the whole `home-manager switch`.
   #
   # Runs after linkGeneration (not just installPackages) on purpose: these
   # downloads can be slow (a full Python source build, or any of them over a
@@ -183,15 +184,41 @@ in
         $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
       }
 
+      install_pinned() {
+        plugin="$1"
+        version="$2"
+        "$asdf" plugin add "$plugin"
+
+        if ! $DRY_RUN_CMD "$asdf" install "$plugin" "$version"; then
+          echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
+          return
+        fi
+        $DRY_RUN_CMD "$asdf" global "$plugin" "$version"
+      }
+
+      install_only() {
+        plugin="$1"
+        version="$2"
+        "$asdf" plugin add "$plugin"
+
+        if ! $DRY_RUN_CMD "$asdf" install "$plugin" "$version"; then
+          echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
+          return
+        fi
+      }
+
       install_latest golang
       install_latest nodejs
-      install_latest java temurin
+      # Java default is pinned (no more "latest" drift). Freeze here matches
+      # what `asdf latest java temurin` resolved to at pin time -- it's a JRE
+      # (no javac); if you need compilation on the default, bump this to the
+      # matching temurin-<major>.<...> JDK string. Bump manually to move.
+      install_pinned java temurin-jre-26.0.2+10
       # Temurin 21 LTS JDK kept alongside for projects that require the 21
       # line -- install-only, does not change `asdf global`. Switch per
       # project with `.tool-versions` or `asdf shell java temurin-21.0.12+101.0.LTS`.
       # Bump this string manually when a new 21.x patch lands.
-      $DRY_RUN_CMD "$asdf" install java temurin-21.0.12+101.0.LTS \
-        || echo "warning: asdfLanguages: asdf install java temurin-21.0.12+101.0.LTS failed" >&2
+      install_only java temurin-21.0.12+101.0.LTS
       # Rides the same asdf-managed Java: mvn resolves java via PATH (the
       # asdf shims), so builds run under the temurin above rather than a
       # separate nixpkgs JDK that pkgs.maven would pin.
