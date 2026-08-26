@@ -109,13 +109,6 @@ in
       $DRY_RUN_CMD chmod 644 "$claudeSettings"
     fi
   '';
-  # Remaps Cmd+Q to Cmd+Opt+Ctrl+Shift+Q globally so accidental presses don't
-  # quit apps. Uses -dict-add to preserve any other NSUserKeyEquivalents entries.
-  home.activation.disableCmdQ = lib.hm.dag.entryAfter [ "writeBoundary" ] (
-    lib.optionalString pkgs.stdenv.isDarwin ''
-      /usr/bin/defaults write -g NSUserKeyEquivalents -dict-add "Quit *" "@~^\$q"
-    ''
-  );
   # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
   # Aqua session comes up -- the earliest legitimate hook for a GUI app.
   launchd.agents.albert = {
