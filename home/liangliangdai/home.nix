@@ -109,6 +109,13 @@ in
       $DRY_RUN_CMD chmod 644 "$claudeSettings"
     fi
   '';
+  # Remaps Cmd+Q to Cmd+Opt+Ctrl+Shift+Q globally so accidental presses don't
+  # quit apps. Uses -dict-add to preserve any other NSUserKeyEquivalents entries.
+  home.activation.disableCmdQ = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+    lib.optionalString pkgs.stdenv.isDarwin ''
+      /usr/bin/defaults write -g NSUserKeyEquivalents -dict-add "Quit *" "@~^\$q"
+    ''
+  );
   # Keeps Go/Node at whatever asdf considers "latest"; Java is pinned to
   # explicit Temurin builds instead, because the JVM ecosystem is picky about
   # majors and silent drift onto a new major (or from JDK to JRE) breaks
