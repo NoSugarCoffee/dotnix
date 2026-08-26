@@ -12,174 +12,97 @@
 
 ## 📖 Overview
 
-Keeping a home environment consistent across machines means scattered configs, manual installs,
-and "works on my machine" drift. This flake declares the entire home environment as code —
-packages, dotfiles, and tool configs all version-controlled in one place — so one command
-applies a fully reproducible setup on any supported machine.
+Keeping a home environment consistent across machines usually means scattered configs, manual
+installs, and "works on my machine" drift. This flake declares the entire home environment as
+code — packages, dotfiles, and tool configs all version-controlled in one place — so one
+command applies a fully reproducible setup on any supported machine.
 
-## 🖥️ Supported systems
+## 🚀 Quick start
 
-- `x86_64-linux`
-- `aarch64-darwin`
-- `x86_64-darwin`
+**New machine, no Nix installed** — one-liner that installs Nix (via the
+[Determinate installer](https://install.determinate.systems/)) if missing and applies this flake.
+No local clone or `git` needed:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
+```
+
+If Nix wasn't installed yet, open a new terminal after the installer finishes and re-run.
+
+**Already have Nix, no home-manager yet** — bootstrap the first switch:
+
+```sh
+# Linux
+nix run .#home-manager -- switch --flake .#liangliangdai
+
+# macOS
+nix run .#home-manager -- switch --flake .#liangliangdai-aarch64-darwin
+```
+
+**Day to day** — once `just` is on PATH:
+
+```sh
+just switch
+```
 
 ## 📦 Managed packages
 
-Cross-platform unless noted. Codex config is written to `~/.codex/config.toml`
+Cross-platform unless tagged. Codex config is written to `~/.codex/config.toml`
 (model `gpt-5-codex`, approval policy `on-request`).
 
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
 [claude-code](https://github.com/anthropics/claude-code) &middot;
 [claude-desktop](https://claude.ai/download)
 
-**Shells & terminals** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
+**Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
 [zellij](https://zellij.dev/) &middot;
 [zoxide](https://github.com/ajeetdsouza/zoxide) &middot;
 [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions)
+
+**Editors & IDEs** &nbsp; [intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
+[pulsar](https://pulsar-edit.dev/) `macOS`
 
 **Version control** &nbsp; [git](https://git-scm.com/) &middot;
 [gh](https://cli.github.com/) &middot;
 [glab](https://gitlab.com/gitlab-org/cli)
 
-**Runtimes via asdf** &nbsp; go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven
-
-**Other** &nbsp; [asdf](https://asdf-vm.com/) &middot;
-[just](https://just.systems/) &middot;
+**Runtimes** &nbsp; [asdf](https://asdf-vm.com/) &middot;
+go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
 [python3](https://www.python.org/) &middot;
-[ipython](https://ipython.org/) &middot;
-[lark-cli](https://www.npmjs.com/package/@larksuite/cli) &middot;
-[intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
-[clash-verge-rev](https://www.clashverge.dev/)
+[ipython](https://ipython.org/)
 
-**macOS only** &nbsp; [google-chrome](https://www.google.com/chrome/) &middot;
-[maccy](https://maccy.app/) &middot;
-[macshot](https://github.com/sw33tLie/macshot) &middot;
-[pulsar](https://pulsar-edit.dev/) &middot;
-[albert](https://albertlauncher.github.io/) &middot;
-[scroll-reverser](https://pilotmoon.com/scrollreverser/)
+**Browsers** &nbsp; [google-chrome](https://www.google.com/chrome/) `macOS`
 
-**Linux only** &nbsp; [copyq](https://hluk.github.io/CopyQ/)
+**Launchers** &nbsp; [albert](https://albertlauncher.github.io/) `macOS`
 
-### 🐚 Shell integration (zsh)
+**Clipboard** &nbsp; [maccy](https://maccy.app/) `macOS` &middot;
+[copyq](https://hluk.github.io/CopyQ/) `Linux`
 
-`~/.zshrc` is managed (`programs.zsh.enable`) so that home-manager's session variables — most
-importantly `home.sessionPath`, which puts `~/.asdf/shims` on `PATH` — actually reach a real
-terminal. Without this, tools like `npm`/`lark-cli` install fine but come back
-`command not found` in an interactive shell. CI verifies this by resolving them through an
-interactive `/bin/zsh` on the macOS runner, not just checking the files exist.
+**Screenshots** &nbsp; [macshot](https://github.com/sw33tLie/macshot) `macOS`
 
-First switch on a machine with a hand-written `~/.zshrc`: home-manager refuses to overwrite it,
-so move it aside (`mv ~/.zshrc ~/.zshrc.backup`) and fold anything worth keeping into
-`programs.zsh.initContent` in `home.nix`.
+**Input** &nbsp; [scroll-reverser](https://pilotmoon.com/scrollreverser/) `macOS`
 
-### 🌐 Faster downloads from mainland China
+**Networking** &nbsp; [clash-verge-rev](https://www.clashverge.dev/)
 
-`scripts/bootstrap-macos.sh` writes `extra-substituters` pointing at the SJTU, TUNA, and USTC
-mirrors of `cache.nixos.org` into `/etc/nix/nix.custom.conf` (the Determinate-supported
-customization file — hand-editing `/etc/nix/nix.conf` gets reverted, since Determinate's own
-tooling manages that file) and restarts the daemon, *before* running the switch. All three are
-1:1 mirrors of the official cache (same signing key), so they're only ever an addition:
-`cache.nixos.org` stays as the automatic fallback for anything a mirror doesn't have.
-
-System-level config is deliberate: a per-user `~/.config/nix/nix.conf` would only be written at
-the *end* of a successful switch (too late for the downloads the switch itself does) and is
-silently ignored by the daemon for non-`trusted-users` anyway. The step is idempotent, so
-re-running the script on an already-set-up Mac is safe.
-
-To check whether it's actually active, look at Nix's *effective* config rather than guessing:
-
-```sh
-nix config show | grep -i substitut
-```
-
-### 🧰 Go / Node / Java / Maven via asdf, Python via nixpkgs
-
-Go, Node, Java, and Maven aren't pinned to whatever nixpkgs ships: `home-manager switch`
-installs `asdf` itself, then runs its own activation step (`home.activation.asdfLanguages` in
-`home.nix`) that plugs in `golang`, `nodejs`, `java` (pinned to the
-[Temurin](https://adoptium.net/) build, since asdf-java's versions are vendor-prefixed rather
-than plain semver), and `maven` (which runs under that same asdf-managed Java via the shims on
-`PATH`, rather than a separate nixpkgs JDK) and sets each to whatever asdf resolves as latest.
-These all install prebuilt binaries — nothing compiles, so no Xcode Command Line Tools are
-needed.
-
-This re-checks on every switch, so the active toolchain can move forward silently as upstream
-releases land — that's the tradeoff for tracking "latest" instead of a version pinned in this
-repo. Each install is best-effort: a network hiccup logs a warning instead of failing the
-whole switch.
-
-To pin a specific project to an older version instead of whatever's currently global, add a
-`.tool-versions` file in that project (standard asdf behavior, e.g. `nodejs 20.11.0`) — asdf's
-shims (already on `PATH` via `home.sessionPath`) pick it up automatically per-directory.
-
-Python deliberately comes from nixpkgs instead (`pkgs.python3`, prebuilt from the cache):
-asdf's python plugin compiles CPython from source, which requires Xcode CLT on macOS and takes
-minutes, and its "latest" resolution picks the experimental free-threaded `t` variant. To
-switch major version, swap `pkgs.python3` for `pkgs.python312`/`python313`/`python314` in
-`home.nix` and re-switch; for a one-off shell with a different version,
-`nix shell nixpkgs#python312` works without touching the config.
-
-`lark-cli` (the Feishu/Lark CLI, npm `@larksuite/cli`) has no nixpkgs package, so the asdf
-activation step installs it globally into the asdf-managed Node and reshims — it surfaces as
-`lark-cli` through the same shims directory.
-
-## 🚀 Quick start
-
-```sh
-just switch
-```
-
-First time (before `home-manager` is on your PATH), bootstrap with:
-
-```sh
-# Linux
-nix run .#home-manager -- switch --flake .#liangliangdai
-
-# macOS (pick your arch)
-nix run .#home-manager -- switch --flake .#liangliangdai-aarch64-darwin
-nix run .#home-manager -- switch --flake .#liangliangdai-x86_64-darwin
-```
-
-### 🍎 New Mac, zero Nix (or even git) installed
-
-No local clone needed — Nix fetches flakes straight from GitHub via its own
-tarball fetcher, `git` CLI not required. `scripts/bootstrap-macos.sh` chains
-the two steps: installs Nix (via the
-[Determinate Systems installer](https://install.determinate.systems/)) if
-it's missing, then applies this flake's Home Manager configuration for your
-Mac's architecture directly from `github:NoSugarCoffee/dotnix`.
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
-```
-
-If Nix wasn't already installed, open a new terminal after the installer
-finishes (so `PATH` picks up `nix`) and re-run the same command to apply the
-configuration.
-
-Equivalent manual command, if you'd rather not pipe a script into `bash`:
-
-```sh
-nix run github:NoSugarCoffee/dotnix#home-manager -- switch --flake github:NoSugarCoffee/dotnix#liangliangdai-aarch64-darwin
-```
+**Utilities** &nbsp; [just](https://just.systems/) &middot;
+[lark-cli](https://www.npmjs.com/package/@larksuite/cli)
 
 ## 🔧 Commands
 
 | Command | Description |
 |---------|-------------|
 | `just switch` | Apply the configuration |
-| `just generations` | Show all Home Manager generations |
 | `just build` | Build without switching |
-| `just show` | Show flake outputs |
+| `just generations` | Show Home Manager generations |
 | `just update` | Update flake inputs |
+| `just show` | Show flake outputs |
 
-## 🐚 Dev shell
+## 📝 Notes
 
-`just` is available in a repo-local dev shell — no Home Manager needed:
-
-```sh
-nix develop
-```
+- **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it.
+- **asdf owns Go / Node / Java / Maven**, tracking latest on every switch (best-effort — network hiccups warn, don't abort). Java is pinned to a specific Temurin build; asdf-java uses vendor-prefixed versions rather than plain semver. Per-project pinning via `.tool-versions`.
+- **Python is from nixpkgs, not asdf**: asdf compiles CPython from source (needs Xcode CLT on macOS) and picks the experimental free-threaded variant as "latest".
+- **Mainland-China mirrors**: `scripts/bootstrap-macos.sh` writes SJTU/TUNA/USTC substituters to `/etc/nix/nix.custom.conf` and restarts the daemon before running the switch. `cache.nixos.org` stays as the fallback. Verify with `nix config show | grep substitut`.
 
 ## 📄 License
 
