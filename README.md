@@ -50,6 +50,7 @@ applies a fully reproducible setup on any supported machine.
 | [macshot](https://github.com/sw33tLie/macshot) | — | yes |
 | [pulsar](https://pulsar-edit.dev/) | — | yes |
 | [albert](https://albertlauncher.github.io/) | — | yes |
+| [scroll-reverser](https://pilotmoon.com/scrollreverser/) | — | yes |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | yes | yes |
 | [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | yes | yes |
 
