@@ -49,6 +49,7 @@
         clash-verge-rev-darwin = final.callPackage ./pkgs/clash-verge-rev-darwin { };
         claude-desktop-darwin = final.callPackage ./pkgs/claude-desktop-darwin { };
         pulsar-darwin = final.callPackage ./pkgs/pulsar-darwin { };
+        vibe-notch-darwin = final.callPackage ./pkgs/vibe-notch-darwin { };
         # from unstable: stable's albert (33.x) predates the source layout
         # pkgs/albert-darwin's patches target (35.x)
         albert-darwin = (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin { };

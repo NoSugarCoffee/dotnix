@@ -60,7 +60,7 @@ in
       # repacks the official DMG for macOS.
       # pulsar is Linux-only in nixpkgs; pkgs/pulsar-darwin repacks the
       # official prebuilt zip for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.pulsar-darwin pkgs.albert-darwin pkgs.scroll-reverser ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.pulsar-darwin pkgs.albert-darwin pkgs.scroll-reverser pkgs.vibe-notch-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -126,6 +126,19 @@ in
     config = {
       ProgramArguments = [
         "${pkgs.scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
+      ];
+      RunAtLoad = true;
+      KeepAlive = false;
+      ProcessType = "Interactive";
+    };
+  };
+  # Vibe Notch has to be running to catch Claude Code session events, so it
+  # comes up with the login session like the other menu-bar-only agents.
+  launchd.agents.vibe-notch = {
+    enable = pkgs.stdenv.isDarwin;
+    config = {
+      ProgramArguments = [
+        "${pkgs.vibe-notch-darwin}/Applications/Vibe Notch.app/Contents/MacOS/Vibe Notch"
       ];
       RunAtLoad = true;
       KeepAlive = false;
