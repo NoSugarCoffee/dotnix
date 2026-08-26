@@ -313,6 +313,7 @@ in
     themeFile = "Catppuccin-Mocha";
     settings = {
       macos_option_as_alt = "yes";
+      shell = "${pkgs.zellij}/bin/zellij";
     };
   };
   # Bounds generation history so the store can't fill the disk again (a
