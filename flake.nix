@@ -22,24 +22,6 @@
       # Linux build working at the cost of an extra nixpkgs in the closure.
       inputs.flake-utils.follows = "flake-utils";
     };
-
-    pyproject-nix = {
-      url = "github:pyproject-nix/pyproject.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    uv2nix = {
-      url = "github:pyproject-nix/uv2nix";
-      inputs.pyproject-nix.follows = "pyproject-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    pyproject-build-systems = {
-      url = "github:pyproject-nix/build-system-pkgs";
-      inputs.pyproject-nix.follows = "pyproject-nix";
-      inputs.uv2nix.follows = "uv2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
   outputs =
     {
@@ -47,9 +29,6 @@
       nixpkgs-unstable,
       home-manager,
       claude-desktop,
-      uv2nix,
-      pyproject-nix,
-      pyproject-build-systems,
       ...
     }:
     let
@@ -91,27 +70,6 @@
           config.allowUnfree = true;
           overlays = [ localPackagesOverlay ];
         };
-      mkBrowserUsePackage =
-        system:
-        let
-          pkgs = mkPkgs system;
-          workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./pkgs/browser-use; };
-          overlay = workspace.mkPyprojectOverlay { sourcePreference = "wheel"; };
-          python = pkgs.python311;
-          pythonBase = pkgs.callPackage pyproject-nix.build.packages { inherit python; };
-          pythonSet = pythonBase.overrideScope (
-            lib.composeManyExtensions [
-              pyproject-build-systems.overlays.wheel
-              overlay
-            ]
-          );
-          venv = pythonSet.mkVirtualEnv "browser-use-env" { "browser-use" = [ ]; };
-          inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
-        in
-        mkApplication {
-          inherit venv;
-          package = pythonSet."browser-use";
-        };
       mkHomeConfiguration =
         system:
         let
@@ -123,12 +81,11 @@
             )
           then claude-desktop.packages.${system}.claude-desktop
           else null;
-          browserUsePackage = mkBrowserUsePackage system;
         in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
           extraSpecialArgs = {
-            inherit claudeDesktopPackage browserUsePackage;
+            inherit claudeDesktopPackage;
           };
           modules = [ ./home/liangliangdai/home.nix ];
         };

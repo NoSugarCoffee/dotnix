@@ -25,40 +25,40 @@ applies a fully reproducible setup on any supported machine.
 
 ## 📦 Managed packages
 
-| Package | Linux | macOS |
-|---------|-------|-------|
-| [codex](https://github.com/openai/codex) | yes | yes |
-| [claude-code](https://github.com/anthropics/claude-code) | yes | yes |
-| [asdf](https://asdf-vm.com/) | yes | yes |
-| [git](https://git-scm.com/) | yes | yes |
-| [gh](https://cli.github.com/) | yes | yes |
-| [glab](https://gitlab.com/gitlab-org/cli) | yes | yes |
-| [just](https://just.systems/) | yes | yes |
-| [python3](https://www.python.org/) | yes | yes |
-| [ipython](https://ipython.org/) | yes | yes |
-| [zellij](https://zellij.dev/) | yes | yes |
-| [kitty](https://sw.kovidgoyal.net/kitty/) | yes | yes |
-| [intellij-idea-ultimate](https://www.jetbrains.com/idea/) | yes | yes |
-| [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | yes | yes |
-| [maven](https://maven.apache.org/) | yes | yes |
-| [browser-use](https://browser-use.com/) | yes | yes |
-| [clash-verge-rev](https://www.clashverge.dev/) | yes | yes |
-| [google-chrome](https://www.google.com/chrome/) | — | yes |
-| [copyq](https://hluk.github.io/CopyQ/) | yes | — |
-| [maccy](https://maccy.app/) | — | yes |
-| [claude-desktop](https://claude.ai/download) | yes | yes |
-| [macshot](https://github.com/sw33tLie/macshot) | — | yes |
-| [pulsar](https://pulsar-edit.dev/) | — | yes |
-| [albert](https://albertlauncher.github.io/) | — | yes |
-| [scroll-reverser](https://pilotmoon.com/scrollreverser/) | — | yes |
-| [zoxide](https://github.com/ajeetdsouza/zoxide) | yes | yes |
-| [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | yes | yes |
+Cross-platform unless noted. Codex config is written to `~/.codex/config.toml`
+(model `gpt-5-codex`, approval policy `on-request`).
 
-Codex config is written to `~/.codex/config.toml` (model `gpt-5-codex`, approval policy `on-request`).
+**AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
+[claude-code](https://github.com/anthropics/claude-code) &middot;
+[claude-desktop](https://claude.ai/download)
 
-`browser-use` is exposed as a normal command in your profile. During `home-manager switch`,
-a pinned upstream installer script is executed automatically and idempotently to provision
-`~/.browser-use-env` on first setup (or when the pinned installer hash changes).
+**Shells & terminals** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
+[zellij](https://zellij.dev/) &middot;
+[zoxide](https://github.com/ajeetdsouza/zoxide) &middot;
+[nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions)
+
+**Version control** &nbsp; [git](https://git-scm.com/) &middot;
+[gh](https://cli.github.com/) &middot;
+[glab](https://gitlab.com/gitlab-org/cli)
+
+**Runtimes via asdf** &nbsp; go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven
+
+**Other** &nbsp; [asdf](https://asdf-vm.com/) &middot;
+[just](https://just.systems/) &middot;
+[python3](https://www.python.org/) &middot;
+[ipython](https://ipython.org/) &middot;
+[lark-cli](https://www.npmjs.com/package/@larksuite/cli) &middot;
+[intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
+[clash-verge-rev](https://www.clashverge.dev/)
+
+**macOS only** &nbsp; [google-chrome](https://www.google.com/chrome/) &middot;
+[maccy](https://maccy.app/) &middot;
+[macshot](https://github.com/sw33tLie/macshot) &middot;
+[pulsar](https://pulsar-edit.dev/) &middot;
+[albert](https://albertlauncher.github.io/) &middot;
+[scroll-reverser](https://pilotmoon.com/scrollreverser/)
+
+**Linux only** &nbsp; [copyq](https://hluk.github.io/CopyQ/)
 
 ### 🐚 Shell integration (zsh)
 

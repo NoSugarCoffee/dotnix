@@ -1,4 +1,4 @@
-{ claudeDesktopPackage, browserUsePackage, lib, pkgs, ... }:
+{ claudeDesktopPackage, lib, pkgs, ... }:
 let
   homeDirectory = if pkgs.stdenv.isDarwin then "/Users/liangliangdai" else "/home/liangliangdai";
   proxyUrl = "http://127.0.0.1:7890";
@@ -52,7 +52,6 @@ in
         pkgs.python3Packages.ipython
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
         pkgs.jetbrains.idea
-        browserUsePackage
       ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
