@@ -291,6 +291,8 @@ in
   # fold its content into programs.zsh.initContent if it should be kept.
   programs.zsh = {
     enable = true;
+    syntaxHighlighting.enable = true;
+    autosuggestion.enable = true;
     # Option+Left/Right jump by word. kitty's macos_option_as_alt makes
     # Option send Alt, which arrives as CSI 1;3 arrow sequences; zsh only
     # binds Alt-b/Alt-f out of the box. zellij is configured to pass
