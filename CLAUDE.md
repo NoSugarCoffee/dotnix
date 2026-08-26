@@ -17,6 +17,5 @@ No work-internal hostnames, tokens, or identities in commits or PR bodies. Work-
 ## Workflow
 
 - **Feature branch → PR → squash-merge → local reset.** `gh pr merge N --squash --delete-branch`, then `git reset --hard origin/main` locally.
-- **Use a git worktree, not `git switch`, when opening a second PR while the current branch has in-flight work.** `git worktree add ../dotnix-<slug> -b feat/<slug> main` keeps the two checkouts physically separate and avoids stash/pop churn.
 - **Commits and PRs only on explicit request.** Draft the change, show the diff, wait for "commit" / "open a PR".
 - **Keep the README managed-packages table in sync with `home.nix`.** A PR-reviewer bot flags drift on every PR — if a package is added or removed in `home.nix`, update the table in the same commit.
