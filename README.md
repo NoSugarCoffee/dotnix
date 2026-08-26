@@ -49,7 +49,6 @@ applies a fully reproducible setup on any supported machine.
 | [claude-desktop](https://claude.ai/download) | yes | yes |
 | [macshot](https://github.com/sw33tLie/macshot) | — | yes |
 | [pulsar](https://pulsar-edit.dev/) | — | yes |
-| [alfred](https://www.alfredapp.com/) | — | yes |
 | [zoxide](https://github.com/ajeetdsouza/zoxide) | yes | yes |
 | [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | yes | yes |
 
