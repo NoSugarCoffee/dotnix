@@ -32,6 +32,12 @@
       ...
     }:
     let
+      # Single source of truth for the user this config is applied to.
+      # Fork this repo: change just this string. Everything else (attribute
+      # names, home.username, homeDirectory, CI env, bootstrap script) reads
+      # from here directly or via `nix eval --raw .#username`.
+      username = "liangliangdai";
+
       lib = nixpkgs.lib;
       systems = [
         "x86_64-linux"
@@ -74,6 +80,8 @@
         system:
         let
           isLinux = lib.elem system [ "x86_64-linux" "aarch64-linux" ];
+          isDarwin = lib.hasSuffix "darwin" system;
+          homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
           claudeDesktopPackage = if
             (
               isLinux
@@ -85,9 +93,9 @@
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
           extraSpecialArgs = {
-            inherit claudeDesktopPackage;
+            inherit claudeDesktopPackage username homeDirectory;
           };
-          modules = [ ./home/liangliangdai/home.nix ];
+          modules = [ ./home/home.nix ];
         };
     in
     {
@@ -105,11 +113,15 @@
         }
       );
 
+      # Exposed so CI and bootstrap-macos.sh can read the fork's username
+      # via `nix eval --raw .#username` instead of duplicating the string.
+      inherit username;
+
       homeConfigurations = {
-        liangliangdai = mkHomeConfiguration "x86_64-linux";
-        liangliangdai-x86_64-linux = mkHomeConfiguration "x86_64-linux";
-        liangliangdai-aarch64-darwin = mkHomeConfiguration "aarch64-darwin";
-        liangliangdai-x86_64-darwin = mkHomeConfiguration "x86_64-darwin";
+        ${username} = mkHomeConfiguration "x86_64-linux";
+        "${username}-x86_64-linux" = mkHomeConfiguration "x86_64-linux";
+        "${username}-aarch64-darwin" = mkHomeConfiguration "aarch64-darwin";
+        "${username}-x86_64-darwin" = mkHomeConfiguration "x86_64-darwin";
       };
 
       devShells = forAllSystems (

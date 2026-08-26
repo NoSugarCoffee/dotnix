@@ -1,6 +1,5 @@
-{ claudeDesktopPackage, lib, pkgs, ... }:
+{ claudeDesktopPackage, username, homeDirectory, lib, pkgs, ... }:
 let
-  homeDirectory = if pkgs.stdenv.isDarwin then "/Users/liangliangdai" else "/home/liangliangdai";
   proxyUrl = "http://127.0.0.1:7890";
   noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
   # Only the portable subset of Claude Code settings is managed; hooks,
@@ -32,8 +31,7 @@ let
 in
 {
   home = {
-    username = "liangliangdai";
-    inherit homeDirectory;
+    inherit username homeDirectory;
     stateVersion = "25.11";
     packages =
       # Python comes prebuilt from nixpkgs rather than asdf: asdf's python
@@ -355,7 +353,7 @@ in
   # HARD PREREQUISITE: the daemon silently ignores user-level substituters
   # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
   # macOS; on other machines add it manually to the system nix.conf
-  # (e.g. `extra-trusted-users = liangliangdai`) or this list is a no-op
+  # (e.g. `extra-trusted-users = ${username}`) or this list is a no-op
   # and downloads just fall through to the system substituters.
   # nix.package is required by home-manager to generate nix.conf; it only
   # names the nix version used for config validation, nothing is installed.

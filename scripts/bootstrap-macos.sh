@@ -24,7 +24,8 @@ case "$(uname -m)" in
     ;;
 esac
 
-flake_target="liangliangdai-${system}"
+flake_username=$(nix eval --raw "${flake_repo}#username")
+flake_target="${flake_username}-${system}"
 
 if ! command -v nix >/dev/null 2>&1; then
   echo "==> Nix not found, installing via the Determinate Systems installer..."

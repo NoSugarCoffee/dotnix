@@ -29,8 +29,10 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
+      - id: user
+        run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
       - run: nix flake check
-      - run: nix build .#homeConfigurations.liangliangdai.activationPackage
+      - run: nix build .#homeConfigurations.${{ steps.user.outputs.name }}.activationPackage
 
   build-macos:
     runs-on: macos-latest
@@ -40,26 +42,32 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-      - run: nix build .#homeConfigurations.liangliangdai-aarch64-darwin.activationPackage
+      - id: user
+        run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
+      - run: nix build .#homeConfigurations.${{ steps.user.outputs.name }}-aarch64-darwin.activationPackage
 
       # Building the derivation only proves it evaluates and fetches/compiles.
       # A new Mac needs the activation *scripts* to also run cleanly, so
       # actually run them here against a throwaway home directory that
-      # matches home.nix's hardcoded username/homeDirectory for Darwin.
+      # matches home.nix's homeDirectory for Darwin.
       - name: Activate the configuration end-to-end
+        env:
+          USERNAME: ${{ steps.user.outputs.name }}
         run: |
           set -euo pipefail
-          sudo mkdir -p /Users/liangliangdai
-          sudo chown "$(id -u):$(id -g)" /Users/liangliangdai
-          HOME=/Users/liangliangdai USER=liangliangdai LOGNAME=liangliangdai "$(readlink -f result)/activate"
+          sudo mkdir -p "/Users/$USERNAME"
+          sudo chown "$(id -u):$(id -g)" "/Users/$USERNAME"
+          HOME="/Users/$USERNAME" USER="$USERNAME" LOGNAME="$USERNAME" "$(readlink -f result)/activate"
 
       # Standalone Home Manager (no nix-darwin) keeps its profile at
       # ~/.local/state/nix/profiles/home-manager, not ~/.nix-profile -- so
       # search rather than assume an exact nesting under it.
       - name: Smoke-test the activated profile
+        env:
+          USERNAME: ${{ steps.user.outputs.name }}
         run: |
           set -euo pipefail
-          export HOME=/Users/liangliangdai
+          export HOME="/Users/$USERNAME"
           echo "== $HOME layout (depth 4) =="
           find -L "$HOME" -maxdepth 4 | sort
 
@@ -78,9 +86,11 @@ jobs:
       # actually gets -- an interactive zsh -- and require the asdf shims to
       # resolve there (this caught "command not found: npm" on a real Mac).
       - name: Smoke-test PATH in an interactive zsh
+        env:
+          USERNAME: ${{ steps.user.outputs.name }}
         run: |
           set -euo pipefail
-          export HOME=/Users/liangliangdai
+          export HOME="/Users/$USERNAME"
           npm_path=$(/bin/zsh -i -c 'command -v npm' 2>/dev/null | tail -1 || true)
           lark_path=$(/bin/zsh -i -c 'command -v lark-cli' 2>/dev/null | tail -1 || true)
           echo "npm:      ${npm_path:-NOT FOUND}"

@@ -1,6 +1,6 @@
 set shell := ["bash", "-cu"]
 
-USER := env_var_or_default("USER", "liangliangdai")
+USER := env_var_or_default("USER", `nix eval --raw .#username`)
 SYSTEM := arch() + "-" + (if os() == "macos" { "darwin" } else { "linux" })
 CONFIG := USER + "-" + SYSTEM
 

@@ -97,6 +97,22 @@ go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
 | `just update` | Update flake inputs |
 | `just show` | Show flake outputs |
 
+## 🍴 Fork
+
+The username is a single source of truth in `flake.nix`:
+
+```nix
+let
+  username = "liangliangdai";
+```
+
+Everything else (`homeConfigurations` attribute names, `home.username`,
+`homeDirectory`, CI `USERNAME`, the bootstrap script's flake target)
+reads from there directly or via `nix eval --raw .#username`. Fork the
+repo and change just that string, then update the git identity in
+`home/home.nix` (`programs.git.settings.user.name` / `.email`) — that's
+the whole rebranding step.
+
 ## 📝 Notes
 
 - **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it.
