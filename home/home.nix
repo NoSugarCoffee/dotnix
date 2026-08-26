@@ -132,6 +132,19 @@ in
       ProcessType = "Interactive";
     };
   };
+  # Vibe Notch has to be running to catch Claude Code session events, so it
+  # comes up with the login session like the other menu-bar-only agents.
+  launchd.agents.vibe-notch = {
+    enable = pkgs.stdenv.isDarwin;
+    config = {
+      ProgramArguments = [
+        "${pkgs.vibe-notch-darwin}/Applications/Vibe Notch.app/Contents/MacOS/Vibe Notch"
+      ];
+      RunAtLoad = true;
+      KeepAlive = false;
+      ProcessType = "Interactive";
+    };
+  };
   # Keeps Go/Node at whatever asdf considers "latest"; Java is pinned to
   # explicit Temurin builds instead, because the JVM ecosystem is picky about
   # majors and silent drift onto a new major (or from JDK to JRE) breaks
