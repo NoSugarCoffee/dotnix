@@ -348,6 +348,15 @@ in
     settings = {
       macos_option_as_alt = "yes";
       shell = "${pkgs.zellij}/bin/zellij";
+      # kitty runs one process for every window it owns, so ping-island's
+      # NSRunningApplication-level activation can only raise "some" kitty
+      # window when jumping to a session, not necessarily the right one.
+      # Remote control on a fixed socket lets it target the exact window by
+      # KITTY_WINDOW_ID instead (see KittyController in the ping-island fork).
+      # socket-only restricts control to this socket, not all local/network
+      # access.
+      allow_remote_control = "socket-only";
+      listen_on = "unix:/tmp/kitty-remote-control";
     };
   };
   # Bounds generation history so the store can't fill the disk again (a
