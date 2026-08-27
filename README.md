@@ -53,7 +53,7 @@ Cross-platform unless tagged. Codex config is written to `~/.codex/config.toml`
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
 [claude-code](https://github.com/anthropics/claude-code) &middot;
 [claude-desktop](https://claude.ai/download) &middot;
-[vibe-notch](https://github.com/farouqaldori/vibe-notch) `macOS`
+[ping-island](https://github.com/NoSugarCoffee/ping-island) `macOS` (personal fork with zellij support)
 
 **Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
 [zellij](https://zellij.dev/) &middot;
