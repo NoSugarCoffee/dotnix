@@ -41,6 +41,7 @@ in
       [
         pkgs.codex
         pkgs.claude-code
+        pkgs.claude-session-registry
         pkgs.asdf-vm
         pkgs.gh
         pkgs.glab
@@ -322,6 +323,13 @@ in
       # active asdf java on every prompt.
       [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
     '';
+    # Claude Code persists every conversation under ~/.claude/projects; these
+    # are just short spellings of the two ways back into one. Not `cc`, which
+    # would shadow the C compiler.
+    shellAliases = {
+      clc = "claude --continue";
+      clr = "claude --resume";
+    };
   };
   # Smarter cd: tracks visited directories, jump with `z <fragment>`.
   # enableZshIntegration defaults to true, wiring the init hook into the
