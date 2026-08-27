@@ -38,7 +38,7 @@ class Conversation(NamedTuple):
         # Conversations started outside zellij have no session to return to,
         # so one is invented per directory. The digest keeps two projects
         # sharing a basename from being merged into a single session.
-        digest = hashlib.sha256(str(self.cwd).encode()).hexdigest()[:6]
+        digest = hashlib.sha256(str(self.cwd).encode()).hexdigest()[:12]
         return f"{self.cwd.name}-{digest}"
 
     @property
