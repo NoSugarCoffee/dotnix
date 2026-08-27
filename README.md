@@ -79,7 +79,8 @@ go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
 **Clipboard** &nbsp; [maccy](https://maccy.app/) `macOS` &middot;
 [copyq](https://hluk.github.io/CopyQ/) `Linux`
 
-**Screenshots** &nbsp; [macshot](https://github.com/sw33tLie/macshot) `macOS`
+**Screenshots & recording** &nbsp; [macshot](https://github.com/sw33tLie/macshot) `macOS` &middot;
+[obs-studio](https://obsproject.com/)
 
 **Input** &nbsp; [scroll-reverser](https://pilotmoon.com/scrollreverser/) `macOS`
 
