@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -21,6 +22,13 @@ from pathlib import Path
 from typing import Final, NamedTuple
 
 ZELLIJ: Final[str] = "@zellij@"
+# A new tab inherits the zellij *server's* environment, not this process's. A
+# server kitty spawned at startup carries a PATH without ~/.nix-profile/bin, so
+# a bare `claude` is not found and the pane dies the instant it opens.
+CLAUDE: Final[str] = "@claude@"
+RESUME_PROCESS: Final[re.Pattern[str]] = re.compile(
+    r"claude --resume (\S+)"
+)
 SERVER_START_TIMEOUT: Final[float] = 10.0
 SERVER_POLL_INTERVAL: Final[float] = 0.2
 
@@ -75,18 +83,47 @@ def unrestorable_reason(conversation: Conversation) -> str | None:
     return None
 
 
-def live_sessions() -> set[str]:
+def session_states() -> dict[str, bool]:
+    """Map every zellij session name to whether its server is still running.
+
+    `zellij ls` lists exited-but-resurrectable sessions alongside live ones and
+    `-s` prints only their names, so the two are indistinguishable there. A
+    terminal restart leaves exactly those husks behind -- read as live, they
+    suppress the restore that is the whole point of this command.
+    """
     # `zellij ls` exits non-zero when there are simply no sessions.
     result = subprocess.run(
-        [ZELLIJ, "ls", "-s"], capture_output=True, text=True, check=False
+        [ZELLIJ, "ls", "-n"], capture_output=True, text=True, check=False
     )
-    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    states: dict[str, bool] = {}
+    for line in result.stdout.splitlines():
+        # Session names may contain spaces, and one could contain "EXITED"
+        # itself, so split on the suffix zellij appends rather than on
+        # whitespace.
+        name, separator, details = line.partition(" [Created ")
+        if not separator:
+            continue
+        states[name] = "EXITED" not in details
+    return states
+
+
+def live_sessions() -> set[str]:
+    return {name for name, live in session_states().items() if live}
 
 
 def zellij(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [ZELLIJ, *args], capture_output=True, text=True, check=True
     )
+
+
+def discard_exited_session(name: str) -> None:
+    """Drop an exited session's husk so the name is free for a fresh one.
+
+    Attaching to a husk resurrects its serialized layout instead of creating an
+    empty session, mixing the restored tabs in with the dead panes.
+    """
+    zellij("delete-session", name)
 
 
 def start_background_session(name: str) -> None:
@@ -107,8 +144,40 @@ def open_tab(session: str, conversation: Conversation) -> None:
         "-s", session, "action", "new-tab",
         "--cwd", str(conversation.cwd),
         "--name", conversation.tab_name,
-        "--", "claude", "--resume", conversation.session_id,
+        "--", CLAUDE, "--resume", conversation.session_id,
     )
+
+
+def active_session_ids() -> set[str]:
+    """Conversations Claude Code already holds open, in a pane or in the
+    background.
+
+    Authoritative where the process table is not. A background agent owns its
+    session and `--resume` refuses to take it over, so a pane opened for one
+    dies the instant it starts -- indistinguishable, afterwards, from a pane
+    that was never restored at all.
+    """
+    listed = subprocess.run(
+        [CLAUDE, "agents", "--json"], capture_output=True, text=True,
+    )
+    if listed.returncode != 0:
+        # Guessing "nothing is open" here would hand every background agent a
+        # pane that dies on arrival, which is the failure this check exists to
+        # prevent.
+        raise SystemExit(
+            f"`claude agents --json` failed ({listed.returncode}) -- cannot "
+            f"tell which conversations are already open: "
+            f"{listed.stderr.strip()}"
+        )
+    agents = {entry["sessionId"] for entry in json.loads(listed.stdout)}
+
+    # `claude agents` knows every background agent and every conversation
+    # started bare, but not the ones this command itself resumed into a pane.
+    processes = subprocess.run(
+        ["ps", "-u", str(os.getuid()), "-o", "args="],
+        capture_output=True, text=True, check=True,
+    )
+    return agents | set(RESUME_PROCESS.findall(processes.stdout))
 
 
 def tab_ids(session: str) -> set[int]:
@@ -146,15 +215,39 @@ def group_by_session(
     return dict(grouped)
 
 
-def restore_session(
-    name: str, conversations: list[Conversation], dry_run: bool
-) -> None:
-    print(f"{name}: {len(conversations)} conversation(s)")
+def announce(conversations: list[Conversation]) -> None:
     for conversation in conversations:
         print(f"  {conversation.tab_name} -> claude --resume "
               f"{conversation.session_id}")
+
+
+def top_up_session(
+    name: str, missing: list[Conversation], dry_run: bool
+) -> None:
+    """Add the tabs a live session is missing rather than skipping it whole.
+
+    A session that came up half-populated -- or one the user opened by hand --
+    is still live, so treating liveness as "done" strands every conversation
+    that has no pane in it.
+    """
+    print(f"{name}: live, adding {len(missing)} missing conversation(s)")
+    announce(missing)
     if dry_run:
         return
+    for conversation in missing:
+        open_tab(name, conversation)
+
+
+def restore_session(
+    name: str, conversations: list[Conversation], exited: bool, dry_run: bool
+) -> None:
+    state = " (exited, will be recreated)" if exited else ""
+    print(f"{name}: {len(conversations)} conversation(s){state}")
+    announce(conversations)
+    if dry_run:
+        return
+    if exited:
+        discard_exited_session(name)
     start_background_session(name)
     placeholders = tab_ids(name)
     try:
@@ -207,12 +300,17 @@ def main() -> int:
             continue
         restorable.append(conversation)
 
-    already_live = live_sessions()
+    active = active_session_ids()
+    states = session_states()
     for name, group in sorted(group_by_session(restorable).items()):
-        if name in already_live:
-            print(f"{name}: already running, left alone")
+        missing = [c for c in group if c.session_id not in active]
+        if not missing:
+            print(f"{name}: every conversation is already open, left alone")
             continue
-        restore_session(name, group, arguments.dry_run)
+        if states.get(name, False):
+            top_up_session(name, missing, arguments.dry_run)
+            continue
+        restore_session(name, missing, name in states, arguments.dry_run)
 
     if not arguments.dry_run:
         print("\nattach with: zellij attach <name>")
