@@ -10,6 +10,7 @@ its own -- attach afterwards with `zellij attach <name>`.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -32,7 +33,13 @@ class Conversation(NamedTuple):
 
     @property
     def target_session(self) -> str:
-        return self.zellij_session or self.cwd.name
+        if self.zellij_session:
+            return self.zellij_session
+        # Conversations started outside zellij have no session to return to,
+        # so one is invented per directory. The digest keeps two projects
+        # sharing a basename from being merged into a single session.
+        digest = hashlib.sha256(str(self.cwd).encode()).hexdigest()[:6]
+        return f"{self.cwd.name}-{digest}"
 
     @property
     def tab_name(self) -> str:
@@ -150,9 +157,20 @@ def restore_session(
         return
     start_background_session(name)
     placeholders = tab_ids(name)
-    for conversation in conversations:
-        open_tab(name, conversation)
-    close_tabs(name, placeholders)
+    try:
+        for conversation in conversations:
+            open_tab(name, conversation)
+    except subprocess.CalledProcessError as error:
+        # Half-populated sessions are worse than none: the session is live, so
+        # a later run reports it as already running and never restores the
+        # conversations that are missing from it.
+        raise RuntimeError(
+            f"{name!r} was only partly restored -- discard it with "
+            f"`zellij kill-session {name}` before retrying: "
+            f"{error.stderr.strip()}"
+        ) from error
+    finally:
+        close_tabs(name, placeholders)
 
 
 def main() -> int:
@@ -160,7 +178,9 @@ def main() -> int:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="print what would be restored without touching zellij",
+        # The live-session probe still runs: it is read-only, and skipping it
+        # would make the preview promise sessions that are already up.
+        help="print the restore plan without creating or changing anything",
     )
     arguments = parser.parse_args()
 
