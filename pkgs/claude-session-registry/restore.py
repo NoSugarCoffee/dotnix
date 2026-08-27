@@ -97,10 +97,13 @@ def session_states() -> dict[str, bool]:
     )
     states: dict[str, bool] = {}
     for line in result.stdout.splitlines():
-        fields = line.split()
-        if not fields:
+        # Session names may contain spaces, and one could contain "EXITED"
+        # itself, so split on the suffix zellij appends rather than on
+        # whitespace.
+        name, separator, details = line.partition(" [Created ")
+        if not separator:
             continue
-        states[fields[0]] = "EXITED" not in line
+        states[name] = "EXITED" not in details
     return states
 
 
@@ -155,15 +158,24 @@ def active_session_ids() -> set[str]:
     that was never restored at all.
     """
     listed = subprocess.run(
-        [CLAUDE, "agents", "--json"],
-        capture_output=True, text=True, check=True,
+        [CLAUDE, "agents", "--json"], capture_output=True, text=True,
     )
+    if listed.returncode != 0:
+        # Guessing "nothing is open" here would hand every background agent a
+        # pane that dies on arrival, which is the failure this check exists to
+        # prevent.
+        raise SystemExit(
+            f"`claude agents --json` failed ({listed.returncode}) -- cannot "
+            f"tell which conversations are already open: "
+            f"{listed.stderr.strip()}"
+        )
     agents = {entry["sessionId"] for entry in json.loads(listed.stdout)}
 
     # `claude agents` knows every background agent and every conversation
     # started bare, but not the ones this command itself resumed into a pane.
     processes = subprocess.run(
-        ["ps", "-eo", "args="], capture_output=True, text=True, check=True
+        ["ps", "-u", str(os.getuid()), "-o", "args="],
+        capture_output=True, text=True, check=True,
     )
     return agents | set(RESUME_PROCESS.findall(processes.stdout))
 
