@@ -55,12 +55,15 @@ in
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev ]
+      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev pkgs.obs-studio ]
       # claude-desktop's flake input is Linux-only; pkgs/claude-desktop-darwin
       # repacks the official DMG for macOS.
       # pulsar is Linux-only in nixpkgs; pkgs/pulsar-darwin repacks the
       # official prebuilt zip for macOS.
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.pulsar-darwin pkgs.albert-darwin pkgs.scroll-reverser pkgs.ping-island-darwin ];
+      # obs-studio is Linux-only in nixpkgs; pkgs/obs-studio-darwin repacks
+      # the official DMG (its virtual camera extension can't install from a
+      # store path -- see the package for why).
+      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.pulsar-darwin pkgs.albert-darwin pkgs.scroll-reverser pkgs.ping-island-darwin pkgs.obs-studio-darwin ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
