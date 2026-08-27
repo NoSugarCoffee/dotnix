@@ -1,9 +1,9 @@
 # nixpkgs' albert is marked Linux-only, and upstream's prebuilt macOS DMG
 # is not self-contained (it hard-links Homebrew Qt at /opt/homebrew paths),
 # so this builds albert from source against nix Qt6 by reusing the nixpkgs
-# derivation and adapting its linux-isms for darwin. Called with the
-# nixpkgs-unstable package set: stable's albert (33.x) predates the source
-# layout these patches target (35.x).
+# derivation and adapting its linux-isms for darwin. `albert` is unstable's
+# recipe built against the stable package set (stable's albert is 34.x, which
+# predates the source layout these patches target); see flake.nix.
 {
   lib,
   albert,

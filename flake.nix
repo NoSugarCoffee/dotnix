@@ -52,10 +52,17 @@
         ping-island-darwin = final.callPackage ./pkgs/ping-island-darwin { };
         obs-studio-darwin = final.callPackage ./pkgs/obs-studio-darwin { };
         claude-session-registry = final.callPackage ./pkgs/claude-session-registry { };
-        # from unstable: stable's albert (33.x) predates the source layout
-        # pkgs/albert-darwin's patches target (35.x)
-        albert-darwin = (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin { };
-        macshot = (mkPkgsUnstable final.stdenv.hostPlatform.system).macshot;
+        # Recipes come from unstable -- stable's albert (34.x) predates the
+        # source layout pkgs/albert-darwin's patches target (35.x), and stable
+        # has no macshot at all -- but they are built with *stable's* stdenv.
+        # Instantiating a second nixpkgs instead (import nixpkgs-unstable {})
+        # drags a duplicate darwin toolchain into the closure for the sake of
+        # these two packages: two LLVMs, two clangs, two apple-sdks, ~276 MiB
+        # of redundant download.
+        albert-darwin = final.callPackage ./pkgs/albert-darwin {
+          albert = unstableRecipe final "al/albert";
+        };
+        macshot = unstableRecipe final "ma/macshot";
         # nixpkgs' undmg leaves AppleDouble sidecars (._Foo) inside the app
         # bundle. Those files are not in the Developer ID seal, so Gatekeeper
         # rejects the bundle with "damaged." Deleting them restores the seal;
@@ -66,12 +73,11 @@
           '';
         });
       };
-      mkPkgsUnstable =
-        system:
-        import nixpkgs-unstable {
-          inherit system;
-          config.allowUnfree = true;
-        };
+      # Call a single package recipe from the unstable tree against a package
+      # set the caller already has, rather than importing a whole second
+      # nixpkgs to reach it.
+      unstableRecipe =
+        pkgs: byName: pkgs.callPackage "${nixpkgs-unstable}/pkgs/by-name/${byName}/package.nix" { };
       mkPkgs =
         system:
         import nixpkgs {
