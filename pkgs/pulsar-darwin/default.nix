@@ -8,6 +8,7 @@
   lib,
   stdenvNoCC,
   fetchurl,
+  makeWrapper,
   unzip,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
@@ -19,7 +20,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     hash = "sha256-y7WjrOD2Kn67zgqwFH7MhHMPnLTihEvqdrTSVvU58tY=";
   };
 
-  nativeBuildInputs = [ unzip ];
+  nativeBuildInputs = [
+    makeWrapper
+    unzip
+  ];
   sourceRoot = ".";
 
   dontPatch = true;
@@ -33,6 +37,15 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     test -n "$app"
     mkdir -p "$out/Applications"
     cp -R "$app" "$out/Applications/"
+
+    # PULSAR_PATH is mandatory, not a nicety: pulsar.sh locates the bundle by
+    # walking three directories up from $0, which from $out/bin lands on the
+    # store root rather than a .app, and its fallback only searches
+    # /Applications and ~/Applications -- never the ~/Applications/Home Manager
+    # Apps/ directory home-manager actually links into.
+    makeWrapper "$out/Applications/Pulsar.app/Contents/Resources/pulsar.sh" \
+      "$out/bin/pulsar" \
+      --set PULSAR_PATH "$out/Applications"
     runHook postInstall
   '';
 
