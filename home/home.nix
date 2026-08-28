@@ -358,7 +358,12 @@ in
     themeFile = "Catppuccin-Mocha";
     settings = {
       macos_option_as_alt = "yes";
-      shell = "${pkgs.zellij}/bin/zellij";
+      # zellij is deliberately not kitty's `shell`: it daemonizes its server
+      # with ppid 1, so a pane's process is a child of that server rather than
+      # of kitty.app, and macOS attributes permissions (Screen Recording) to
+      # the server -- which, being a bare nix-store binary, can never hold a
+      # grant. Start it per window with `zellij` / `zellij attach`;
+      # claude-session-registry attaches explicitly and does not rely on this.
       # kitty runs one process for every window it owns, so ping-island's
       # NSRunningApplication-level activation can only raise "some" kitty
       # window when jumping to a session, not necessarily the right one.
