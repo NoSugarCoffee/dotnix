@@ -88,7 +88,8 @@ go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
 **Networking** &nbsp; [clash-verge-rev](https://www.clashverge.dev/)
 
 **Utilities** &nbsp; [just](https://just.systems/) &middot;
-[lark-cli](https://www.npmjs.com/package/@larksuite/cli)
+[lark-cli](https://www.npmjs.com/package/@larksuite/cli) &middot;
+translate-selection (local: translates the terminal selection via [translate-shell](https://github.com/soimort/translate-shell), bound to a kitty hotkey — see Notes)
 
 ## 🔧 Commands
 
@@ -121,6 +122,7 @@ the whole rebranding step.
 - **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it.
 - **asdf owns Go / Node / Java / Maven**, tracking latest on every switch (best-effort — network hiccups warn, don't abort). Java is pinned to a specific Temurin build; asdf-java uses vendor-prefixed versions rather than plain semver. Per-project pinning via `.tool-versions`.
 - **Python is from nixpkgs, not asdf**: asdf compiles CPython from source (needs Xcode CLT on macOS) and picks the experimental free-threaded variant as "latest".
+- **Translate the selection** with `Cmd+Shift+T` (macOS) / `Ctrl+Shift+Alt+T` (Linux): the selected text is translated in a kitty overlay window, Chinese ↔ English with the direction auto-detected. Because zellij grabs the mouse there are two ways to select — `Shift`+drag makes the selection kitty's own, a plain drag makes it zellij's and copy-on-select puts it in the system clipboard; the hotkey reads whichever is present.
 - **Mainland-China mirrors**: `scripts/bootstrap-macos.sh` writes SJTU/TUNA/USTC substituters to `/etc/nix/nix.custom.conf` and restarts the daemon before running the switch. `cache.nixos.org` stays as the fallback. Verify with `nix config show | grep substitut`.
 
 ## 📄 License
