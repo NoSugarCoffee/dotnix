@@ -51,6 +51,8 @@ in
         pkgs.python3Packages.ipython
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
         pkgs.jetbrains.idea
+        # Provides the `cursor` CLI that ~/.codex/config.toml's file_opener uses.
+        pkgs.code-cursor
       ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
