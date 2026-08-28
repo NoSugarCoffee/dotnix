@@ -5,6 +5,11 @@ result-*
 **/result
 **/result-*
 
+# --- Overlay marker ------------------------------------------------------
+# Machine-local: names the private overlay flake that consumes this checkout,
+# which makes `just switch` refuse to run from here. See the justfile.
+.overlay
+
 # --- Nix evaluation / direnv state ---------------------------------------
 .direnv/
 .envrc.local
