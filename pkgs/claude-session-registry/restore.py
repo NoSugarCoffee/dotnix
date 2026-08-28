@@ -79,7 +79,12 @@ def unrestorable_reason(conversation: Conversation) -> str | None:
     if not conversation.cwd.is_dir():
         return f"directory is gone: {conversation.cwd}"
     if not conversation.transcript.is_file():
-        return f"transcript is gone: {conversation.transcript}"
+        # A conversation writes no transcript until its first message, so one
+        # just opened is indistinguishable on disk from one whose transcript
+        # was deleted. Neither can be resumed, so say what is actually known
+        # rather than asserting the alarming half of it.
+        return f"no transcript at {conversation.transcript} (deleted, or " \
+               f"never written because the conversation was never messaged)"
     return None
 
 
