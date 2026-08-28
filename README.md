@@ -101,7 +101,7 @@ translate-selection (local: translates the terminal selection via [translate-she
 | `just update` | Update flake inputs |
 | `just show` | Show flake outputs |
 
-## 🍴 Fork
+## 🍴 Fork or extend
 
 The username is a single source of truth in `flake.nix`:
 
@@ -116,6 +116,27 @@ reads from there directly or via `nix eval --raw .#username`. Fork the
 repo and change just that string, then update the git identity in
 `home/home.nix` (`programs.git.settings.user.name` / `.email`) — that's
 the whole rebranding step.
+
+Config that can't live in a public repo (employer hostnames, internal
+artifact registries) doesn't need a fork at all. Take this flake as an
+input and layer extra home-manager modules on top from a private one:
+
+```nix
+{
+  inputs.dotnix.url = "github:NoSugarCoffee/dotnix";
+
+  outputs =
+    { dotnix, ... }:
+    {
+      homeConfigurations."liangliangdai-aarch64-darwin" =
+        dotnix.lib.mkHomeConfiguration "aarch64-darwin" [ ./work ];
+    };
+}
+```
+
+`lib.mkHomeConfiguration` takes a system and a list of extra modules, so
+the private flake reuses this configuration verbatim and follows it by
+bumping one input — no long-lived fork to keep rebasing.
 
 ## 📝 Notes
 
