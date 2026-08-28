@@ -276,7 +276,17 @@ def attach_sessions(names: list[str], dry_run: bool) -> None:
         )
         return
     for name in detached:
-        open_terminal(name, socket)
+        try:
+            open_terminal(name, socket)
+        except subprocess.CalledProcessError as error:
+            # A KITTY_LISTEN_ON left over from an exited kitty fails every
+            # launch. The sessions are restored either way, so name the ones
+            # that ended up without a terminal rather than abandoning the rest.
+            print(
+                f"  warning: no kitty tab for {name!r}, attach by hand: "
+                f"{error.stderr.strip()}",
+                file=sys.stderr,
+            )
 
 
 def group_by_session(
