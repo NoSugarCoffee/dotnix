@@ -89,16 +89,18 @@ def holds_no_conversation(transcript: Path) -> bool:
     """
     if not transcript.is_file():
         return True
-    with transcript.open() as handle:
+    # Read bytes, not text: a conversation appending right now can cut its last
+    # line mid-character, and an iterating text handle decodes before any of
+    # this function's error handling can run.
+    with transcript.open("rb") as handle:
         for line in handle:
             if not line.strip():
                 continue
             try:
                 entry = json.loads(line)
-            except json.JSONDecodeError:
-                # A conversation appending right now can leave its last line
-                # half-written. Unreadable is not evidence of emptiness, and
-                # this decides whether to delete the record.
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # Unreadable is not evidence of emptiness, and this decides
+                # whether to delete the record.
                 return False
             if entry.get("type") in CONTENT_ENTRIES:
                 return False
