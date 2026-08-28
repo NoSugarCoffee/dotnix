@@ -81,7 +81,7 @@
           overlays = [ localPackagesOverlay ];
         };
       mkHomeConfiguration =
-        system:
+        system: extraModules:
         let
           isLinux = lib.elem system [ "x86_64-linux" "aarch64-linux" ];
           isDarwin = lib.hasSuffix "darwin" system;
@@ -99,7 +99,7 @@
           extraSpecialArgs = {
             inherit claudeDesktopPackage username homeDirectory;
           };
-          modules = [ ./home/home.nix ];
+          modules = [ ./home/home.nix ] ++ extraModules;
         };
     in
     {
@@ -122,11 +122,16 @@
       inherit username;
 
       homeConfigurations = {
-        ${username} = mkHomeConfiguration "x86_64-linux";
-        "${username}-x86_64-linux" = mkHomeConfiguration "x86_64-linux";
-        "${username}-aarch64-darwin" = mkHomeConfiguration "aarch64-darwin";
-        "${username}-x86_64-darwin" = mkHomeConfiguration "x86_64-darwin";
+        ${username} = mkHomeConfiguration "x86_64-linux" [ ];
+        "${username}-x86_64-linux" = mkHomeConfiguration "x86_64-linux" [ ];
+        "${username}-aarch64-darwin" = mkHomeConfiguration "aarch64-darwin" [ ];
+        "${username}-x86_64-darwin" = mkHomeConfiguration "x86_64-darwin" [ ];
       };
+
+      # Exposed so config that can't live in a public repo (employer hostnames,
+      # internal artifact registries) can layer modules onto this configuration
+      # from a private flake instead of forking it and drifting. See README.
+      lib.mkHomeConfiguration = mkHomeConfiguration;
 
       devShells = forAllSystems (
         system:
