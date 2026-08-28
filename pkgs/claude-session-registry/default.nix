@@ -7,20 +7,21 @@
 # `claude --resume <id>` in fresh zellij tabs.
 {
   claude-code,
+  kitty,
   lib,
   symlinkJoin,
   writers,
   zellij,
 }:
 let
-  # The restore command drives zellij and claude directly rather than resolving
-  # them from PATH: it runs from a Claude Code hook context and after a fresh
-  # login, neither of which is guaranteed to have the user profile on PATH --
-  # and the tabs it opens inherit the zellij server's PATH, not its own.
+  # The restore command drives zellij, claude and kitty directly rather than
+  # resolving them from PATH: it runs from a Claude Code hook context and after
+  # a fresh login, neither of which is guaranteed to have the user profile on
+  # PATH -- and the tabs it opens inherit the zellij server's PATH, not its own.
   restoreSource =
     builtins.replaceStrings
-      [ "@zellij@" "@claude@" ]
-      [ "${zellij}/bin/zellij" "${claude-code}/bin/claude" ]
+      [ "@zellij@" "@claude@" "@kitty@" ]
+      [ "${zellij}/bin/zellij" "${claude-code}/bin/claude" "${kitty}/bin/kitty" ]
       (builtins.readFile ./restore.py);
 in
 symlinkJoin {

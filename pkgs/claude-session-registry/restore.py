@@ -5,8 +5,9 @@ which is the only way to land a pane back on the exact conversation it held:
 `claude --continue` resolves to the newest conversation in a directory however
 many panes that directory had.
 
-Tabs are added to detached (background) sessions, so this needs no terminal of
-its own -- attach afterwards with `zellij attach <name>`.
+Zellij tabs are added to detached (background) sessions, so this needs no
+terminal of its own; a kitty tab is then opened per session to attach to it,
+which is the half that would otherwise be typed out by hand.
 """
 
 import argparse
@@ -26,6 +27,7 @@ ZELLIJ: Final[str] = "@zellij@"
 # server kitty spawned at startup carries a PATH without ~/.nix-profile/bin, so
 # a bare `claude` is not found and the pane dies the instant it opens.
 CLAUDE: Final[str] = "@claude@"
+KITTY: Final[str] = "@kitty@"
 RESUME_PROCESS: Final[re.Pattern[str]] = re.compile(
     r"claude --resume (\S+)"
 )
@@ -211,6 +213,72 @@ def close_tabs(session: str, ids: set[int]) -> None:
             )
 
 
+def has_client(session: str) -> bool:
+    """Whether a terminal is already attached to this session.
+
+    `zellij ls` cannot tell attached from detached, but a session's own
+    list-clients prints one row per connected client under a header row.
+    """
+    result = zellij("-s", session, "action", "list-clients")
+    return any(line.strip() for line in result.stdout.splitlines()[1:])
+
+
+def detached_sessions(names: list[str]) -> list[str]:
+    """Which of the caller's sessions have no terminal on them.
+
+    Callers pass only names that this run has left standing; a name not live
+    among those is one a dry run would have created, so it needs a terminal
+    just as much as a live-but-unattached one does.
+    """
+    live = live_sessions()
+    return [name for name in names if name not in live or not has_client(name)]
+
+
+def open_terminal(session: str, socket: str) -> None:
+    window = os.environ.get("KITTY_WINDOW_ID")
+    # Without a window to anchor to, kitty puts the tab in whichever OS window
+    # happens to be focused when the call lands.
+    placement = ["--match", f"window_id:{window}"] if window else []
+    subprocess.run(
+        [
+            KITTY, "@", "--to", socket, "launch",
+            "--type=tab", "--dont-take-focus", *placement,
+            "--", ZELLIJ, "attach", session,
+        ],
+        capture_output=True, text=True, check=True,
+    )
+
+
+def attach_sessions(names: list[str], dry_run: bool) -> None:
+    if not names:
+        print("\nno session to attach to")
+        return
+
+    detached = detached_sessions(names)
+    if not detached:
+        print("\nevery session already has a terminal attached")
+        return
+
+    print(f"\nattaching {len(detached)} session(s) in new kitty tabs:")
+    for name in detached:
+        print(f"  zellij attach {name}")
+    if dry_run:
+        return
+
+    socket = os.environ.get("KITTY_LISTEN_ON", "")
+    if not socket:
+        # Restoring already succeeded; only the terminals are missing, and
+        # saying which ones beats failing the whole command over it.
+        print(
+            "  KITTY_LISTEN_ON is unset (not running under kitty, or "
+            "allow_remote_control is off) -- run those by hand",
+            file=sys.stderr,
+        )
+        return
+    for name in detached:
+        open_terminal(name, socket)
+
+
 def group_by_session(
     conversations: list[Conversation],
 ) -> dict[str, list[Conversation]]:
@@ -280,6 +348,13 @@ def main() -> int:
         # would make the preview promise sessions that are already up.
         help="print the restore plan without creating or changing anything",
     )
+    parser.add_argument(
+        "--no-attach",
+        dest="attach",
+        action="store_false",
+        help="leave the restored sessions detached instead of opening a "
+             "kitty tab for each",
+    )
     arguments = parser.parse_args()
 
     directory = registry_dir()
@@ -307,17 +382,30 @@ def main() -> int:
 
     active = active_session_ids()
     states = session_states()
-    for name, group in sorted(group_by_session(restorable).items()):
-        missing = [c for c in group if c.session_id not in active]
+    grouped = group_by_session(restorable)
+    # Only the sessions this run leaves standing can be attached to: `zellij
+    # attach` on a name with no server creates an empty session rather than
+    # reaching the conversations that name was recorded for.
+    attachable: list[str] = []
+    for name in sorted(grouped):
+        missing = [c for c in grouped[name] if c.session_id not in active]
         if not missing:
             print(f"{name}: every conversation is already open, left alone")
+            # "Already open" also covers background agents, which hold a
+            # conversation without a zellij session of their own -- so being
+            # left alone is no promise that the session exists.
+            if states.get(name, False):
+                attachable.append(name)
             continue
+        attachable.append(name)
         if states.get(name, False):
             top_up_session(name, missing, arguments.dry_run)
             continue
         restore_session(name, missing, name in states, arguments.dry_run)
 
-    if not arguments.dry_run:
+    if arguments.attach:
+        attach_sessions(attachable, arguments.dry_run)
+    elif not arguments.dry_run:
         print("\nattach with: zellij attach <name>")
     return 0
 
