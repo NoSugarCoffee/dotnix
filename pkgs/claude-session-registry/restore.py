@@ -28,6 +28,9 @@ ZELLIJ: Final[str] = "@zellij@"
 # a bare `claude` is not found and the pane dies the instant it opens.
 CLAUDE: Final[str] = "@claude@"
 KITTY: Final[str] = "@kitty@"
+# The transcript entry types that constitute something to resume; the rest are
+# headers and metadata a conversation writes before any message arrives.
+CONTENT_ENTRIES: Final[frozenset[str]] = frozenset({"user", "assistant"})
 RESUME_PROCESS: Final[re.Pattern[str]] = re.compile(
     r"claude --resume (\S+)"
 )
@@ -75,6 +78,91 @@ def load_conversations(directory: Path) -> list[Conversation]:
             )
         )
     return conversations
+
+
+def holds_no_conversation(transcript: Path) -> bool:
+    """Whether a transcript records nothing that could be resumed.
+
+    Claude Code writes headers -- a bridge-session line, titles, mode markers
+    -- before the first message lands, so the file existing is no evidence that
+    anything was ever said in it.
+    """
+    if not transcript.is_file():
+        return True
+    # Read bytes, not text: a conversation appending right now can cut its last
+    # line mid-character, and an iterating text handle decodes before any of
+    # this function's error handling can run.
+    with transcript.open("rb") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # Unreadable is not evidence of emptiness, and this decides
+                # whether to delete the record.
+                return False
+            if entry.get("type") in CONTENT_ENTRIES:
+                return False
+    return True
+
+
+def retirable_reason(
+    conversation: Conversation, active: set[str]
+) -> str | None:
+    """Why a record can never be restored from, if it cannot.
+
+    Only conversations no longer open are considered. One still open may yet
+    receive its first message, and no second SessionStart will come to write
+    the record again -- which also covers the transcript merely lagging, since
+    a record can be written before its transcript appears, or the transcript
+    may never appear at all.
+
+    Liveness of the *zellij session* is deliberately not consulted. A session
+    routinely outlives a conversation that was opened in it and never messaged,
+    so it holds such records back forever while saying nothing about them.
+    """
+    if conversation.session_id in active:
+        return None
+    if not conversation.transcript.is_file():
+        return f"no transcript was ever written at {conversation.transcript}"
+    if holds_no_conversation(conversation.transcript):
+        return "never messaged"
+    return None
+
+
+def retire_empty_records(
+    directory: Path,
+    conversations: list[Conversation],
+    active: set[str],
+    dry_run: bool,
+) -> list[Conversation]:
+    """Drop records that nothing could ever be restored from.
+
+    A terminal that dies takes its SessionEnd hook with it, so the records of
+    conversations that were never messaged accumulate with nothing to resume --
+    every later run then reports them as skipped, forever.
+    """
+    kept: list[Conversation] = []
+    retired: list[tuple[Conversation, str]] = []
+    for conversation in conversations:
+        reason = retirable_reason(conversation, active)
+        if reason:
+            retired.append((conversation, reason))
+        else:
+            kept.append(conversation)
+
+    if not retired:
+        return kept
+
+    print(f"retiring {len(retired)} record(s) with nothing to resume:")
+    for conversation, reason in retired:
+        print(f"  {conversation.tab_name}/{conversation.session_id}: {reason}")
+        if not dry_run:
+            (directory / f"{conversation.session_id}.json").unlink(
+                missing_ok=True
+            )
+    return kept
 
 
 def unrestorable_reason(conversation: Conversation) -> str | None:
@@ -379,6 +467,12 @@ def main() -> int:
         print(f"no recorded conversations in {directory}")
         return 0
 
+    active = active_session_ids()
+    states = session_states()
+    conversations = retire_empty_records(
+        directory, conversations, active, arguments.dry_run
+    )
+
     restorable: list[Conversation] = []
     for conversation in conversations:
         reason = unrestorable_reason(conversation)
@@ -390,8 +484,6 @@ def main() -> int:
             continue
         restorable.append(conversation)
 
-    active = active_session_ids()
-    states = session_states()
     grouped = group_by_session(restorable)
     # Only the sessions this run leaves standing can be attached to: `zellij
     # attach` on a name with no server creates an empty session rather than
