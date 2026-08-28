@@ -19,6 +19,10 @@ on:
     - cron: "17 4 * * 1"
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -29,6 +33,14 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
+      # Substituter backed by this repo's GitHub Actions cache. It uploads only
+      # paths cache.nixos.org does not already have -- here that is albert,
+      # qcoro and the vendor DMG fetches, i.e. everything `nix build` would
+      # otherwise recompile or re-download on every run.
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+        with:
+          # FlakeHub Cache is the paid tier; stay on the free GHA cache.
+          use-flakehub: false
       - id: user
         run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
       - run: nix flake check
@@ -42,6 +54,11 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+      # albert is ~5.5 min of the macOS build and is in no public cache, so
+      # this job is where the cache earns its keep.
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+        with:
+          use-flakehub: false
       - id: user
         run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
       - run: nix build .#homeConfigurations.${{ steps.user.outputs.name }}-aarch64-darwin.activationPackage
