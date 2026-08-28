@@ -139,6 +139,19 @@ input and layer extra home-manager modules on top from a private one:
 the private flake reuses this configuration verbatim and follows it by
 bumping one input — no long-lived fork to keep rebasing.
 
+Switch from the private flake, never from this one: `just switch` here
+builds the same modules *without* the overlay's, so it activates cleanly
+and silently removes everything the overlay manages. Since the dependency
+only points one way, this repo can't detect that on its own — drop an
+untracked `.overlay` file naming where to switch from, and `just switch`
+will refuse:
+
+```console
+$ echo ~/src/dotnix-work > .overlay
+$ just switch
+This checkout is an input to the overlay flake at /home/you/src/dotnix-work -- run 'just switch' there instead.
+```
+
 ## 📝 Notes
 
 - **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it.
