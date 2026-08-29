@@ -8,13 +8,7 @@ default:
     @just --list
 
 # Apply the Home Manager configuration for the current platform.
-# Refuses when an untracked `.overlay` file is present: this checkout is then
-# an input to a private overlay flake (see "Fork or extend" in the README),
-# and switching from here builds the same modules *without* that flake's,
-# silently removing everything it manages. The dependency is one-way, so this
-# marker is the only thing that can notice.
 switch:
-    @if [ -f .overlay ]; then echo "This checkout is an input to the overlay flake at $(cat .overlay) -- run 'just switch' there instead." >&2; exit 1; fi
     nix run .#home-manager -- switch --flake .#{{CONFIG}}
 
 # Show all Home Manager generations.
