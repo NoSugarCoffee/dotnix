@@ -43,6 +43,7 @@ in
         pkgs.claude-code
         pkgs.claude-session-registry
         pkgs.asdf-vm
+        pkgs.git
         pkgs.gh
         pkgs.glab
         pkgs.just
@@ -416,25 +417,14 @@ in
     "https://mirrors.ustc.edu.cn/nix-channels/store"
     "https://cache.nixos.org/"
   ];
-  # Installs git and writes ~/.config/git/config with portable settings.
-  # Machine-specific or work-internal config (URL rewrites, credential
-  # helpers, work identity) belongs in ~/.gitconfig-local, which is
-  # included unconditionally but silently skipped when absent.
-  programs.git = {
-    enable = true;
-    settings = {
-      user = {
-        name = "NoSugarCoffee";
-        email = "25247325+NoSugarCoffee@users.noreply.github.com";
-      };
-      core.editor = "vim";
-      http.postBuffer = 524288000;
-      init.defaultBranch = "main";
-      url."git@github.com:".insteadOf = "https://github.com/";
-    };
-    includes = [
-      { path = "${homeDirectory}/.gitconfig-local"; }
-    ];
-  };
+  # git is installed as a plain package, not via programs.git: that module's
+  # only other job is writing ~/.config/git/config, and git config is left
+  # unmanaged here. Identity has to be switched per checkout (personal vs
+  # employer), and git can only express that with `includeIf`, which takes a
+  # path -- so the split needs a second, machine-local file no matter what.
+  # Generating half a chain from the store while the other half stays
+  # hand-written was worse than owning none of it: the values never change,
+  # and a store symlink means a rebuild to correct an email address.
+  # ~/.gitconfig is hand-maintained instead.
   programs.home-manager.enable = true;
 }
