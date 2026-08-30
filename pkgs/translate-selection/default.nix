@@ -1,4 +1,11 @@
-{ lib, stdenv, writeShellApplication, translate-shell, python3, xclip }:
+{
+  lib,
+  stdenv,
+  writeShellApplication,
+  translate-shell,
+  python3,
+  xclip,
+}:
 
 let
   # zellij grabs the mouse, so kitty's own selection (shift+drag) and zellij's
@@ -10,7 +17,11 @@ let
 in
 writeShellApplication {
   name = "translate-selection";
-  runtimeInputs = [ translate-shell python3 ] ++ lib.optional stdenv.isLinux xclip;
+  runtimeInputs = [
+    translate-shell
+    python3
+  ]
+  ++ lib.optional stdenv.isLinux xclip;
   text = ''
     raw=$(cat)
     if [ -z "''${raw//[[:space:]]/}" ]; then

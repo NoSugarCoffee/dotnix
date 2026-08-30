@@ -38,7 +38,7 @@
       # from here directly or via `nix eval --raw .#username`.
       username = "liangliangdai";
 
-      lib = nixpkgs.lib;
+      inherit (nixpkgs) lib;
       systems = [
         "x86_64-linux"
         "aarch64-darwin"
@@ -55,8 +55,10 @@
         translate-selection = final.callPackage ./pkgs/translate-selection { };
         # from unstable: stable's albert (33.x) predates the source layout
         # pkgs/albert-darwin's patches target (35.x)
-        albert-darwin = (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin { };
-        macshot = (mkPkgsUnstable final.stdenv.hostPlatform.system).macshot;
+        albert-darwin =
+          (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin
+            { };
+        inherit (mkPkgsUnstable final.stdenv.hostPlatform.system) macshot;
         # nixpkgs' undmg leaves AppleDouble sidecars (._Foo) inside the app
         # bundle. Those files are not in the Developer ID seal, so Gatekeeper
         # rejects the bundle with "damaged." Deleting them restores the seal;
@@ -83,16 +85,17 @@
       mkHomeConfiguration =
         system:
         let
-          isLinux = lib.elem system [ "x86_64-linux" "aarch64-linux" ];
+          isLinux = lib.elem system [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
           isDarwin = lib.hasSuffix "darwin" system;
           homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
-          claudeDesktopPackage = if
-            (
-              isLinux
-              && builtins.hasAttr system claude-desktop.packages
-            )
-          then claude-desktop.packages.${system}.claude-desktop
-          else null;
+          claudeDesktopPackage =
+            if (isLinux && builtins.hasAttr system claude-desktop.packages) then
+              claude-desktop.packages.${system}.claude-desktop
+            else
+              null;
         in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
