@@ -1,0 +1,22 @@
+.github/workflows/code-quality.lock.yml
+  ai_agent 1,256,488-490,496,1696
+.github/workflows/code-quality.md
+  s_519609c9d02108::t_b5ee186ca4ff4b 63-68
+  s_519609c9d02108::t_a547f1368606d8 54-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "46ca1e77060e0231caf874662bf99022963039ee",
+  "prompts": {},
+  "sessions": {
+    "s_519609c9d02108": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3286a116-bcda-4df2-9502-293c7a8c49da",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
