@@ -51,7 +51,8 @@ safe-outputs:
   create-issue:
     title-prefix: "[quality] "
     labels: [code-quality, automation]
-    max: 3
+    # Two checks, at most one issue each.
+    max: 2
 ---
 
 # Weekly Repository Review
@@ -59,10 +60,12 @@ safe-outputs:
 This repository is a Home Manager flake that configures macOS (aarch64) and
 Linux workstations.
 
-`statix`, `deadnix`, `nixfmt`, `ruff` and `shellcheck` all run in CI on every
-pull request (`.github/workflows/ci.yml`, the `lint` job) and block the merge.
-**Do not re-report anything a linter would catch** — if it were there, the
-build would already be red. Your job is the two checks no linter can express.
+`statix`, `deadnix`, `nixfmt`, `ruff` and `shellcheck` run in CI and block the
+merge (`.github/workflows/ci.yml`, the `lint` job) on every pull request that
+touches Nix, Python or shell code — `ci.yml` skips documentation-only PRs,
+which cannot introduce those findings anyway. **Do not re-report anything a
+linter would catch**; if it were there, the build would already be red. Your
+job is the two checks no linter can express.
 
 ## 1. README drift
 
