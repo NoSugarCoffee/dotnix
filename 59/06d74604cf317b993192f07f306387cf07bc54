@@ -1,0 +1,32 @@
+.github/workflows/code-quality.md
+  s_519609c9d02108::t_ddcdd5d57fe976 5,13
+  s_519609c9d02108::t_09c9aecd3d9444 52-53
+  s_519609c9d02108::t_e1a355f0104be6 19-22,35-37,39-51,54,57-60,76,81-82,84-90,92-93,95-98,100,102-104,106-108,110-114,116-118,128-129,136
+  s_519609c9d02108::t_7b5b0d4b4b109c 29-34,38
+  s_519609c9d02108::t_1288f829eb1c4f 55-56
+  s_519609c9d02108::t_3da86a01b5073f 61
+  s_519609c9d02108::t_566a0857cc3378 1-4,6-12,14-18,23-28,62-75,77-80,83,91,94,99,101,105,109,115,119-127,130-135,137-142
+.gitattributes
+  s_519609c9d02108::t_e544c5578f3a79 1
+.github/workflows/code-quality.lock.yml
+  ai_agent 1-1653
+.github/aw/actions-lock.json
+  s_519609c9d02108::t_e544c5578f3a79 1-2,8-19
+  s_519609c9d02108::t_99e861b0c3e0d6 3-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "5906d74604cf317b993192f07f306387cf07bc54",
+  "prompts": {},
+  "sessions": {
+    "s_519609c9d02108": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3286a116-bcda-4df2-9502-293c7a8c49da",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
