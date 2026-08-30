@@ -12,7 +12,30 @@ permissions:
   contents: read
   issues: read
 
-engine: copilot
+# OpenRouter has no first-class engine; it is reached by pointing the claude
+# engine's base URL at it. gh-aw sees a custom endpoint and stops rewriting the
+# model slug, so the provider-prefixed name passes through intact.
+engine:
+  id: claude
+  env:
+    ANTHROPIC_BASE_URL: "https://openrouter.ai/api/v1"
+    ANTHROPIC_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+model: anthropic/claude-sonnet-5
+
+# The agent runs behind the AWF egress firewall, so the provider host has to be
+# allowlisted explicitly.
+network:
+  allowed:
+    - defaults
+    - openrouter.ai
+
+# Sonnet 5's list price. The AWF proxy rejects models missing from its built-in
+# pricing table with HTTP 400, and a provider-prefixed slug is not in it.
+models:
+  default-ai-credits-pricing:
+    input: 3
+    output: 15
 
 timeout-minutes: 20
 
