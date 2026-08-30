@@ -24,6 +24,47 @@ permissions:
   id-token: write
 
 jobs:
+  # Platform-independent, so it runs once rather than per-target. Every linter
+  # runs even after an earlier one fails, so a red build reports everything
+  # wrong at once instead of one thing per push.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - uses: DeterminateSystems/magic-nix-cache-action@v14
+        with:
+          use-flakehub: false
+      - name: Lint
+        run: |
+          nix shell --inputs-from . \
+            nixpkgs#statix nixpkgs#deadnix nixpkgs#nixfmt \
+            nixpkgs#ruff nixpkgs#shellcheck \
+            --command bash -c '
+              status=0
+              run() {
+                title=$1
+                shift
+                echo "::group::$title"
+                # Every linter here exits non-zero on findings, and this runs
+                # under `bash -e`; the || keeps one failure from aborting the
+                # rest.
+                "$@" || status=1
+                echo "::endgroup::"
+              }
+
+              run statix     statix check .
+              run deadnix    deadnix --fail .
+              run nixfmt     nixfmt --check $(git ls-files "*.nix")
+              run ruff       ruff check pkgs/claude-session-registry
+              run shellcheck shellcheck scripts/bootstrap-macos.sh
+
+              exit $status
+            '
+
   build-linux:
     runs-on: ubuntu-latest
     steps:

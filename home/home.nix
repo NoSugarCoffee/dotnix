@@ -1,4 +1,11 @@
-{ claudeDesktopPackage, username, homeDirectory, lib, pkgs, ... }:
+{
+  claudeDesktopPackage,
+  username,
+  homeDirectory,
+  lib,
+  pkgs,
+  ...
+}:
 let
   proxyUrl = "http://127.0.0.1:7890";
   noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
@@ -59,7 +66,11 @@ in
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
-      ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.copyq pkgs.clash-verge-rev pkgs.obs-studio ]
+      ++ lib.optionals pkgs.stdenv.isLinux [
+        pkgs.copyq
+        pkgs.clash-verge-rev
+        pkgs.obs-studio
+      ]
       # claude-desktop's flake input is Linux-only; pkgs/claude-desktop-darwin
       # repacks the official DMG for macOS.
       # pulsar is Linux-only in nixpkgs; pkgs/pulsar-darwin repacks the
@@ -67,7 +78,18 @@ in
       # obs-studio is Linux-only in nixpkgs; pkgs/obs-studio-darwin repacks
       # the official DMG (its virtual camera extension can't install from a
       # store path -- see the package for why).
-      ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.google-chrome pkgs.clash-verge-rev-darwin pkgs.maccy pkgs.claude-desktop-darwin pkgs.macshot pkgs.pulsar-darwin pkgs.albert-darwin pkgs.scroll-reverser pkgs.ping-island-darwin pkgs.obs-studio-darwin ];
+      ++ lib.optionals pkgs.stdenv.isDarwin [
+        pkgs.google-chrome
+        pkgs.clash-verge-rev-darwin
+        pkgs.maccy
+        pkgs.claude-desktop-darwin
+        pkgs.macshot
+        pkgs.pulsar-darwin
+        pkgs.albert-darwin
+        pkgs.scroll-reverser
+        pkgs.ping-island-darwin
+        pkgs.obs-studio-darwin
+      ];
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -113,43 +135,45 @@ in
       $DRY_RUN_CMD chmod 644 "$claudeSettings"
     fi
   '';
-  # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
-  # Aqua session comes up -- the earliest legitimate hook for a GUI app.
-  launchd.agents.albert = {
-    enable = pkgs.stdenv.isDarwin;
-    config = {
-      ProgramArguments = [
-        "${pkgs.albert-darwin}/Applications/Albert.app/Contents/MacOS/Albert"
-      ];
-      RunAtLoad = true;
-      KeepAlive = false;
-      ProcessType = "Interactive";
+  launchd.agents = {
+    # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
+    # Aqua session comes up -- the earliest legitimate hook for a GUI app.
+    albert = {
+      enable = pkgs.stdenv.isDarwin;
+      config = {
+        ProgramArguments = [
+          "${pkgs.albert-darwin}/Applications/Albert.app/Contents/MacOS/Albert"
+        ];
+        RunAtLoad = true;
+        KeepAlive = false;
+        ProcessType = "Interactive";
+      };
     };
-  };
-  # Scroll Reverser only reverses scroll direction while its process is
-  # running, so it has to come up with the login session.
-  launchd.agents.scroll-reverser = {
-    enable = pkgs.stdenv.isDarwin;
-    config = {
-      ProgramArguments = [
-        "${pkgs.scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
-      ];
-      RunAtLoad = true;
-      KeepAlive = false;
-      ProcessType = "Interactive";
+    # Scroll Reverser only reverses scroll direction while its process is
+    # running, so it has to come up with the login session.
+    scroll-reverser = {
+      enable = pkgs.stdenv.isDarwin;
+      config = {
+        ProgramArguments = [
+          "${pkgs.scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
+        ];
+        RunAtLoad = true;
+        KeepAlive = false;
+        ProcessType = "Interactive";
+      };
     };
-  };
-  # Ping Island has to be running to catch Claude Code session events, so it
-  # comes up with the login session like the other menu-bar-only agents.
-  launchd.agents.ping-island = {
-    enable = pkgs.stdenv.isDarwin;
-    config = {
-      ProgramArguments = [
-        "${pkgs.ping-island-darwin}/Applications/Ping Island.app/Contents/MacOS/Ping Island"
-      ];
-      RunAtLoad = true;
-      KeepAlive = false;
-      ProcessType = "Interactive";
+    # Ping Island has to be running to catch Claude Code session events, so it
+    # comes up with the login session like the other menu-bar-only agents.
+    ping-island = {
+      enable = pkgs.stdenv.isDarwin;
+      config = {
+        ProgramArguments = [
+          "${pkgs.ping-island-darwin}/Applications/Ping Island.app/Contents/MacOS/Ping Island"
+        ];
+        RunAtLoad = true;
+        KeepAlive = false;
+        ProcessType = "Interactive";
+      };
     };
   };
   # Keeps Go/Node at whatever asdf considers "latest"; Java is pinned to
@@ -309,122 +333,128 @@ in
   # generated ~/.zshrc do that sourcing. A pre-existing hand-written
   # ~/.zshrc must be moved aside once (home-manager refuses to overwrite);
   # fold its content into programs.zsh.initContent if it should be kept.
-  programs.zsh = {
-    enable = true;
-    syntaxHighlighting.enable = true;
-    autosuggestion.enable = true;
-    # Option+Left/Right jump by word. kitty's macos_option_as_alt makes
-    # Option send Alt, which arrives as CSI 1;3 arrow sequences; zsh only
-    # binds Alt-b/Alt-f out of the box. zellij is configured to pass
-    # Alt+Left/Right through (see zellij/config.kdl).
-    initContent = ''
-      bindkey "^[[1;3D" backward-word
-      bindkey "^[[1;3C" forward-word
-      # mvn (and other JVM launchers) resolve Java through JAVA_HOME -- on
-      # macOS falling back to /usr/libexec/java_home, which knows nothing
-      # about asdf installs. asdf-java's hook keeps JAVA_HOME pointed at the
-      # active asdf java on every prompt.
-      [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
-    '';
-    # Claude Code persists every conversation under ~/.claude/projects; these
-    # are just short spellings of the two ways back into one. Not `cc`, which
-    # would shadow the C compiler.
-    shellAliases = {
-      clc = "claude --continue";
-      clr = "claude --resume";
+  programs = {
+    zsh = {
+      enable = true;
+      syntaxHighlighting.enable = true;
+      autosuggestion.enable = true;
+      # Option+Left/Right jump by word. kitty's macos_option_as_alt makes
+      # Option send Alt, which arrives as CSI 1;3 arrow sequences; zsh only
+      # binds Alt-b/Alt-f out of the box. zellij is configured to pass
+      # Alt+Left/Right through (see zellij/config.kdl).
+      initContent = ''
+        bindkey "^[[1;3D" backward-word
+        bindkey "^[[1;3C" forward-word
+        # mvn (and other JVM launchers) resolve Java through JAVA_HOME -- on
+        # macOS falling back to /usr/libexec/java_home, which knows nothing
+        # about asdf installs. asdf-java's hook keeps JAVA_HOME pointed at the
+        # active asdf java on every prompt.
+        [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
+      '';
+      # Claude Code persists every conversation under ~/.claude/projects; these
+      # are just short spellings of the two ways back into one. Not `cc`, which
+      # would shadow the C compiler.
+      shellAliases = {
+        clc = "claude --continue";
+        clr = "claude --resume";
+      };
     };
+    # Smarter cd: tracks visited directories, jump with `z <fragment>`.
+    # enableZshIntegration defaults to true, wiring the init hook into the
+    # managed ~/.zshrc.
+    zoxide.enable = true;
+    # Installs zellij; the full config (a dump of the 0.43.1 defaults, kept
+    # in zellij/config.kdl for easy keybinding edits) is written directly as
+    # KDL rather than through programs.zellij.settings, whose nix-attrs form
+    # can't express the keybinds tree well. The config itself is written by
+    # the xdg.configFile entry just below this block. On macOS the default
+    # OSC52 clipboard escape doesn't reach the system clipboard from every
+    # terminal, so selections are piped to pbcopy explicitly; Linux keeps
+    # the OSC52 default, which its terminals handle.
+    zellij.enable = true;
+    # kitty replaces Terminal.app as the terminal emulator: Terminal.app
+    # translates Option+arrows into Esc-prefixed sequences (e.g. Esc f) that
+    # collide with zellij's Alt bindings, and its settings live in a plist
+    # nix can't reliably own. macos_option_as_alt makes Option send Alt so
+    # the zellij keybindings work; it is ignored on Linux.
+    kitty = {
+      enable = true;
+      themeFile = "Catppuccin-Mocha";
+      settings = {
+        macos_option_as_alt = "yes";
+        # zellij is deliberately not kitty's `shell`: it daemonizes its server
+        # with ppid 1, so a pane's process is a child of that server rather than
+        # of kitty.app, and macOS attributes permissions (Screen Recording) to
+        # the server -- which, being a bare nix-store binary, can never hold a
+        # grant. Start it per window with `zellij` / `zellij attach`;
+        # claude-session-registry attaches explicitly and does not rely on this.
+        # kitty runs one process for every window it owns, so ping-island's
+        # NSRunningApplication-level activation can only raise "some" kitty
+        # window when jumping to a session, not necessarily the right one.
+        # Remote control on a fixed socket lets it target the exact window by
+        # KITTY_WINDOW_ID instead (see KittyController in the ping-island fork).
+        # socket-only restricts control to this socket, not all local/network
+        # access.
+        allow_remote_control = "socket-only";
+        listen_on = "unix:/tmp/kitty-remote-control";
+      };
+      # Translate the selected text in an overlay window. Two ways to select,
+      # because zellij grabs the mouse: shift+drag makes the selection kitty's
+      # own (which is what @selection reads), while a plain drag is zellij's and
+      # lands in the system clipboard via copy_on_select -- translate-selection
+      # falls back to reading that. Chinese and English, direction auto-detected.
+      # Linux can't use cmd, and ctrl+shift+t is kitty's own new_tab there.
+      keybindings = {
+        "${if pkgs.stdenv.isDarwin then "cmd+shift+t" else "ctrl+shift+alt+t"}" =
+          "launch --type=overlay --stdin-source=@selection ${pkgs.translate-selection}/bin/translate-selection";
+      };
+    };
+    # git is installed as a plain package, not via programs.git: that module's
+    # only other job is writing ~/.config/git/config, and git config is left
+    # unmanaged here. Identity has to be switched per checkout (personal vs
+    # employer), and git can only express that with `includeIf`, which takes a
+    # path -- so the split needs a second, machine-local file no matter what.
+    # Generating half a chain from the store while the other half stays
+    # hand-written was worse than owning none of it: the values never change,
+    # and a store symlink means a rebuild to correct an email address.
+    # ~/.gitconfig is hand-maintained instead.
+    home-manager.enable = true;
   };
-  # Smarter cd: tracks visited directories, jump with `z <fragment>`.
-  # enableZshIntegration defaults to true, wiring the init hook into the
-  # managed ~/.zshrc.
-  programs.zoxide.enable = true;
-  # Installs zellij; the full config (a dump of the 0.43.1 defaults, kept
-  # in zellij/config.kdl for easy keybinding edits) is written directly as
-  # KDL rather than through programs.zellij.settings, whose nix-attrs form
-  # can't express the keybinds tree well. On macOS the default OSC52
-  # clipboard escape doesn't reach the system clipboard from every
-  # terminal, so selections are piped to pbcopy explicitly; Linux keeps
-  # the OSC52 default, which its terminals handle.
-  programs.zellij.enable = true;
+  # zellij's config, written as KDL -- see programs.zellij above.
   xdg.configFile."zellij/config.kdl".text =
     builtins.readFile ./zellij/config.kdl
     + lib.optionalString pkgs.stdenv.isDarwin ''
       copy_command "pbcopy"
     '';
-  # kitty replaces Terminal.app as the terminal emulator: Terminal.app
-  # translates Option+arrows into Esc-prefixed sequences (e.g. Esc f) that
-  # collide with zellij's Alt bindings, and its settings live in a plist
-  # nix can't reliably own. macos_option_as_alt makes Option send Alt so
-  # the zellij keybindings work; it is ignored on Linux.
-  programs.kitty = {
-    enable = true;
-    themeFile = "Catppuccin-Mocha";
-    settings = {
-      macos_option_as_alt = "yes";
-      # zellij is deliberately not kitty's `shell`: it daemonizes its server
-      # with ppid 1, so a pane's process is a child of that server rather than
-      # of kitty.app, and macOS attributes permissions (Screen Recording) to
-      # the server -- which, being a bare nix-store binary, can never hold a
-      # grant. Start it per window with `zellij` / `zellij attach`;
-      # claude-session-registry attaches explicitly and does not rely on this.
-      # kitty runs one process for every window it owns, so ping-island's
-      # NSRunningApplication-level activation can only raise "some" kitty
-      # window when jumping to a session, not necessarily the right one.
-      # Remote control on a fixed socket lets it target the exact window by
-      # KITTY_WINDOW_ID instead (see KittyController in the ping-island fork).
-      # socket-only restricts control to this socket, not all local/network
-      # access.
-      allow_remote_control = "socket-only";
-      listen_on = "unix:/tmp/kitty-remote-control";
+  nix = {
+    # Bounds generation history so the store can't fill the disk again (a
+    # full root disk once broke everything on the Linux box): a weekly timer
+    # (systemd on Linux, launchd on macOS) deletes generations older than two
+    # weeks and garbage-collects what they referenced. Time-bounded because
+    # Nix has no "keep at most N generations" -- rollback still works within
+    # the 14-day window.
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 14d";
     };
-    # Translate the selected text in an overlay window. Two ways to select,
-    # because zellij grabs the mouse: shift+drag makes the selection kitty's
-    # own (which is what @selection reads), while a plain drag is zellij's and
-    # lands in the system clipboard via copy_on_select -- translate-selection
-    # falls back to reading that. Chinese and English, direction auto-detected.
-    # Linux can't use cmd, and ctrl+shift+t is kitty's own new_tab there.
-    keybindings = {
-      "${if pkgs.stdenv.isDarwin then "cmd+shift+t" else "ctrl+shift+alt+t"}" =
-        "launch --type=overlay --stdin-source=@selection ${pkgs.translate-selection}/bin/translate-selection";
-    };
+    # Required by home-manager to generate nix.conf; it only names the nix
+    # version used for config validation, nothing is installed.
+    package = pkgs.nix;
+    # Prefer the China mirrors over cache.nixos.org: the system-level
+    # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
+    # the slow upstream is always tried first. This user-level list overrides
+    # the order; nix falls back per-path to later entries automatically.
+    # HARD PREREQUISITE: the daemon silently ignores user-level substituters
+    # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
+    # macOS; on other machines add it manually to the system nix.conf
+    # (e.g. `extra-trusted-users = ${username}`) or this list is a no-op
+    # and downloads just fall through to the system substituters.
+    settings.substituters = [
+      "https://mirror.sjtu.edu.cn/nix-channels/store"
+      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+      "https://mirrors.ustc.edu.cn/nix-channels/store"
+      "https://cache.nixos.org/"
+    ];
   };
-  # Bounds generation history so the store can't fill the disk again (a
-  # full root disk once broke everything on the Linux box): a weekly timer
-  # (systemd on Linux, launchd on macOS) deletes generations older than two
-  # weeks and garbage-collects what they referenced. Time-bounded because
-  # Nix has no "keep at most N generations" -- rollback still works within
-  # the 14-day window.
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 14d";
-  };
-  # Prefer the China mirrors over cache.nixos.org: the system-level
-  # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
-  # the slow upstream is always tried first. This user-level list overrides
-  # the order; nix falls back per-path to later entries automatically.
-  # HARD PREREQUISITE: the daemon silently ignores user-level substituters
-  # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
-  # macOS; on other machines add it manually to the system nix.conf
-  # (e.g. `extra-trusted-users = ${username}`) or this list is a no-op
-  # and downloads just fall through to the system substituters.
-  # nix.package is required by home-manager to generate nix.conf; it only
-  # names the nix version used for config validation, nothing is installed.
-  nix.package = pkgs.nix;
-  nix.settings.substituters = [
-    "https://mirror.sjtu.edu.cn/nix-channels/store"
-    "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
-    "https://mirrors.ustc.edu.cn/nix-channels/store"
-    "https://cache.nixos.org/"
-  ];
-  # git is installed as a plain package, not via programs.git: that module's
-  # only other job is writing ~/.config/git/config, and git config is left
-  # unmanaged here. Identity has to be switched per checkout (personal vs
-  # employer), and git can only express that with `includeIf`, which takes a
-  # path -- so the split needs a second, machine-local file no matter what.
-  # Generating half a chain from the store while the other half stays
-  # hand-written was worse than owning none of it: the values never change,
-  # and a store symlink means a rebuild to correct an email address.
-  # ~/.gitconfig is hand-maintained instead.
-  programs.home-manager.enable = true;
 }
