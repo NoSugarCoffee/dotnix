@@ -384,6 +384,7 @@ in
       enable = true;
       themeFile = "Catppuccin-Mocha";
       settings = {
+        font_size = 14;
         macos_option_as_alt = "yes";
         # zellij is deliberately not kitty's `shell`: it daemonizes its server
         # with ppid 1, so a pane's process is a child of that server rather than
