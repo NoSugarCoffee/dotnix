@@ -1,0 +1,21 @@
+README.md
+  s_40159018ae4d29::t_2e0ef22808a482 124
+home/home.nix
+  s_40159018ae4d29::t_ede924d79ca589 348-366
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "a1bacfa7af6568ec2e1bb77345bece89430d4d2a",
+  "prompts": {},
+  "sessions": {
+    "s_40159018ae4d29": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd3d7d0b-6bb0-4af1-a2ef-f47e156b9914",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
