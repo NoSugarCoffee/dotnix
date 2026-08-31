@@ -104,8 +104,13 @@ inputs whose locked `rev` is **not** that commit:
 
 ```bash
 gh api "repos/<owner>/<repo>/commits?sha=<ref>&per_page=1" \
-  --jq '.[0] | .sha[0:7] + "  " + .commit.committer.date[0:10]'
+  --jq '.[0] | .sha + "  " + .commit.committer.date[0:10]'
 ```
+
+`flake.lock` stores full 40-character revs, so compare against the full `.sha`.
+Abbreviating either side turns every input into a mismatch and recreates the
+false positives this check exists to avoid. Abbreviate only in the issue text,
+after the comparison is done.
 
 Report how far behind each one is — commits, or dates if that is easier to
 establish — and name the newest available rev. An input already at HEAD is not
