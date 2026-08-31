@@ -55,6 +55,7 @@ in
         pkgs.glab
         pkgs.just
         pkgs.nix-zsh-completions
+        pkgs.translate-selection
         pkgs.python3
         pkgs.python3Packages.ipython
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
