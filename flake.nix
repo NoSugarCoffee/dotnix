@@ -58,7 +58,9 @@
         albert-darwin =
           (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin
             { };
-        inherit (mkPkgsUnstable final.stdenv.hostPlatform.system) macshot;
+        # code-cursor from unstable: the stable branch pins 3.5.17, dozens of
+        # releases behind upstream, and Cursor nags to update on every launch.
+        inherit (mkPkgsUnstable final.stdenv.hostPlatform.system) macshot code-cursor;
         # nixpkgs' undmg leaves AppleDouble sidecars (._Foo) inside the app
         # bundle. Those files are not in the Developer ID seal, so Gatekeeper
         # rejects the bundle with "damaged." Deleting them restores the seal;
