@@ -42,9 +42,17 @@ models:
 
 timeout-minutes: 20
 
-# Both checks below read files straight out of the checkout, so this needs no
-# setup steps and no Nix -- unlike the linters, which moved to ci.yml.
+# No setup steps and no Nix -- unlike the linters, which moved to ci.yml. The
+# README check reads the checkout; the flake check also needs to ask GitHub for
+# each input's newest commit, which gh-proxy mode provides as a pre-authenticated
+# `gh` in bash rather than a separate MCP server.
 tools:
+  github:
+    mode: gh-proxy
+    # Narrowed from the default set: the only GitHub call either check makes is
+    # reading commits, so pull_requests and issues access would be unused
+    # permissions.
+    toolsets: [repos]
   bash: ["*"]
 
 safe-outputs:
@@ -82,15 +90,42 @@ Note that some entries are deliberately annotated rather than bare names —
 local packages describe what they do, and some carry a fork note. A wording
 difference is not drift; a missing or wrongly-tagged package is.
 
-## 2. Flake input staleness
+## 2. Flake inputs behind upstream
 
-Read the `lastModified` timestamps in `flake.lock` and report inputs not
-updated in more than 90 days, naming each input and its age in days.
+**Age is not staleness.** Several inputs here are pinned to repositories that
+are finished — `numtide/flake-utils` and `nix-systems/default` have not had a
+commit in years, so a pin that looks ancient is simply current. Reporting age
+alone produces false positives; the first version of this check did exactly
+that and filed an issue about three inputs that were all already at HEAD.
 
-Distinguish the root inputs this repo controls from transitive nodes pulled in
-by another flake — the two need different fixes, and saying which is which is
-most of the value. Do not propose a specific version bump; the point is to
-surface age, not to plan the upgrade.
+So compare, don't date. For each input in `flake.lock`, take its `owner`,
+`repo` and `ref`, ask GitHub for the newest commit on that ref, and report only
+inputs whose locked `rev` is **not** that commit:
+
+```bash
+gh api "repos/<owner>/<repo>/commits?sha=<ref>&per_page=1" \
+  --jq '.[0] | .sha + "  " + .commit.committer.date[0:10]'
+```
+
+`flake.lock` stores full 40-character revs, so compare against the full `.sha`.
+Abbreviating either side turns every input into a mismatch and recreates the
+false positives this check exists to avoid. Abbreviate only in the issue text,
+after the comparison is done.
+
+Report how far behind each one is — commits, or dates if that is easier to
+establish — and name the newest available rev. An input already at HEAD is not
+a finding no matter how old the commit is.
+
+Two things to get right:
+
+- **Separate root inputs from transitive ones.** Root inputs are yours to bump.
+  A transitive node belongs to whichever flake pulled it in and usually cannot
+  be moved without updating that flake.
+- **Read `flake.nix` before reporting a transitive nixpkgs.** The
+  `claude-desktop` input deliberately does not follow this repo's nixpkgs,
+  because its build recipe still calls `nodePackages.asar`, which nixpkgs
+  removed on 2026-03-03. That node being old is what keeps the Linux build
+  working. Do not report a pin whose comment explains why it is pinned.
 
 ## What to Create
 
