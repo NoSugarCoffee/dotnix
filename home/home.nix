@@ -78,6 +78,8 @@ in
       # obs-studio is Linux-only in nixpkgs; pkgs/obs-studio-darwin repacks
       # the official DMG (its virtual camera extension can't install from a
       # store path -- see the package for why).
+      # jetbrains.air doesn't exist in nixpkgs at all; pkgs/jetbrains-air-darwin
+      # repacks the official preview DMG.
       ++ lib.optionals pkgs.stdenv.isDarwin [
         pkgs.google-chrome
         pkgs.clash-verge-rev-darwin
@@ -89,6 +91,7 @@ in
         pkgs.scroll-reverser
         pkgs.ping-island-darwin
         pkgs.obs-studio-darwin
+        pkgs.jetbrains-air-darwin
       ];
     file.".codex/config.toml" = {
       force = true;

@@ -51,6 +51,7 @@
         pulsar-darwin = final.callPackage ./pkgs/pulsar-darwin { };
         ping-island-darwin = final.callPackage ./pkgs/ping-island-darwin { };
         obs-studio-darwin = final.callPackage ./pkgs/obs-studio-darwin { };
+        jetbrains-air-darwin = final.callPackage ./pkgs/jetbrains-air-darwin { };
         claude-session-registry = final.callPackage ./pkgs/claude-session-registry { };
         translate-selection = final.callPackage ./pkgs/translate-selection { };
         # from unstable: stable's albert (33.x) predates the source layout
