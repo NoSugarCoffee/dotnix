@@ -62,6 +62,7 @@ claude-session-registry (local: records live Claude Code conversations, replays 
 [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions)
 
 **Editors & IDEs** &nbsp; [intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
+[jetbrains-air](https://air.dev/) `macOS` &middot;
 [cursor](https://cursor.com/) &middot;
 [pulsar](https://pulsar-edit.dev/) `macOS`
 
