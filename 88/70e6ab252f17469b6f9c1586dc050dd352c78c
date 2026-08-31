@@ -1,0 +1,26 @@
+pkgs/jetbrains-air-darwin/default.nix
+  s_372a8e47c98d8c::t_258680d6f09e73 1-47
+flake.nix
+  s_372a8e47c98d8c::t_4c2d735bc913b9 54
+home/home.nix
+  s_372a8e47c98d8c::t_3333e664fdb1e2 81-82
+  s_372a8e47c98d8c::t_53d0cae8fb7e6f 94
+README.md
+  s_372a8e47c98d8c::t_f0e7a4e7b0f4f3 65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "8870e6ab252f17469b6f9c1586dc050dd352c78c",
+  "prompts": {},
+  "sessions": {
+    "s_372a8e47c98d8c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "987b81ce-7cbf-4fa5-a354-4c04379e4015",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
