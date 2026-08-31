@@ -345,15 +345,25 @@ in
       # Option send Alt, which arrives as CSI 1;3 arrow sequences; zsh only
       # binds Alt-b/Alt-f out of the box. zellij is configured to pass
       # Alt+Left/Right through (see zellij/config.kdl).
-      initContent = ''
-        bindkey "^[[1;3D" backward-word
-        bindkey "^[[1;3C" forward-word
-        # mvn (and other JVM launchers) resolve Java through JAVA_HOME -- on
-        # macOS falling back to /usr/libexec/java_home, which knows nothing
-        # about asdf installs. asdf-java's hook keeps JAVA_HOME pointed at the
-        # active asdf java on every prompt.
-        [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
-      '';
+      initContent = lib.mkMerge [
+        ''
+          bindkey "^[[1;3D" backward-word
+          bindkey "^[[1;3C" forward-word
+          # mvn (and other JVM launchers) resolve Java through JAVA_HOME -- on
+          # macOS falling back to /usr/libexec/java_home, which knows nothing
+          # about asdf installs. asdf-java's hook keeps JAVA_HOME pointed at the
+          # active asdf java on every prompt.
+          [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
+        ''
+        # Escape hatch for shell config that must not reach a public repo
+        # (employer hostnames, internal registries, credentials) or that is
+        # machine-specific. Sourced at mkOrder 1500 -- after everything this
+        # module declares -- so a local definition wins, and guarded so a
+        # machine without the file still gets a working shell.
+        (lib.mkOrder 1500 ''
+          [ -f "$HOME/.zshrc-local" ] && . "$HOME/.zshrc-local"
+        '')
+      ];
       # Claude Code persists every conversation under ~/.claude/projects; these
       # are just short spellings of the two ways back into one. Not `cc`, which
       # would shadow the C compiler.
