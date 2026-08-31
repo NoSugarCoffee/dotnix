@@ -121,7 +121,7 @@ the whole rebranding step.
 
 ## 📝 Notes
 
-- **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it.
+- **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it. Since the generated `~/.zshrc` is a store symlink and can't be edited, an untracked `~/.zshrc-local` is sourced last if it exists: put machine-specific or non-public shell config there rather than in this repo.
 - **git config is deliberately unmanaged.** git is installed, but `~/.gitconfig` is hand-maintained. Identity has to switch per checkout (personal vs employer), and git expresses that only through `includeIf`, which takes a *path* — so a second machine-local file is unavoidable. Generating half the chain from the store while the other half stayed hand-written was worse than owning none of it, not least because a store symlink means a rebuild to fix a typo in an email address.
 - **asdf owns Go / Node / Java / Maven**, tracking latest on every switch (best-effort — network hiccups warn, don't abort). Java is pinned to a specific Temurin build; asdf-java uses vendor-prefixed versions rather than plain semver. Per-project pinning via `.tool-versions`.
 - **Python is from nixpkgs, not asdf**: asdf compiles CPython from source (needs Xcode CLT on macOS) and picks the experimental free-threaded variant as "latest".
