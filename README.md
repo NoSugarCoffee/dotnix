@@ -73,7 +73,8 @@ claude-session-registry (local: records live Claude Code conversations, replays 
 **Runtimes** &nbsp; [asdf](https://asdf-vm.com/) &middot;
 go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
 [python3](https://www.python.org/) &middot;
-[ipython](https://ipython.org/)
+[ipython](https://ipython.org/) &middot;
+[pip](https://pip.pypa.io/)
 
 **Browsers** &nbsp; [google-chrome](https://www.google.com/chrome/) `macOS`
 
