@@ -49,6 +49,7 @@ in
         pkgs.codex
         pkgs.claude-code
         pkgs.claude-session-registry
+        pkgs.apm
         pkgs.asdf-vm
         pkgs.git
         pkgs.gh
