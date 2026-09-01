@@ -56,8 +56,10 @@ in
         pkgs.just
         pkgs.nix-zsh-completions
         pkgs.translate-selection
-        pkgs.python3
-        pkgs.python3Packages.ipython
+        (pkgs.python3.withPackages (ps: [
+          ps.pip
+          ps.ipython
+        ]))
         # IntelliJ IDEA Ultimate; unfree, activation needs your JetBrains license.
         pkgs.jetbrains.idea
         # Provides the `cursor` CLI that ~/.codex/config.toml's file_opener uses.
