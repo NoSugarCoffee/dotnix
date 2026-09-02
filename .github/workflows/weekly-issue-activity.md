@@ -1,0 +1,183 @@
+---
+description: Creates weekly summary of issue activity including trends, charts, and insights every Monday
+
+timeout-minutes: 20
+
+on:
+  schedule: weekly on monday
+  workflow_dispatch:
+
+permissions:
+  issues: read
+
+# OpenRouter has no first-class engine; it is reached by pointing an engine's
+# base URL at it. codex rather than claude because the model is a GPT -- the
+# claude engine drives the Claude Code CLI, which cannot run one. gh-aw sees a
+# custom endpoint and stops rewriting the model slug, so the provider-prefixed
+# name passes through intact.
+engine:
+  id: codex
+  env:
+    OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
+    OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+model: openai/gpt-5.6-luna
+
+# The agent runs behind the AWF egress firewall, so the provider host has to be
+# allowlisted explicitly.
+network:
+  allowed:
+    - defaults
+    - python
+    - openrouter.ai
+
+# Luna's OpenRouter rate. The AWF proxy rejects models missing from its
+# built-in pricing table with HTTP 400, and a provider-prefixed slug is not
+# in it.
+models:
+  default-ai-credits-pricing:
+    input: 0.20
+    output: 1.20
+
+tools:
+  edit:
+  bash:
+    - "*"
+  github:
+    lockdown: true
+    toolsets:
+      - issues
+    min-integrity: none # This workflow is allowed to examine and comment on any issues or PRs
+
+safe-outputs:
+  upload-asset:
+  create-discussion:
+    title-prefix: "[weekly-issue-activity] "
+    category: "audits"
+    close-older-discussions: true
+
+steps:
+  - name: Setup Python environment
+    run: |
+      mkdir -p /tmp/gh-aw/agent/charts /tmp/gh-aw/agent/data
+      pip install --user --quiet numpy pandas matplotlib seaborn scipy
+      python3 -c "import pandas, matplotlib, seaborn; print('Python environment ready')"
+source: githubnext/agentics/workflows/weekly-issue-activity.md@578e0e0ea6291fed42a36d3fd46cec6a0e86afd8
+---
+
+# Weekly Issue Summary
+
+Create a comprehensive weekly summary of issue activity for repository ${{ github.repository }}.
+
+## Step 1: Collect Issue Data
+
+Use GitHub API tools to gather data for the past 30 days:
+
+1. **Issue Activity Data**  -  Count of issues opened per day, closed per day, and running open count
+2. **Issue Resolution Data**  -  Average time to close issues, distribution of issue lifespans, breakdown by label
+
+Fetch enough issues to compute weekly and daily trends over the past 30 days. Use the GitHub toolset to query issues filtered by `created` and `closed` dates.
+
+## Step 2: Generate Trend Charts
+
+Write Python scripts to create exactly 2 high-quality trend charts and execute them via bash.
+
+### Chart 1: Issue Activity Trends
+
+Save data to `/tmp/gh-aw/agent/data/issue_activity.csv` with columns: `date,opened,closed,open_total`
+
+Generate a multi-line chart:
+
+- Issues opened per week (bar or line)
+- Issues closed per week (bar or line)
+- Running total of open issues (secondary line)
+- X-axis: last 12 weeks, Y-axis: count
+- Save as `/tmp/gh-aw/agent/charts/issue_activity_trends.png` at 300 DPI, 12×7 inches
+- Use seaborn whitegrid style with a professional color palette
+
+### Chart 2: Issue Resolution Time Trends
+
+Save data to `/tmp/gh-aw/agent/data/issue_resolution.csv` with columns: `date,avg_days,median_days`
+
+Generate a line chart with moving average overlay:
+
+- Average time to close (7-day moving average line)
+- Median time to close
+- Shaded variance band
+- X-axis: last 30 days, Y-axis: days to resolution
+- Save as `/tmp/gh-aw/agent/charts/issue_resolution_trends.png` at 300 DPI, 12×7 inches
+
+Run your Python scripts via bash and verify the charts exist before proceeding.
+
+### Python Notes
+
+- Use pandas for data manipulation and datetime handling
+- Use `matplotlib.pyplot` and `seaborn` for visualization
+- Apply `plt.tight_layout()` before saving
+- Handle sparse data gracefully (use bar charts if fewer than 7 data points)
+- Set `matplotlib.use('Agg')` to avoid display errors in headless environments
+
+## Step 3: Upload Charts
+
+Upload both chart images using the `upload-asset` safe output tool. Collect the returned URLs to embed in the discussion.
+
+## Step 4: Create Weekly Discussion
+
+Create a discussion with the title format: `Weekly Summary - [YYYY-MM-DD]`
+
+### Formatting Guidelines
+
+- Use `###` for main sections, `####` for subsections (discussion title is the h1)
+- Wrap long lists in `<details><summary>` collapsible sections
+- Keep critical information (overview, trends, statistics, recommendations) always visible
+- Keep optional detail (full issue lists, verbose breakdowns) in collapsible sections
+
+### Discussion Structure
+
+```markdown
+### 📊 Weekly Overview
+
+[1–2 paragraphs: total issues opened and closed this week, how that compares to the previous week, key theme or pattern in the issues]
+
+### 📈 Issue Activity Trends
+
+#### Weekly Activity Patterns
+![Issue Activity Trends]({chart_1_url})
+
+[2–3 sentences: describe the trend  -  are issues accumulating, being resolved quickly, or holding steady?]
+
+#### Resolution Time Analysis
+![Issue Resolution Trends]({chart_2_url})
+
+[2–3 sentences: how quickly are issues being resolved? improving or slowing down?]
+
+### 🔑 Key Trends
+
+[Bullet list of 3–5 notable patterns: common issue types, label distribution, new contributors filing issues, recurring topics, etc.]
+
+### 📋 Summary Statistics
+
+| Metric | This Week | Last Week | Trend |
+|--------|-----------|-----------|-------|
+| Issues Opened | X | X | ↑/↓/→ |
+| Issues Closed | X | X | ↑/↓/→ |
+| Currently Open | X | X | ↑/↓/→ |
+| Avg Close Time | X days | X days | ↑/↓/→ |
+
+<details>
+<summary><b>Full Issue List (This Week)</b></summary>
+
+[Numbered list of all issues opened this week with title, number, author, labels]
+
+</details>
+
+### 💡 Recommendations for Upcoming Week
+
+[3–5 actionable suggestions: which issues to prioritize, patterns that suggest backlog growth, labels that need attention, etc.]
+```
+
+## Step 5: Notes
+
+- If fewer than 7 days of data are available, generate charts with available data and note the limited range
+- If no issues exist this week, still create a discussion noting the quiet week
+- Always create the discussion even if charts fail to generate (omit chart sections and explain)
