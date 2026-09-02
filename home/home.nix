@@ -50,6 +50,7 @@ in
         pkgs.claude-code
         pkgs.claude-session-registry
         pkgs.apm
+        pkgs.agent-access
         pkgs.asdf-vm
         pkgs.git
         pkgs.gh
