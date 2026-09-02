@@ -301,6 +301,8 @@ Create a pull request that adds `.github/agentic-wiki/PAGES.md` to the repositor
 - Explain that maintainers can edit the template before running the wiki generator again
 - Include the template content
 
+**You MUST pass an explicit `branch` argument to `create_pull_request`** (e.g. `agentic-wiki/pages-template`). This repo's session is not on a git branch of its own -- omitting `branch` (or passing `main`) makes the tool fall back to the checkout's current branch, which on a direct dispatch *is* `main`, and a PR from `main` into `main` is rejected. The branch name does not need to already exist; the framework creates it from your file changes.
+
 After creating the PR, **continue to Step 3** to generate wiki pages using the template you just created.
 
 ## Step 3: Generate Wiki
