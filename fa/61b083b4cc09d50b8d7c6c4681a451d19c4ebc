@@ -1,0 +1,19 @@
+pkgs/agent-access/default.nix
+  s_b7b44043b81ba7::t_46be058162d8b0 36-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "fa61b083b4cc09d50b8d7c6c4681a451d19c4ebc",
+  "prompts": {},
+  "sessions": {
+    "s_b7b44043b81ba7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bfb4f130-8ea3-4a3b-8e91-36d70e2422da",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
