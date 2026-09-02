@@ -120,14 +120,20 @@ steps:
   # `nix flake update` / `nix store prefetch-file` as their evaluation command.
   # This is a normal Actions step outside the agent sandbox, so it isn't
   # subject to (and doesn't need entries in) the network egress allowlist above.
+  #
+  # Deliberately no magic-nix-cache-action here (unlike ci.yml): it needs
+  # sudo, runs a background daemon on 127.0.0.1, and rewrites the nix
+  # substituter config -- and it broke the agent sandbox's own gh-proxy
+  # sidecar (`gh api` inside the agent's bash failed with "CLI proxy
+  # unavailable", reproduced twice: runs 33534879499 and 33578228026).
+  # It also buys nothing here: it exists to cache expensive *builds*
+  # (ci.yml's albert/qcoro compiles), and neither program builds anything --
+  # `nix flake update` and `nix store prefetch-file` are metadata/fetch only.
   - name: Install Nix
     uses: cachix/install-nix-action@v30
     with:
       extra_nix_config: |
         experimental-features = nix-command flakes
-  - uses: DeterminateSystems/magic-nix-cache-action@v14
-    with:
-      use-flakehub: false
 
   - name: Clone repo-memory for scheduling
     env:
