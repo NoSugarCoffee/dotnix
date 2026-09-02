@@ -55,6 +55,7 @@
         claude-session-registry = final.callPackage ./pkgs/claude-session-registry { };
         translate-selection = final.callPackage ./pkgs/translate-selection { };
         apm = final.callPackage ./pkgs/apm { };
+        agent-access = final.callPackage ./pkgs/agent-access { };
         # from unstable: stable's albert (33.x) predates the source layout
         # pkgs/albert-darwin's patches target (35.x)
         albert-darwin =
