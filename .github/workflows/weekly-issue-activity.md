@@ -43,11 +43,13 @@ tools:
   edit:
   bash:
     - "*"
+  # lockdown mode needs its own GH_AW_GITHUB_TOKEN/GH_AW_GITHUB_MCP_SERVER_TOKEN
+  # secret, which this repo doesn't provision; gh-proxy uses the runner's
+  # pre-authenticated `gh` CLI instead, matching code-quality.md.
   github:
-    lockdown: true
+    mode: gh-proxy
     toolsets:
       - issues
-    min-integrity: none # This workflow is allowed to examine and comment on any issues or PRs
 
 safe-outputs:
   upload-asset:
