@@ -9,5 +9,11 @@
     {"title":"AGENTS.md","slug":"AGENTS.md","parent":"For-Agents"},
     {"title":"llms.txt","slug":"llms.txt","parent":"For-Agents"}
   ],
-  "sidebarSections": {}
+  "sidebarSections": {
+    "Home": ["Quick Reference"],
+    "Architecture": ["Supported Systems"],
+    "Getting-Started": ["Bootstrap Notes"],
+    "Packages": ["Local Packages"],
+    "Operations": ["Configuration Boundaries"]
+  }
 }
