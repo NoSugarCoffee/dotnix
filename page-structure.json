@@ -4,6 +4,7 @@
     {"title":"Architecture","slug":"Architecture","parent":null},
     {"title":"Getting Started","slug":"Getting-Started","parent":null},
     {"title":"Packages","slug":"Packages","parent":null},
+    {"title":"Local Packages","slug":"Local-Packages","parent":"Packages"},
     {"title":"Operations","slug":"Operations","parent":null},
     {"title":"For Agents","slug":"For-Agents","parent":null},
     {"title":"AGENTS.md","slug":"AGENTS.md","parent":"For-Agents"},
