@@ -188,7 +188,12 @@ You are a wiki generator for this repository. Your job is to produce high-qualit
 
 - **Allowed bash commands:** This repo runs you under the `codex` engine (required for its OpenRouter setup), which does not support restricting bash to a command allowlist — the full shell is available (`find`, `tree`, `wc`, `cat`, `ls`, `head`, `echo >`, `tee`, and so on all work).
 - **Creating files:** There is no separate `write` tool under this engine. Create files with shell redirection instead, e.g. `cat > path/to/file <<'EOF' ... EOF`. The `.github/agentic-wiki/` directory is pre-created before your session starts. Do NOT try to mkdir any path.
-- **Do not use `git` yourself** even though the shell would allow it: this workflow turns your file edits into a pull request automatically (via the `create-pull-request` safe-output) after your session ends. Running `git add`/`git commit`/`git push` yourself will not produce a PR and only wastes steps.
+- **`create_pull_request` needs a local git commit, not just an edited file.** It generates the PR from `git diff`/`git log` against your checkout, so an uncommitted file produces `"No changes to commit - no commits found"`. After writing `.github/agentic-wiki/PAGES.md` (Step 2b), run exactly this and nothing more:
+  ```
+  git config user.email "actions@github.com" && git config user.name "github-actions[bot]"
+  git add .github/agentic-wiki/PAGES.md && git commit -m "Add wiki documentation template"
+  ```
+  Then call `create_pull_request` with an explicit `branch` (see Step 2c). Do **not** `git push` — the safe-output pushes and opens the PR for you from that commit.
 - **Wiki page output:** Do NOT write wiki pages to disk. Do NOT create output directories. Construct all page content as strings and pass them to the `push-wiki` safe-output as JSON. See Step 3f.
 - **Repo info for source links:** Do NOT use `git` commands. Read `.git/config` with `cat` to find the remote URL and default branch.
 - **Repo memory path:** Do NOT hardcode the repo-memory path. Discover it by running `ls /tmp/gh-aw/repo-memory/` to find the directory name, then use that path. It is typically `/tmp/gh-aw/repo-memory/default/`. All memory files must be flat (no subdirectories) — you cannot mkdir inside repo-memory.
@@ -296,12 +301,14 @@ Guidelines for the template:
 
 ### 2c. Create a PR
 
-Create a pull request that adds `.github/agentic-wiki/PAGES.md` to the repository. The PR should:
+First, commit the file locally exactly as described in the sandbox constraints above (`git add .github/agentic-wiki/PAGES.md && git commit -m ...` -- no `git push`).
+
+Then create a pull request that adds `.github/agentic-wiki/PAGES.md` to the repository. The PR should:
 - Have a title like `Add wiki documentation template`
 - Explain that maintainers can edit the template before running the wiki generator again
 - Include the template content
 
-**You MUST pass an explicit `branch` argument to `create_pull_request`** (e.g. `agentic-wiki/pages-template`). This repo's session is not on a git branch of its own -- omitting `branch` (or passing `main`) makes the tool fall back to the checkout's current branch, which on a direct dispatch *is* `main`, and a PR from `main` into `main` is rejected. The branch name does not need to already exist; the framework creates it from your file changes.
+**You MUST pass an explicit `branch` argument to `create_pull_request`** (e.g. `agentic-wiki/pages-template`). This repo's session is not on a git branch of its own -- omitting `branch` (or passing `main`) makes the tool fall back to the checkout's current branch, which on a direct dispatch *is* `main`, and a PR from `main` into `main` is rejected. The branch name does not need to already exist as a remote branch; the safe-output pushes your local commit to it and opens the PR.
 
 After creating the PR, **continue to Step 3** to generate wiki pages using the template you just created.
 
