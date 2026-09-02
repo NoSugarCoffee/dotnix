@@ -94,9 +94,14 @@ safe-outputs:
       output: "Wiki pages pushed successfully"
       permissions:
         contents: write
+      # The prompt (Step 3f) batches pages in groups of <=4 per call, so a repo
+      # with more than 4 pages needs more than one push_wiki call per run.
+      # gh-aw defaults custom safe-output jobs to max: 1; the 2026-09-02 test
+      # run silently dropped its second batch because of this.
+      max: 5
       inputs:
         files:
-          description: "JSON object mapping filenames to markdown content, e.g. {\"Home.md\": \"...\", \"_Sidebar.md\": \"...\"}"
+          description: "JSON object mapping filenames to markdown content, e.g. {\"Home.md\": \"...\", \"_Sidebar.md\": \"...\"}. Top-level keys MUST be the filenames themselves -- do NOT nest this under an extra {\"files\": {...}} wrapper."
           required: true
           type: string
       steps:
@@ -107,7 +112,14 @@ safe-outputs:
             token: ${{ secrets.GITHUB_TOKEN }}
         - name: Write wiki pages
           run: |
-            jq -r '.items[] | select(.type == "push_wiki") | .files | fromjson | to_entries[] | @base64' "$GH_AW_AGENT_OUTPUT" | while IFS= read -r entry; do
+            # Defensively unwraps a {"files": {...}} envelope the model
+            # sometimes emits despite the input schema describing a flat
+            # filename->content map (observed on openai/gpt-5.6-luna, 2026-09-02).
+            jq -r '
+              .items[] | select(.type == "push_wiki") | .files | fromjson
+              | (if (type == "object" and has("files") and (keys | length) == 1) then .files else . end)
+              | to_entries[] | @base64
+            ' "$GH_AW_AGENT_OUTPUT" | while IFS= read -r entry; do
               FILENAME=$(printf '%s' "$entry" | base64 -d | jq -r '.key')
               CONTENT=$(printf '%s' "$entry" | base64 -d | jq -r '.value')
               printf '%s\n' "$CONTENT" > "$FILENAME"
@@ -174,8 +186,9 @@ You are a wiki generator for this repository. Your job is to produce high-qualit
 
 **CRITICAL: Sandbox constraints.** Read this carefully — violating these will cause permission errors.
 
-- **Allowed bash commands:** Only `find`, `tree`, `wc`, and read-only commands (`cat`, `ls`, `head`) work. All other bash commands (`git`, `echo >`, `touch`, `cp`, `tee`, `node`, `python`, `install`, `mkdir`) will be denied.
-- **Creating files:** Use the `write` tool. The `.github/agentic-wiki/` directory is pre-created before your session starts. Do NOT try to mkdir any path.
+- **Allowed bash commands:** This repo runs you under the `codex` engine (required for its OpenRouter setup), which does not support restricting bash to a command allowlist — the full shell is available (`find`, `tree`, `wc`, `cat`, `ls`, `head`, `echo >`, `tee`, and so on all work).
+- **Creating files:** There is no separate `write` tool under this engine. Create files with shell redirection instead, e.g. `cat > path/to/file <<'EOF' ... EOF`. The `.github/agentic-wiki/` directory is pre-created before your session starts. Do NOT try to mkdir any path.
+- **Do not use `git` yourself** even though the shell would allow it: this workflow turns your file edits into a pull request automatically (via the `create-pull-request` safe-output) after your session ends. Running `git add`/`git commit`/`git push` yourself will not produce a PR and only wastes steps.
 - **Wiki page output:** Do NOT write wiki pages to disk. Do NOT create output directories. Construct all page content as strings and pass them to the `push-wiki` safe-output as JSON. See Step 3f.
 - **Repo info for source links:** Do NOT use `git` commands. Read `.git/config` with `cat` to find the remote URL and default branch.
 - **Repo memory path:** Do NOT hardcode the repo-memory path. Discover it by running `ls /tmp/gh-aw/repo-memory/` to find the directory name, then use that path. It is typically `/tmp/gh-aw/repo-memory/default/`. All memory files must be flat (no subdirectories) — you cannot mkdir inside repo-memory.
