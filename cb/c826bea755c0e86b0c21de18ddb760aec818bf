@@ -1,0 +1,21 @@
+home/home.nix
+  s_b7b44043b81ba7::t_d34510040175cd 54
+README.md
+  s_b7b44043b81ba7::t_0eddfae53970a0 57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "cbc826bea755c0e86b0c21de18ddb760aec818bf",
+  "prompts": {},
+  "sessions": {
+    "s_b7b44043b81ba7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bfb4f130-8ea3-4a3b-8e91-36d70e2422da",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
