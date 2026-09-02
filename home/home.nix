@@ -321,7 +321,10 @@ in
   # asdf itself comes from home.packages; this exposes the shims it installs
   # into (~/.asdf/shims) so `go`/`node`/`python`/`java` resolve without
   # extra shell config.
-  home.sessionPath = [ "${homeDirectory}/.asdf/shims" ];
+  home.sessionPath = [
+    "${homeDirectory}/.asdf/shims"
+    "${homeDirectory}/.local/bin"
+  ];
   # Route shell tools through the local Clash Verge proxy (default mixed
   # port 7890). Both spellings are set because tools disagree on which
   # they read (curl honors lowercase, some Go/Java tools only uppercase).
