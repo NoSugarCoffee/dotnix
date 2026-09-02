@@ -1,0 +1,13 @@
+{
+  "pages": [
+    {"title":"Home","slug":"Home","parent":null},
+    {"title":"Architecture","slug":"Architecture","parent":null},
+    {"title":"Getting Started","slug":"Getting-Started","parent":null},
+    {"title":"Packages","slug":"Packages","parent":null},
+    {"title":"Operations","slug":"Operations","parent":null},
+    {"title":"For Agents","slug":"For-Agents","parent":null},
+    {"title":"AGENTS.md","slug":"AGENTS.md","parent":"For-Agents"},
+    {"title":"llms.txt","slug":"llms.txt","parent":"For-Agents"}
+  ],
+  "sidebarSections": {}
+}

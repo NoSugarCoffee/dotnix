@@ -1,0 +1,10 @@
+{
+  "Home": {"sourceFiles":[{"path":"README.md","hash":"wc-7060"},{"path":"flake.nix","hash":"wc-5434"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "Architecture": {"sourceFiles":[{"path":"flake.nix","hash":"wc-5434"},{"path":"home/home.nix","hash":"wc-21454"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "Getting-Started": {"sourceFiles":[{"path":"README.md","hash":"wc-7060"},{"path":"scripts/bootstrap-macos.sh","hash":"wc-3653"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "Packages": {"sourceFiles":[{"path":"home/home.nix","hash":"wc-21454"},{"path":"flake.nix","hash":"wc-5434"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "Operations": {"sourceFiles":[{"path":"README.md","hash":"wc-7060"},{"path":"justfile","hash":"wc-688"},{"path":"home/home.nix","hash":"wc-21454"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "For-Agents": {"sourceFiles":[{"path":"README.md","hash":"wc-7060"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "AGENTS.md": {"sourceFiles":[{"path":"README.md","hash":"wc-7060"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"},
+  "llms.txt": {"sourceFiles":[{"path":"README.md","hash":"wc-7060"}],"templateHash":"generated-first-run","generatedAt":"2026-09-02T00:00:00Z"}
+}
