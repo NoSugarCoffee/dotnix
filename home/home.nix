@@ -51,6 +51,7 @@ in
         pkgs.claude-session-registry
         pkgs.apm
         pkgs.agent-access
+        pkgs.bitwarden-cli
         pkgs.asdf-vm
         pkgs.git
         pkgs.gh
