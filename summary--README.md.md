@@ -1,2 +1,2 @@
-`ff793adb279cc20fa563501fdafabeb78efc3566b5614ee8494623e14826c655`
-Project overview: reproducible Home Manager dotfiles for Linux and macOS; quick-start commands, managed package categories, just commands, fork instructions, shell/proxy/translation notes, and MIT license.
+`9bfa2ad45005153ea0db5d5c88cd94bd381dd4665ab575b2d2e132811fc44edc`
+Overview and quick-start for reproducible Home Manager dotfiles on Linux/macOS; managed package groups, just commands, fork instructions, shell/proxy/translation notes, and MIT license.

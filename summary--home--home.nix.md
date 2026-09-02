@@ -1,2 +1,2 @@
-`544e20c19357e7275bea3342d407f1dd85084eefce962ffacc9d27069a1d5812`
-Defines packages, Codex and Claude settings, zsh, session path/variables, launch agents, asdf activation for Go/Node/Java/Maven, translation bindings, and platform conditionals.
+`419c28eb19f6537e0f4e7a0143da6af263604e4c417bb9839717cf2e68ee4f31`
+Defines common and platform packages, Codex/Claude settings, zsh, session path and variables, kitty bindings, macOS launchd agents, and best-effort asdf activation for Go/Node/Java/Maven. Keeps git identity and selected Claude keys machine-owned.
