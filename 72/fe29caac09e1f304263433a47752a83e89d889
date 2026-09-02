@@ -1,0 +1,24 @@
+.github/workflows/weekly-issue-activity.md
+  s_8a57f9d1fabdb5::t_85d46fcf29ff3e 13-27,32-40
+  s_8a57f9d1fabdb5::t_92850c8e9ca471 1-12,28-31,41-183
+.github/workflows/weekly-issue-activity.lock.yml
+  ai_agent 1-1788
+.github/skills/agentic-workflows/SKILL.md
+  s_8a57f9d1fabdb5::t_92850c8e9ca471 1-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "72fe29caac09e1f304263433a47752a83e89d889",
+  "prompts": {},
+  "sessions": {
+    "s_8a57f9d1fabdb5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bcb2a2d6-ccc7-4433-8575-d4f0961bd574",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
