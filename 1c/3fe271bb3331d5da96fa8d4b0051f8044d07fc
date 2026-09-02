@@ -1,0 +1,22 @@
+.github/workflows/agentic-wiki-writer.md
+  s_b637674f8bcc36::t_7c7fefd67e90bf 191-196
+  s_b637674f8bcc36::t_891a610dca426e 304-306,311
+.github/workflows/agentic-wiki-writer.lock.yml
+  ai_agent 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "1c3fe271bb3331d5da96fa8d4b0051f8044d07fc",
+  "prompts": {},
+  "sessions": {
+    "s_b637674f8bcc36": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57e1b390-0719-4610-b889-d3c92d81e90a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
