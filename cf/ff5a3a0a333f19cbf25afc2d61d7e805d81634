@@ -1,0 +1,29 @@
+.github/workflows/agentic-wiki-writer.lock.yml
+  ai_agent 1-1959
+.github/workflows/agentic-wiki-writer.md
+  s_b637674f8bcc36::t_86f2d708a12dfb 21-48
+  s_b637674f8bcc36::t_1fa85b77ae4e1a 104
+  s_b637674f8bcc36::t_039ef77961de9f 59-64,66
+  s_b637674f8bcc36::t_f622be22593816 74-76,78
+  s_b637674f8bcc36::t_50323f964a582b 1-20,49-58,65,67-73,77,79-103,105-849
+.github/aw/actions-lock.json
+  s_b637674f8bcc36::t_6bde20f08dfcac 8-11
+.github/workflows/agentics-maintenance.yml
+  s_b637674f8bcc36::t_6bde20f08dfcac 1-633
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "cfff5a3a0a333f19cbf25afc2d61d7e805d81634",
+  "prompts": {},
+  "sessions": {
+    "s_b637674f8bcc36": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57e1b390-0719-4610-b889-d3c92d81e90a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
