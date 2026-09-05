@@ -35,6 +35,9 @@ engine:
   env:
     OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
     OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    # AWF's gh wrapper mktemp's into TMPDIR. The default runner temp is not
+    # writable inside the chroot (curl then exits 2: "CLI proxy unavailable").
+    TMPDIR: /tmp
 
 model: openai/gpt-5.6-luna
 
@@ -105,7 +108,10 @@ tools:
   bash: true
   repo-memory:
     branch-name: memory/autoloop
-    file-glob: ["*.md"]
+    # allowed-extensions, not file-glob: gh-aw compiles `*.md` to a regex that
+    # requires a slash (`dir/file.md`), so root-level `{program}.md` state
+    # files were filtered out on every push and last_run never persisted.
+    allowed-extensions: [".md"]
     # 30 KB per state file -- enough for the structured sections plus ~10 most-recent
     # iteration entries plus ~5 compressed-range summaries. The rolling-compaction
     # rule in "Update Rules" below keeps files under this budget. Tune up for
@@ -118,8 +124,9 @@ imports:
 steps:
   # Both current programs (nixpkgs-freshness, darwin-packages-freshness) run
   # `nix flake update` / `nix store prefetch-file` as their evaluation command.
-  # This is a normal Actions step outside the agent sandbox, so it isn't
-  # subject to (and doesn't need entries in) the network egress allowlist above.
+  # The "Evaluate selected program" step below runs those on the runner, outside
+  # the agent sandbox, and writes /tmp/gh-aw/autoloop-eval.json. Nix is also
+  # symlinked into the sandbox PATH so the agent can apply `nix flake update`.
   #
   # Deliberately no magic-nix-cache-action here (unlike ci.yml): it needs
   # sudo, runs a background daemon on 127.0.0.1, and rewrites the nix
@@ -129,33 +136,23 @@ steps:
   # It also buys nothing here: it exists to cache expensive *builds*
   # (ci.yml's albert/qcoro compiles), and neither program builds anything --
   # `nix flake update` and `nix store prefetch-file` are metadata/fetch only.
+  #
+  # gh-aw clones memory/autoloop into /tmp/gh-aw/repo-memory/default *before*
+  # these steps. Do not clone it a second time under .../autoloop — the
+  # scheduler reads the `default` tree.
   - name: Install Nix
     uses: cachix/install-nix-action@v30
     with:
       extra_nix_config: |
         experimental-features = nix-command flakes
 
-  - name: Clone repo-memory for scheduling
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GITHUB_REPOSITORY: ${{ github.repository }}
-      GITHUB_SERVER_URL: ${{ github.server_url }}
+  - name: Expose Nix to the agent sandbox
     run: |
-      # Clone the repo-memory branch so the scheduling step can read persisted state
-      # from previous runs.  The framework-managed repo-memory clone happens after
-      # pre-steps, so we perform an early shallow clone here.
-      MEMORY_DIR="/tmp/gh-aw/repo-memory/autoloop"
-      BRANCH="memory/autoloop"
-      mkdir -p "$(dirname "$MEMORY_DIR")"
-      REPO_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
-      AUTH_URL="$(echo "$REPO_URL" | sed "s|https://|https://x-access-token:${GH_TOKEN}@|")"
-      if git ls-remote --exit-code --heads "$AUTH_URL" "$BRANCH" > /dev/null 2>&1; then
-        git clone --single-branch --branch "$BRANCH" --depth 1 "$AUTH_URL" "$MEMORY_DIR" 2>&1
-        echo "Cloned repo-memory branch to $MEMORY_DIR"
-      else
-        mkdir -p "$MEMORY_DIR"
-        echo "No repo-memory branch found yet (first run). Created empty directory."
-      fi
+      nix_bin="$(command -v nix)"
+      test -n "$nix_bin"
+      mkdir -p "${RUNNER_TEMP}/gh-aw/mcp-cli/bin"
+      ln -sfn "$nix_bin" "${RUNNER_TEMP}/gh-aw/mcp-cli/bin/nix"
+      echo "Linked $nix_bin into ${RUNNER_TEMP}/gh-aw/mcp-cli/bin"
 
   - name: Check which programs are due
     env:
@@ -164,6 +161,13 @@ steps:
       AUTOLOOP_PROGRAM: ${{ github.event.inputs.program }}
     run: |
       python3 .github/workflows/scripts/autoloop_scheduler.py
+
+  - name: Evaluate selected program on the runner
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+    run: |
+      bash .github/workflows/scripts/autoloop_eval.sh
 
 source: githubnext/autoloop
 ---
@@ -245,6 +249,7 @@ The pre-step has already determined which program to run. Read `/tmp/gh-aw/autol
 - **`state_file_size_bytes`**: Current size of the selected program's state file in bytes (0 if it does not exist yet). Use this together with `state_file_max_bytes` to decide whether to compact aggressively this iteration (see [Update Rules](#update-rules) — when size exceeds 80% of the max, collapse older iteration entries).
 - **`state_file_max_bytes`**: The configured `max-file-size` for repo-memory state files (default `30720`, i.e. 30 KB). Files larger than this are rejected by repo-memory, breaking scheduling.
 - **`issue_programs`**: A mapping of program name → issue number for all discovered issue-based programs.
+- **`dashboard_issues`**: A mapping of file-based program name → the oldest open `[Autoloop: {name}]` issue. `selected_issue` is populated from this for file-based programs — do **not** create a new program issue when it is set.
 - **`deferred`**: Other programs that were due but will be handled in future runs.
 - **`unconfigured`**: Programs that still have the sentinel or placeholder content.
 - **`skipped`**: Programs not due yet based on their per-program schedule.
@@ -488,9 +493,10 @@ Each run executes **one iteration for the single selected program**:
 
 ### Step 4: Evaluate
 
-1. Run the evaluation command specified in the program file.
-2. Parse the metric from the output.
+1. If `/tmp/gh-aw/autoloop-eval.json` exists, that file **is** the evaluation — it was produced on the runner with working `nix` and `gh` before the sandbox started. Read it and parse the metric from there. Do not re-run `gh api` or `nix store prefetch-file` inside the sandbox unless you have just changed a target file and the sandbox tools actually work.
+2. Otherwise run the evaluation command specified in the program file.
 3. Compare against `best_metric` from the state file.
+4. For `darwin-packages-freshness`, if `proposed` is present, apply at most one of those precomputed bumps (hashes already fetched — do not guess). For `nixpkgs-freshness`, bump one stale input with `nix flake update <input-name>` (nix is on PATH).
 
 ### Step 5: Accept or Reject
 
@@ -606,7 +612,7 @@ There are no separate "steering" or "experiment log" issues — they have all be
 
 ### Auto-Creation for File-Based Programs
 
-If `selected_issue` is `null` in `/tmp/gh-aw/autoloop.json`, the program is file-based **and** has no program issue yet. On the first run, create one with `create-issue`:
+If `selected_issue` is `null` in `/tmp/gh-aw/autoloop.json`, the program is file-based **and** has no program issue yet. Search open issues titled `[Autoloop: {program-name}]` before creating — if any exist, adopt the oldest and do **not** call `create-issue`. Only if none exist, create one with `create-issue`:
 
 - **Title**: `[Autoloop: {program-name}]`.
 - **Body**: the contents of the program file (`program.md`) plus a placeholder for the status comment so maintainers know one will be edited in place.
@@ -912,7 +918,8 @@ The `delta` is **signed by metric direction**: for `higher`-direction programs a
 - **Respect human input.** The Current Priorities section is set by maintainers — follow it.
 - **Diminishing returns.** If the last 5 consecutive iterations were rejected, post a comment suggesting the user review the program definition or update the state file's Current Priorities.
 - **Transparency.** Every PR and comment must include AI disclosure with 🤖.
-- **Safety.** Never modify files outside the target list. Never modify the evaluation script. Never modify the program definition (except via `/autoloop` command mode).
+- **Safety.** Never modify files outside the target list. Never modify the evaluation scripts under `.github/workflows/scripts/`. Never modify the program definition (except via `/autoloop` command mode).
+- **State files live in `/tmp/gh-aw/repo-memory/default/`** (also `GH_AW_MEMORY_DIR`). Write `{program-name}.md` there as a flat file — no subdirectory.
 - **Read AGENTS.md first**: before starting work, read the repository's `AGENTS.md` file (if present) to understand project-specific conventions.
 - **Build and test**: run any build/test commands before creating PRs.
 
