@@ -1,0 +1,51 @@
+.github/workflows/scripts/autoloop_eval.sh
+  s_b7cc1103b4bb78::t_3fe3a5e10b400d 1-43
+.github/workflows/ci.yml
+  s_b7cc1103b4bb78::t_3dac99852cbb72 41-42
+  s_b7cc1103b4bb78::t_a87d426c2c5687 65-68
+.github/workflows/scripts/eval_darwin_packages_freshness.sh
+  s_b7cc1103b4bb78::t_66a85f16315c46 1-45
+.github/workflows/scripts/eval_nixpkgs_freshness.sh
+  s_b7cc1103b4bb78::t_8b7e5beb76ae82 1-35
+.github/workflows/scripts/autoloop_scheduler.py
+  s_b7cc1103b4bb78::t_51f9d398af6113 545,557
+  s_b7cc1103b4bb78::t_feb7dca13f85bb 145-195
+  s_b7cc1103b4bb78::t_a066bb2c8cdaa8 576
+  s_b7cc1103b4bb78::t_5970a740bf6852 607
+  s_b7cc1103b4bb78::t_ce5d456c304776 749-751
+  s_b7cc1103b4bb78::t_b80c9c4b7481cf 51-54
+  s_b7cc1103b4bb78::t_72152225b3c6fa 637-652
+  s_b7cc1103b4bb78::t_a7bfa8cf494234 786
+.github/workflows/autoloop.md
+  s_b7cc1103b4bb78::t_901aa22f91fa16 496-497,499
+  s_b7cc1103b4bb78::t_f6041ad5e8256b 921-922
+  s_b7cc1103b4bb78::t_07667df23a2a5a 111-114
+  s_b7cc1103b4bb78::t_313e3a6ad3f5cc 127-129,139-142,149,151-155,165-170
+  s_b7cc1103b4bb78::t_d49e6c7cbe267a 38-40
+  s_b7cc1103b4bb78::t_966fb06790fa76 252
+  s_b7cc1103b4bb78::t_6edae4aa9b43d2 615
+.autoloop/programs/nixpkgs-freshness.md
+  s_b7cc1103b4bb78::t_ec15719ada818a 47,51-55
+.github/workflows/autoloop.lock.yml
+  ai_agent 1-2,403,574-580,586-592,1212,1903,2093
+.autoloop/programs/darwin-packages-freshness.md
+  s_b7cc1103b4bb78::t_a2222842a6429c 49,53-58
+tests/test_autoloop_scheduler.py
+  s_b7cc1103b4bb78::t_0a8a7aaa1a2ac1 1-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "b52c31d94a1f0b5d303aeee5f36a79dde55acafc",
+  "prompts": {},
+  "sessions": {
+    "s_b7cc1103b4bb78": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "222ba4f7-c49f-460e-952f-d1c0c46c3ecd",
+        "model": "grok-4.6"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
