@@ -46,34 +46,13 @@ Do NOT modify:
 ## Evaluation
 
 ```bash
-set -euo pipefail
-
-# --- clash-verge-rev-darwin: compare pinned version to the latest GitHub release tag ---
-cv_pinned=$(grep -oP '(?<=version = ")[^"]+' pkgs/clash-verge-rev-darwin/default.nix | head -1)
-cv_latest_tag=$(gh api repos/clash-verge-rev/clash-verge-rev/releases/latest --jq '.tag_name')
-cv_latest="${cv_latest_tag#v}"
-cv_current=0
-[ "$cv_pinned" = "$cv_latest" ] && cv_current=1
-
-# --- claude-desktop-darwin: compare pinned hash to a fresh prefetch of the same URL ---
-cd_pinned_hash=$(grep -oP '(?<=hash = ")[^"]+' pkgs/claude-desktop-darwin/default.nix | head -1)
-cd_url=$(grep -oP '(?<=url = ")[^"]+' pkgs/claude-desktop-darwin/default.nix | head -1)
-cd_fresh_hash=$(nix store prefetch-file --json "$cd_url" | jq -r '.hash')
-cd_current=0
-[ "$cd_pinned_hash" = "$cd_fresh_hash" ] && cd_current=1
-
-packages_current=$((cv_current + cd_current))
-
-jq -n \
-  --argjson packages_current "$packages_current" \
-  --arg cv_pinned "$cv_pinned" --arg cv_latest "$cv_latest" --argjson cv_current "$cv_current" \
-  --argjson cd_current "$cd_current" \
-  '{packages_current: $packages_current,
-    "clash-verge-rev": {pinned: $cv_pinned, latest: $cv_latest, current: ($cv_current == 1)},
-    "claude-desktop": {current: ($cd_current == 1)}}'
+bash .github/workflows/scripts/eval_darwin_packages_freshness.sh
 ```
 
 The metric is `packages_current` from the JSON output. **Higher is better.**
-CI's macOS build job (`ci.yml` `build-macos`) actually fetches and unpacks
-both DMGs, so a wrong hash or a broken app-bundle assumption fails loudly
-there rather than silently passing this script.
+When a pin is stale the JSON also includes a `proposed` object with
+prefetch-derived hashes — apply those rather than guessing. Prefer
+`/tmp/gh-aw/autoloop-eval.json` when present (written on the runner before
+the sandbox starts). CI's macOS build job (`ci.yml` `build-macos`) actually
+fetches and unpacks both DMGs, so a wrong hash or a broken app-bundle
+assumption fails loudly there rather than silently passing this script.

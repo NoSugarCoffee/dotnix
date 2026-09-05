@@ -48,10 +48,10 @@ from datetime import datetime, timedelta, timezone
 PROGRAMS_DIR = ".autoloop/programs"
 TEMPLATE_FILE = os.path.join(PROGRAMS_DIR, "example.md")
 
-# Repo-memory files are cloned to /tmp/gh-aw/repo-memory/{id}/ where {id}
-# is derived from the branch-name configured in the tools section
-# (memory/autoloop -> autoloop).
-REPO_MEMORY_DIR = "/tmp/gh-aw/repo-memory/autoloop"
+# gh-aw always clones the configured memory branch into the `default` id
+# directory (`GH_AW_MEMORY_DIR`), regardless of `branch-name`. The scheduler
+# must read that same tree or last_run never survives a run.
+REPO_MEMORY_DIR = "/tmp/gh-aw/repo-memory/default"
 
 ISSUE_PROGRAMS_DIR = "/tmp/gh-aw/issue-programs"
 OUTPUT_DIR = "/tmp/gh-aw"
@@ -140,6 +140,57 @@ def slugify_issue_title(title, number=None):
     if not slug:
         slug = "issue-{}".format(number) if number is not None else "issue"
     return slug
+
+
+def dashboard_program_name(title, file_program_names):
+    """Return the file-based program an Autoloop dashboard issue belongs to.
+
+    File-based programs get an issue titled ``[Autoloop: {program-name}]``.
+    Those issues are dashboards, not independent programs. Issue titles that
+    do not match a file-based program name stay issue-based programs.
+    """
+    prefix = "[Autoloop: "
+    if not title.startswith(prefix) or not title.endswith("]"):
+        return None
+    inner = title[len(prefix) : -1]
+    if inner in file_program_names:
+        return inner
+    return None
+
+
+def classify_issue_programs(issue_programs, file_program_names):
+    """Split fetched issues into real issue-based programs vs dashboards.
+
+    When several dashboard issues exist for the same file program (the
+    historical create-issue-every-run failure mode), keep the oldest
+    (lowest issue number) so the agent reuses it instead of opening another.
+
+    Returns ``(remaining_issue_programs, dashboard_issues)`` where
+    ``dashboard_issues`` maps file-program name → issue number.
+    """
+    remaining = {}
+    dashboards = {}
+    dashboard_seen = {}
+    for slug, info in issue_programs.items():
+        matched = dashboard_program_name(info.get("title") or "", file_program_names)
+        if matched is None:
+            remaining[slug] = info
+            continue
+        previous = dashboard_seen.get(matched)
+        if previous is None or info["issue_number"] < previous["issue_number"]:
+            dashboard_seen[matched] = info
+    for name, info in dashboard_seen.items():
+        dashboards[name] = info["issue_number"]
+    return remaining, dashboards
+
+
+def resolve_selected_issue(selected, issue_programs, dashboard_issues):
+    """Issue number the agent should treat as the program issue, or None."""
+    if selected is None:
+        return None
+    if selected in issue_programs:
+        return issue_programs[selected]["issue_number"]
+    return dashboard_issues.get(selected)
 
 
 def parse_link_header(header):
@@ -491,7 +542,7 @@ def find_existing_pr_for_branch(repo, program_name, github_token, http_get_json=
 # ---------------------------------------------------------------------------
 
 
-def select_program(due, forced_program=None, all_programs=None, unconfigured=None, issue_programs=None):
+def select_program(due, forced_program=None, all_programs=None, unconfigured=None, issue_programs=None, dashboard_issues=None):
     """Pick the program to run.
 
     Returns ``(selected, selected_file, selected_issue, selected_target_metric,
@@ -503,6 +554,7 @@ def select_program(due, forced_program=None, all_programs=None, unconfigured=Non
     all_programs = all_programs or {}
     unconfigured = unconfigured or []
     issue_programs = issue_programs or {}
+    dashboard_issues = dashboard_issues or {}
     if forced_program:
         if forced_program not in all_programs:
             return (
@@ -521,9 +573,7 @@ def select_program(due, forced_program=None, all_programs=None, unconfigured=Non
         selected = forced_program
         selected_file = all_programs[forced_program]
         deferred = [p["name"] for p in due if p["name"] != forced_program]
-        selected_issue = (
-            issue_programs[selected]["issue_number"] if selected in issue_programs else None
-        )
+        selected_issue = resolve_selected_issue(selected, issue_programs, dashboard_issues)
         selected_target_metric = None
         selected_metric_direction = None
         for p in due:
@@ -554,9 +604,7 @@ def select_program(due, forced_program=None, all_programs=None, unconfigured=Non
         selected_target_metric = due_sorted[0].get("target_metric")
         selected_metric_direction = due_sorted[0].get("metric_direction") or "higher"
         deferred = [p["name"] for p in due_sorted[1:]]
-        selected_issue = (
-            issue_programs[selected]["issue_number"] if selected in issue_programs else None
-        )
+        selected_issue = resolve_selected_issue(selected, issue_programs, dashboard_issues)
         return (
             selected,
             selected_file,
@@ -586,11 +634,22 @@ def main():
     # 1. Directory-based programs: .autoloop/programs/<name>/program.md (preferred)
     # 2. Bare markdown programs: .autoloop/programs/<name>.md (simple)
     # 3. Issue-based programs: GitHub issues with the 'autoloop-program' label
-    program_files = []
-    program_files.extend(_scan_directory_programs())
-    program_files.extend(_scan_bare_programs())
-    issue_files, issue_programs = _fetch_issue_programs(repo, github_token)
-    program_files.extend(issue_files)
+    #    excluding dashboards for file-based programs (see classify_issue_programs).
+    file_program_files = []
+    file_program_files.extend(_scan_directory_programs())
+    file_program_files.extend(_scan_bare_programs())
+    file_program_names = {get_program_name(path) for path in file_program_files}
+    _issue_files, issue_programs = _fetch_issue_programs(repo, github_token)
+    issue_programs, dashboard_issues = classify_issue_programs(
+        issue_programs, file_program_names
+    )
+    if dashboard_issues:
+        print(
+            "  Dashboard issues for file programs: {}".format(
+                {name: "#{}".format(num) for name, num in dashboard_issues.items()}
+            )
+        )
+    program_files = file_program_files + [info["file"] for info in issue_programs.values()]
 
     if not program_files:
         # Fallback to single-file locations
@@ -687,7 +746,9 @@ def main():
         })
 
     selected, selected_file, selected_issue, selected_target_metric, selected_metric_direction, deferred, error = (
-        select_program(due, forced_program, all_programs, unconfigured, issue_programs)
+        select_program(
+            due, forced_program, all_programs, unconfigured, issue_programs, dashboard_issues
+        )
     )
 
     if error:
@@ -722,6 +783,7 @@ def main():
         "issue_programs": {
             name: info["issue_number"] for name, info in issue_programs.items()
         },
+        "dashboard_issues": dashboard_issues,
         "deferred": deferred,
         "skipped": skipped,
         "unconfigured": unconfigured,

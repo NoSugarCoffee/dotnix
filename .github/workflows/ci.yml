@@ -38,6 +38,8 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
+      - name: Test Autoloop scheduler
+        run: python3 -m unittest tests.test_autoloop_scheduler -v
       - name: Lint
         run: |
           nix shell --inputs-from . \
@@ -60,7 +62,10 @@ jobs:
               run deadnix    deadnix --fail .
               run nixfmt     nixfmt --check $(git ls-files "*.nix")
               run ruff       ruff check pkgs/claude-session-registry
-              run shellcheck shellcheck scripts/bootstrap-macos.sh
+              run shellcheck shellcheck scripts/bootstrap-macos.sh \
+                .github/workflows/scripts/autoloop_eval.sh \
+                .github/workflows/scripts/eval_darwin_packages_freshness.sh \
+                .github/workflows/scripts/eval_nixpkgs_freshness.sh
 
               exit $status
             '
