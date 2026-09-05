@@ -57,7 +57,8 @@ Cross-platform unless tagged. Codex config is written to `~/.codex/config.toml`
 [bitwarden-cli](https://bitwarden.com/help/cli/) (vault backing agent-access) &middot;
 [claude-desktop](https://claude.ai/download) &middot;
 [ping-island](https://github.com/NoSugarCoffee/ping-island) `macOS` (personal fork with zellij support) &middot;
-claude-session-registry (local: records live Claude Code conversations, replays them into zellij tabs and attaches each session in a kitty tab)
+claude-session-registry (local: records live Claude Code conversations, replays them into zellij tabs and attaches each session in a kitty tab) &middot;
+[ccstatusline](https://github.com/sirmalloc/ccstatusline) (Claude Code status line formatter; prebuilt npm release, not in nixpkgs)
 
 **Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
 [zellij](https://zellij.dev/) &middot;

@@ -33,6 +33,11 @@ let
       theme = "dark";
       tui = "fullscreen";
       remoteControlAtStartup = true;
+      statusLine = {
+        type = "command";
+        command = "ccstatusline";
+        padding = 0;
+      };
     }
   );
 in
@@ -49,6 +54,7 @@ in
         pkgs.codex
         pkgs.claude-code
         pkgs.claude-session-registry
+        pkgs.ccstatusline
         pkgs.apm
         pkgs.agent-access
         pkgs.bitwarden-cli
@@ -449,6 +455,12 @@ in
     + lib.optionalString pkgs.stdenv.isDarwin ''
       copy_command "pbcopy"
     '';
+  # ccstatusline's own widget/color config -- exported from its interactive
+  # TUI once and checked in here rather than left in ~/.config, matching the
+  # zellij config.kdl approach: since this path is a read-only nix store
+  # symlink, re-running the TUI to tweak widgets can't save back to it. Edit
+  # this file directly and re-switch instead.
+  xdg.configFile."ccstatusline/settings.json".source = ./ccstatusline/settings.json;
   nix = {
     # Bounds generation history so the store can't fill the disk again (a
     # full root disk once broke everything on the Linux box): a weekly timer
