@@ -8,11 +8,8 @@ default:
     @just --list
 
 # Apply the Home Manager configuration for the current platform.
-# -b backup: standalone home-manager aborts at checkLinkTargets when a newly
-# managed path already exists as a regular file (ccstatusline's TUI writes
-# ~/.config/ccstatusline/settings.json before the first switch).
 switch:
-    nix run .#home-manager -- switch --flake .#{{CONFIG}} -b backup
+    nix run .#home-manager -- switch --flake .#{{CONFIG}}
 
 # Show all Home Manager generations.
 generations:
