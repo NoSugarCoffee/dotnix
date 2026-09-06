@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runner-side (and in-sandbox) evaluation for nixpkgs-freshness.
-# Prints JSON with up_to_date_fraction and stale_inputs. Higher is better.
+# Prints JSON with up_to_date_fraction and stale_inputs, plus a proposed
+# flake.lock bumping one stale input when nix is available. Higher is better.
 set -euo pipefail
 
 total=0
@@ -30,6 +31,29 @@ for name in $(jq -r '.nodes.root.inputs | keys[]' flake.lock); do
   fi
 done
 
+# The agent sandbox has no nix, so the lock rewrite -- rev, narHash and
+# lastModified, none of which can be derived by hand -- happens here and is
+# handed over as a file for the agent to copy into place.
+proposed='null'
+if [ "$(jq 'length' <<<"$stale")" -gt 0 ] && command -v nix >/dev/null 2>&1; then
+  input=$(jq -r '.[0].name' <<<"$stale")
+  scratch=$(mktemp -d)
+  trap 'rm -rf "$scratch"' EXIT
+  cp flake.nix flake.lock "$scratch/"
+  nix flake update "$input" --flake "$scratch" >&2
+
+  proposed_dir="${AUTOLOOP_PROPOSED_DIR:-/tmp/gh-aw/autoloop-proposed}"
+  mkdir -p "$proposed_dir"
+  cp "$scratch/flake.lock" "$proposed_dir/flake.lock"
+
+  proposed=$(jq -n \
+    --arg input "$input" \
+    --arg flake_lock "$proposed_dir/flake.lock" \
+    --arg base_blob "$(git hash-object flake.lock)" \
+    --arg rev "$(jq -r --arg i "$input" '.nodes[.nodes.root.inputs[$i]].locked.rev' "$scratch/flake.lock")" \
+    '{input: $input, flake_lock: $flake_lock, base_flake_lock_blob: $base_blob, rev: $rev}')
+fi
+
 fraction=$(awk -v c="$current" -v t="$total" 'BEGIN { printf "%.4f", c/t }')
-jq -n --argjson fraction "$fraction" --argjson stale "$stale" \
-  '{up_to_date_fraction: $fraction, stale_inputs: $stale}'
+jq -n --argjson fraction "$fraction" --argjson stale "$stale" --argjson proposed "$proposed" \
+  '{up_to_date_fraction: $fraction, stale_inputs: $stale, proposed: $proposed}'

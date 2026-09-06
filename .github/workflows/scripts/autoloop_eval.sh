@@ -36,7 +36,16 @@ case "$selected" in
     ;;
 esac
 
-result=$("$script")
+# Measure the branch the iteration will land on, not the default ref: bumps
+# accepted by earlier iterations live only on that branch, and evaluating main
+# would re-propose them -- for nixpkgs-freshness that means handing the agent a
+# flake.lock derived from main, reverting every bump already on the branch.
+head_branch=$(jq -r '.head_branch // empty' "$CONFIG")
+if [ -n "$head_branch" ] && git rev-parse --verify --quiet "refs/remotes/origin/$head_branch" >/dev/null; then
+  git checkout -B "$head_branch" "refs/remotes/origin/$head_branch"
+fi
+
+result=$(bash "$script")
 jq -n --arg selected "$selected" --argjson result "$result" \
   '$result + {selected: $selected}' > "$OUT"
 echo "Wrote evaluation for $selected to $OUT"

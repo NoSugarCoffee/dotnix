@@ -42,11 +42,12 @@ engine:
 model: openai/gpt-5.6-luna
 
 # The agent runs behind the AWF egress firewall, so the provider host has to be
-# allowlisted explicitly. cache.nixos.org/channels.nixos.org are for `nix flake
-# update` and `nix store prefetch-file` in the two evaluation scripts;
-# storage.googleapis.com is the vendor host claude-desktop-darwin's DMG lives
-# on (its own release notes have no versioned URL, so this stays hardcoded
-# rather than derived from an input).
+# allowlisted explicitly. cache.nixos.org/channels.nixos.org only matter to the
+# runner-side evaluation steps, which are not firewalled -- kept so that an
+# evaluation script re-run inside the sandbox fails on the missing `nix` binary
+# rather than on a confusing egress denial; storage.googleapis.com is the vendor
+# host claude-desktop-darwin's DMG lives on (its own release notes have no
+# versioned URL, so this stays hardcoded rather than derived from an input).
 network:
   allowed:
     - defaults
@@ -125,8 +126,11 @@ steps:
   # Both current programs (nixpkgs-freshness, darwin-packages-freshness) run
   # `nix flake update` / `nix store prefetch-file` as their evaluation command.
   # The "Evaluate selected program" step below runs those on the runner, outside
-  # the agent sandbox, and writes /tmp/gh-aw/autoloop-eval.json. Nix is also
-  # symlinked into the sandbox PATH so the agent can apply `nix flake update`.
+  # the agent sandbox, and writes /tmp/gh-aw/autoloop-eval.json. That step also
+  # precomputes what the agent would otherwise need nix for -- prefetched hashes
+  # and a rewritten flake.lock -- because nix cannot be reached from inside the
+  # sandbox: symlinking it onto the sandbox PATH was tried and the agent still
+  # got "nix: command not found" (run 33990254940, issue #120).
   #
   # Deliberately no magic-nix-cache-action here (unlike ci.yml): it needs
   # sudo, runs a background daemon on 127.0.0.1, and rewrites the nix
@@ -145,14 +149,6 @@ steps:
     with:
       extra_nix_config: |
         experimental-features = nix-command flakes
-
-  - name: Expose Nix to the agent sandbox
-    run: |
-      nix_bin="$(command -v nix)"
-      test -n "$nix_bin"
-      mkdir -p "${RUNNER_TEMP}/gh-aw/mcp-cli/bin"
-      ln -sfn "$nix_bin" "${RUNNER_TEMP}/gh-aw/mcp-cli/bin/nix"
-      echo "Linked $nix_bin into ${RUNNER_TEMP}/gh-aw/mcp-cli/bin"
 
   - name: Check which programs are due
     env:
@@ -496,7 +492,7 @@ Each run executes **one iteration for the single selected program**:
 1. If `/tmp/gh-aw/autoloop-eval.json` exists, that file **is** the evaluation — it was produced on the runner with working `nix` and `gh` before the sandbox started. Read it and parse the metric from there. Do not re-run `gh api` or `nix store prefetch-file` inside the sandbox unless you have just changed a target file and the sandbox tools actually work.
 2. Otherwise run the evaluation command specified in the program file.
 3. Compare against `best_metric` from the state file.
-4. For `darwin-packages-freshness`, if `proposed` is present, apply at most one of those precomputed bumps (hashes already fetched — do not guess). For `nixpkgs-freshness`, bump one stale input with `nix flake update <input-name>` (nix is on PATH).
+4. Both freshness programs hand you their change precomputed under `proposed`, because `nix` is not available inside the sandbox: for `darwin-packages-freshness` apply at most one of the prefetched hash bumps, and for `nixpkgs-freshness` apply the rewritten `flake.lock` exactly as that program's **Evaluation** section prescribes (guard with the `base_flake_lock_blob` check). Never guess a hash, a rev or a `narHash`, and do not try to run `nix` yourself.
 
 ### Step 5: Accept or Reject
 
