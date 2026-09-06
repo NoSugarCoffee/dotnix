@@ -36,6 +36,11 @@ RESUME_PROCESS: Final[re.Pattern[str]] = re.compile(
 )
 SERVER_START_TIMEOUT: Final[float] = 10.0
 SERVER_POLL_INTERVAL: Final[float] = 0.2
+# A session's name is the last component of its unix IPC socket path, and the
+# 103-byte limit on those is nearly spent by macOS's per-user $TMPDIR before
+# zellij appends anything of its own.
+SYNTHESIZED_NAME_LIMIT: Final[int] = 20
+SYNTHESIZED_DIGEST_LENGTH: Final[int] = 8
 
 
 class Conversation(NamedTuple):
@@ -51,8 +56,13 @@ class Conversation(NamedTuple):
         # Conversations started outside zellij have no session to return to,
         # so one is invented per directory. The digest keeps two projects
         # sharing a basename from being merged into a single session.
-        digest = hashlib.sha256(str(self.cwd).encode()).hexdigest()[:12]
-        return f"{self.cwd.name}-{digest}"
+        digest = hashlib.sha256(str(self.cwd).encode()).hexdigest()[
+            :SYNTHESIZED_DIGEST_LENGTH
+        ]
+        stem = self.cwd.name[
+            : SYNTHESIZED_NAME_LIMIT - SYNTHESIZED_DIGEST_LENGTH - 1
+        ]
+        return f"{stem}-{digest}"
 
     @property
     def tab_name(self) -> str:
@@ -212,6 +222,17 @@ def zellij(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def reported(error: subprocess.CalledProcessError) -> str:
+    """What a failed helper said, in place of a traceback that drops it.
+
+    subprocess renders only the exit status in its message, so the one thing
+    worth reading -- zellij naming the socket path it could not use, say --
+    never reaches the terminal.
+    """
+    command = " ".join([Path(error.cmd[0]).name, *error.cmd[1:]])
+    return f"{command} failed ({error.returncode}): {error.stderr.strip()}"
+
+
 def discard_exited_session(name: str) -> None:
     """Drop an exited session's husk so the name is free for a fresh one.
 
@@ -296,7 +317,7 @@ def close_tabs(session: str, ids: set[int]) -> None:
         except subprocess.CalledProcessError as error:
             print(
                 f"  warning: could not close placeholder tab {tab_id} in "
-                f"{session!r}: {error.stderr.strip()}",
+                f"{session!r}: {reported(error)}",
                 file=sys.stderr,
             )
 
@@ -372,7 +393,7 @@ def attach_sessions(names: list[str], dry_run: bool) -> None:
             # that ended up without a terminal rather than abandoning the rest.
             print(
                 f"  warning: no kitty tab for {name!r}, attach by hand: "
-                f"{error.stderr.strip()}",
+                f"{reported(error)}",
                 file=sys.stderr,
             )
 
@@ -431,7 +452,7 @@ def restore_session(
         raise RuntimeError(
             f"{name!r} was only partly restored -- discard it with "
             f"`zellij kill-session {name}` before retrying: "
-            f"{error.stderr.strip()}"
+            f"{reported(error)}"
         ) from error
     finally:
         close_tabs(name, placeholders)
@@ -513,4 +534,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except subprocess.CalledProcessError as failure:
+        raise SystemExit(reported(failure)) from failure
