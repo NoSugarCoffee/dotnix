@@ -1,0 +1,21 @@
+justfile
+  s_bb58da250f2650::t_5af29e4e35b1cb 12
+home/home.nix
+  s_bb58da250f2650::t_129a8147cbc188 458-461
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "84f08ba524d5201257799dbf9a6d58864c1069c0",
+  "prompts": {},
+  "sessions": {
+    "s_bb58da250f2650": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6a0b4e7d-6b7f-43e4-84e2-317ed51b8168",
+        "model": "grok-4.6"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
