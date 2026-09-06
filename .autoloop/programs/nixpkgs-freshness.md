@@ -68,13 +68,14 @@ the already-rewritten lock:
 Apply it with:
 
 ```bash
-test "$(git hash-object flake.lock)" = "<base_flake_lock_blob>"
-cp <flake_lock> flake.lock
+test "$(git hash-object flake.lock)" = "<base_flake_lock_blob>" \
+  && cp <flake_lock> flake.lock
 ```
 
-The hash check is mandatory: the proposed lock is a whole file derived from
-the tree the runner evaluated, so copying it onto a different tree would
-silently revert every other input's pin. If the hashes differ, apply nothing
-and report the mismatch. If `proposed` is `null` while `stale_inputs` is
-non-empty, `nix` was missing on the runner -- report that and change nothing;
-never hand-edit `rev`/`narHash`/`lastModified`.
+The hash check is mandatory, and must gate the copy in the same command as
+above rather than being run before it: the proposed lock is a whole file
+derived from the tree the runner evaluated, so copying it onto a different
+tree would silently revert every other input's pin. If the hashes differ,
+apply nothing and report the mismatch. If `proposed` is `null` while
+`stale_inputs` is non-empty, `proposed_error` says why -- report it and change
+nothing; never hand-edit `rev`/`narHash`/`lastModified`.
