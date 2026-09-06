@@ -10,8 +10,11 @@ schedule: weekly
 ## Goal
 
 Keep this flake's **root** inputs pinned to the newest commit available on
-their locked ref. One iteration = bump one stale root input via
-`nix flake update <input-name>` and let CI prove the new pin still builds.
+their locked ref. One iteration = bump one stale root input by applying the
+evaluation's precomputed `flake.lock` and let CI prove the new pin still
+builds. `nix` does not exist inside the agent sandbox, so the bump is
+computed on the runner (see **Evaluation**) rather than by running
+`nix flake update` yourself.
 
 Root inputs (from `flake.nix`, five total): `nixpkgs`, `nixpkgs-unstable`,
 `home-manager`, `flake-utils`, `claude-desktop`.
@@ -53,3 +56,26 @@ total_root_inputs`). **Higher is better.** Prefer
 the sandbox starts). `nix flake check` and this repo's own `ci.yml` build
 jobs are the real safety net -- this script only measures staleness, it does
 not build anything.
+
+When a root input is stale the JSON also carries a `proposed` object holding
+the already-rewritten lock:
+
+```json
+{ "input": "nixpkgs", "flake_lock": "/tmp/gh-aw/autoloop-proposed/flake.lock",
+  "base_flake_lock_blob": "<git blob hash>", "rev": "<new rev>" }
+```
+
+Apply it with:
+
+```bash
+test "$(git hash-object flake.lock)" = "<base_flake_lock_blob>" \
+  && cp <flake_lock> flake.lock
+```
+
+The hash check is mandatory, and must gate the copy in the same command as
+above rather than being run before it: the proposed lock is a whole file
+derived from the tree the runner evaluated, so copying it onto a different
+tree would silently revert every other input's pin. If the hashes differ,
+apply nothing and report the mismatch. If `proposed` is `null` while
+`stale_inputs` is non-empty, `proposed_error` says why -- report it and change
+nothing; never hand-edit `rev`/`narHash`/`lastModified`.

@@ -38,8 +38,11 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
-      - name: Test Autoloop scheduler
-        run: python3 -m unittest tests.test_autoloop_scheduler -v
+      # Discovery rather than named modules: naming them meant every test file
+      # added since the first one (autoloop eval, session restore) silently
+      # never ran here.
+      - name: Test
+        run: python3 -m unittest discover -s tests -t tests -v
       - name: Lint
         run: |
           nix shell --inputs-from . \
