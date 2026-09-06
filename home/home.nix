@@ -33,6 +33,9 @@ let
       theme = "dark";
       tui = "fullscreen";
       remoteControlAtStartup = true;
+      # Names the ccstatusline binary as Claude Code's status line. Widget
+      # layout is not managed here: ccstatusline writes
+      # ~/.config/ccstatusline/settings.json itself (see the note above nix.gc).
       statusLine = {
         type = "command";
         command = "ccstatusline";
