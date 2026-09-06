@@ -1,0 +1,35 @@
+.github/workflows/scripts/autoloop_eval.sh
+  s_e050c45bc1cf13::t_1d0380bdad1803 39-48
+.github/workflows/scripts/eval_nixpkgs_freshness.sh
+  s_e050c45bc1cf13::t_2e118446818798 3-4
+  s_e050c45bc1cf13::t_992868e3bd3fe4 34-56,58-59
+.github/workflows/autoloop.lock.yml
+  ai_agent 1
+.github/workflows/ci.yml
+  s_e050c45bc1cf13::t_2f8a2d3d0f8cca 41-45
+tests/test_autoloop_eval.py
+  ai_agent 1-134
+.github/workflows/autoloop.md
+  s_e050c45bc1cf13::t_91048061b8b5cd 129-133
+  s_e050c45bc1cf13::t_ae415e88efff9d 45-50
+  s_e050c45bc1cf13::t_dc22ae4db016f4 495
+.autoloop/programs/nixpkgs-freshness.md
+  s_e050c45bc1cf13::t_6fe16a080727de 59-80
+  s_e050c45bc1cf13::t_99328cee9d8572 13-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "40a38fe25e7d02e727218a36b7a2e82809a83ca6",
+  "prompts": {},
+  "sessions": {
+    "s_e050c45bc1cf13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f96d47bc-fe58-4858-a48f-7c0bb633bfd1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
