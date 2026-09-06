@@ -33,6 +33,9 @@ let
       theme = "dark";
       tui = "fullscreen";
       remoteControlAtStartup = true;
+      # Names the ccstatusline binary as Claude Code's status line. Widget
+      # layout is not managed here: ccstatusline writes
+      # ~/.config/ccstatusline/settings.json itself (see the note above nix.gc).
       statusLine = {
         type = "command";
         command = "ccstatusline";
@@ -455,12 +458,10 @@ in
     + lib.optionalString pkgs.stdenv.isDarwin ''
       copy_command "pbcopy"
     '';
-  # ccstatusline's own widget/color config -- exported from its interactive
-  # TUI once and checked in here rather than left in ~/.config, matching the
-  # zellij config.kdl approach: since this path is a read-only nix store
-  # symlink, re-running the TUI to tweak widgets can't save back to it. Edit
-  # this file directly and re-switch instead.
-  xdg.configFile."ccstatusline/settings.json".source = ./ccstatusline/settings.json;
+  # ccstatusline writes ~/.config/ccstatusline/settings.json on schema
+  # migration and from its TUI, so that path cannot be a store symlink
+  # (EACCES → "⚠ invalid config"). Leave the live file unmanaged; a copyable
+  # export lives at ./ccstatusline/settings.json.
   nix = {
     # Bounds generation history so the store can't fill the disk again (a
     # full root disk once broke everything on the Linux box): a weekly timer
