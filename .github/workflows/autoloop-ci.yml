@@ -1,0 +1,26 @@
+name: Autoloop CI
+
+# Autoloop's commits reach their branch through gh-aw's safe_outputs job, which
+# pushes with GITHUB_TOKEN -- and events from that token do not start workflow
+# runs, so `ci.yml` never sees the loop's work. workflow_dispatch is the one
+# exception GitHub makes, so dispatch it here once per new branch head. Without
+# this the CI gate in autoloop.md can only ever report "pending".
+on:
+  workflow_run:
+    workflows: [Autoloop]
+    types: [completed]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Dispatch CI for unbuilt autoloop branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/workflows/scripts/autoloop_dispatch_ci.sh
