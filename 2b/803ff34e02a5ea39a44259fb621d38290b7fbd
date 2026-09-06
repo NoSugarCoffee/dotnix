@@ -1,0 +1,19 @@
+home/home.nix
+  s_bb58da250f2650::t_a88d3a2154dafb 36-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "2b803ff34e02a5ea39a44259fb621d38290b7fbd",
+  "prompts": {},
+  "sessions": {
+    "s_bb58da250f2650": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6a0b4e7d-6b7f-43e4-84e2-317ed51b8168",
+        "model": "grok-4.6"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
