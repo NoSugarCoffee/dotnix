@@ -8,25 +8,27 @@
 
 | Field | Value |
 |-------|-------|
-| Last Run | 2026-09-05T20:33:18Z |
-| Iteration Count | 1 |
-| Best Metric | — |
+| Last Run | 2026-09-06T00:00:00Z |
+| Iteration Count | 2 |
+| Best Metric | 0.6000 |
 | Target Metric | — |
 | Metric Direction | higher |
 | Branch | `autoloop/nixpkgs-freshness` |
-| PR | — |
-| Issue | #120 |
+| PR | #aw_nixpr |
+| Issue | #aw_nixfresh |
 | Paused | false |
 | Pause Reason | — |
 | Completed | false |
 | Completed Reason | — |
-| Consecutive Errors | 1 |
-| Recent Statuses | error |
+| Consecutive Errors | 0 |
+| Recent Statuses | accepted, error |
 
 ## 📋 Program Info
 
 **Goal**: Keep root flake inputs pinned to the newest commit available on their locked refs.
 **Metric**: up_to_date_fraction (higher is better)
+**Pull Request**: #aw_nixpr
+**Issue**: #aw_nixfresh
 
 ## 🎯 Current Priorities
 
@@ -34,7 +36,7 @@
 
 ## 📚 Lessons Learned
 
-- The runner for this iteration did not have `nix` on PATH, so the prescribed single-input update could not be performed safely.
+- The runner precomputed a whole-file lockfile proposal, allowing a safe single-input bump without requiring Nix in the agent sandbox.
 
 ## 🚧 Foreclosed Avenues
 
@@ -42,7 +44,7 @@
 
 ## 🔭 Future Directions
 
-- Retry the `nixpkgs` bump when a runner with the Nix tool is available.
+- Continue with the next stale root input on the next scheduled iteration; the remaining stale inputs are `nixpkgs` and `nixpkgs-unstable`.
 
 ## 📊 Iteration History
 
@@ -52,3 +54,11 @@
 - **Change**: Attempted the prescribed `nix flake update nixpkgs`.
 - **Metric**: 0.6000 (precomputed evaluation; no new metric)
 - **Notes**: `nix` was unavailable on PATH, so no lockfile change was made.
+
+### Iteration 2 — 2026-09-06 00:00 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/34041304141)
+
+- **Status**: ✅ Accepted
+- **Change**: Applied the precomputed `home-manager` lockfile bump using the mandatory base-blob guard.
+- **Metric**: 0.6000 (previous best: —, delta: +0.6000)
+- **Commit**: pending PR commit
+- **Notes**: One of three stale root inputs is now current; the next iteration should apply the next precomputed single-input proposal.
