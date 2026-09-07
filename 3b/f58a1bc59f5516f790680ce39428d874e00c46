@@ -1,0 +1,32 @@
+.github/workflows/autoloop.lock.yml
+  ai_agent 1,584
+.github/workflows/autoloop-ci.yml
+  s_e050c45bc1cf13::t_1c3e4cdbb4120e 18-23
+.github/workflows/scripts/autoloop_verify_ci.sh
+  s_e050c45bc1cf13::t_18cdd62ec947a9 12,25,30-38,40-41,46-49,55,58,60-74
+tests/test_autoloop_ci_gate.py
+  s_e050c45bc1cf13::t_060d0aceb64376 19-23,28-29,43-45,65,75,121-123,133-135,162,166,168,178-180,185-187,192-194,197-220
+  s_e050c45bc1cf13::t_6259a5832afb69 97,99-106,110-111,114,117,119-120,124-132,136-137,141,147-155,157
+  s_e050c45bc1cf13::t_f92dc11b4f4ca7 59-64,66,69-74,76-78,81-87
+.github/workflows/scripts/autoloop_dispatch_ci.sh
+  s_e050c45bc1cf13::t_51c8aca5dbfb03 12-16,18-19,21,27-33,41
+.github/workflows/autoloop.md
+  s_e050c45bc1cf13::t_7b6aca70eff767 541-543,546
+  s_e050c45bc1cf13::t_5457a424b8c5ae 167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "3bf58a1bc59f5516f790680ce39428d874e00c46",
+  "prompts": {},
+  "sessions": {
+    "s_e050c45bc1cf13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f96d47bc-fe58-4858-a48f-7c0bb633bfd1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
