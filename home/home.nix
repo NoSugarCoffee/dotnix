@@ -9,7 +9,16 @@
 let
   proxyUrl = "http://127.0.0.1:7890";
   noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
-  # Only the portable subset of Claude Code settings is managed; hooks,
+  # Pi user extensions: computer-use (screen/GUI), browser-native (web automation),
+  # remote-pi (multi-agent mesh + mobile). These are not ordinary packages on PATH;
+  # they are Pi agent capabilities installed into ~/.pi/agent/npm/node_modules/ via
+  # `pi install`. An activation script ensures they exist after a fresh machine
+  # bootstrap, so switching PCs doesn't require manual re-installation.
+  piExtensions = [
+    "npm:pi-computer-use"
+    "npm:pi-agent-browser-native"
+    "npm:remote-pi"
+  ];
   # plugins, and anything set via /config stay machine-owned (see the
   # claudeCodeSettings activation below for the merge semantics).
   claudeManagedSettings = pkgs.writeText "claude-managed-settings.json" (
@@ -328,6 +337,25 @@ in
         echo "warning: asdfLanguages: npm shim missing, skipping @larksuite/cli" >&2
       fi
       true # this subshell's own exit status must always be 0
+    )
+  '';
+  # Pi extensions are installed imperatively (npm:pi-computer-use,
+  # npm:pi-agent-browser-native, npm:remote-pi) via `pi install`. On a fresh
+  # machine they are missing entirely. This activation checks `pi list` first
+  # and installs only the ones that are absent, so it is a cheap no-op on
+  # every-day switches.
+  home.activation.piPackages = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    (
+      set +e
+      pi="${pkgs.pi-coding-agent}/bin/pi"
+      installed=$($pi list 2>/dev/null)
+      for ext in ${lib.concatStringsSep " " piExtensions}; do
+        if ${pkgs.gnugrep}/bin/grep -Fq "$ext" <<< "$installed"; then
+          continue
+        fi
+        $DRY_RUN_CMD "$pi" install "$ext" || echo "warning: piPackages: failed to install $ext" >&2
+      done
+      true
     )
   '';
   # asdf itself comes from home.packages; this exposes the shims it installs
