@@ -66,9 +66,7 @@ jobs:
               run nixfmt     nixfmt --check $(git ls-files "*.nix")
               run ruff       ruff check pkgs/claude-session-registry
               run shellcheck shellcheck scripts/bootstrap-macos.sh \
-                .github/workflows/scripts/autoloop_eval.sh \
-                .github/workflows/scripts/eval_darwin_packages_freshness.sh \
-                .github/workflows/scripts/eval_nixpkgs_freshness.sh
+                $(git ls-files ".github/workflows/scripts/*.sh")
 
               exit $status
             '

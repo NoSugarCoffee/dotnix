@@ -158,6 +158,16 @@ steps:
     run: |
       python3 .github/workflows/scripts/autoloop_scheduler.py
 
+  # Runs before the evaluation so a red branch head is known before any new
+  # change is layered on top of it. autoloop-ci.yml is what makes a verdict
+  # possible at all; see the comment there.
+  - name: Verify the previous iteration's CI
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    run: |
+      bash .github/workflows/scripts/autoloop_verify_ci.sh
+
   - name: Evaluate selected program on the runner
     env:
       GH_TOKEN: ${{ github.token }}
@@ -425,6 +435,7 @@ Each run executes **one iteration for the single selected program**:
 
 ### Step 2: Analyze and Propose
 
+0. **Read `/tmp/gh-aw/autoloop-ci.json` first** — it decides whether this run may propose anything at all (see [Step 5a](#step-5a-ratify-the-previous-iteration)). `failed` makes this iteration a repair, `pending` ends it immediately, and only `none` or `verified` let you continue below. Checking here avoids designing a change that Step 5a would then discard.
 1. Read the target files and understand the current state.
 2. Review the state file's **Lessons Learned**, **Foreclosed Avenues**, and **Current Priorities** — what worked, what didn't, and what the maintainer wants.
 3. **Think carefully** about what change is most likely to improve the metric. Consider:
@@ -496,68 +507,58 @@ Each run executes **one iteration for the single selected program**:
 
 ### Step 5: Accept or Reject
 
-The sandbox-computed metric is necessary but **not sufficient** for acceptance. The agent's sandbox cannot reliably install many project toolchains (e.g., `bun`, `tsc`, `cargo`, `go`, `pytest`) due to network restrictions on asset hosts, so a "metric improved" signal from the sandbox can mask broken commits (e.g., type-check or test failures the sandbox couldn't observe). Acceptance must therefore be gated on **CI green** for the pushed HEAD commit. If CI fails, attempt to fix-and-retry within the same iteration rather than reverting — reverting throws away mostly-correct work and creates `commit→revert→commit` churn on the branch.
+The sandbox-computed metric is necessary but **not sufficient** for acceptance. The agent's sandbox cannot reliably install many project toolchains (e.g., `bun`, `tsc`, `cargo`, `go`, `pytest`) due to network restrictions on asset hosts, so a "metric improved" signal from the sandbox can mask broken commits (e.g., type-check or test failures the sandbox couldn't observe). Acceptance is therefore gated on **CI green** — but the gate is one run behind the commit it judges, and that is structural rather than a shortcut:
 
-The accept path is split into three sub-steps: **5a (push and wait for CI)**, **5b (fix loop)**, **5c (accept)**.
+- gh-aw wipes git credentials before the agent starts, so **you cannot push**.
+- Your commit reaches the branch, and the PR is opened, from the `safe_outputs` job that runs **after** you have exited.
+- GitHub starts no workflow run for a push made with `GITHUB_TOKEN`, so `autoloop-ci.yml` dispatches `ci.yml` on the branch after each Autoloop run finishes.
 
-**If the metric did not improve**, jump straight to the "metric did not improve" path below — no push, no CI gate.
+An iteration therefore cannot watch CI for the commit it just wrote — there is no branch to push and no PR to poll while you are running. Do not attempt it. Instead every run **opens by ratifying the previous iteration** from the verdict the runner already computed in `/tmp/gh-aw/autoloop-ci.json`.
 
-#### Step 5a: Push and wait for CI
+The path is: **5a (ratify the previous iteration)**, **5b (repair a red branch)**, **5c (accept this iteration, provisionally)**.
 
-**Only entered if the metric improved** (or this is the first run establishing a baseline).
+#### Step 5a: Ratify the previous iteration
+
+Read `/tmp/gh-aw/autoloop-ci.json`; its `state` decides what this run is allowed to do:
+
+| `state` | Meaning | This iteration |
+|---|---|---|
+| `none` | no branch yet, or it sits at the default branch | nothing to ratify — continue |
+| `verified` | CI passed on `head_sha` | record the ratification, then continue |
+| `failed` | CI failed on `head_sha` | go to **Step 5b** — the repair *is* this iteration |
+| `pending` | CI for `head_sha` has not started or not finished | **make no new change** — report and end |
+
+On `pending`, end without committing: append `"waiting-on-ci"` to `recent_statuses`, prepend a ⏳ entry to the iteration history naming `head_sha`, and say so in the issue comment. Stacking a second unverified commit onto an unverified one is exactly what this gate exists to prevent, and `autoloop-ci.yml` will have dispatched the build by the time the next run reads the verdict.
+
+On `verified`, record it before doing anything else: set `last_verified_sha` in the **⚙️ Machine State** table to `head_sha`, reset `ci_fix_attempts` to 0, and mark the newest ✅ history entry as ratified with the `run_url` from the verdict.
+
+#### Step 5b: Repair a red branch
+
+`state: failed` means the branch head does not build. Repairing it is the whole iteration — do not evaluate a new change, and do not revert as a first move, since a revert throws away mostly-correct work and creates `commit→revert→commit` churn.
+
+1. **Read the failure**: `gh run view <run_url's run id> --log-failed` for the failing jobs, and reduce it to a **failure signature** — a stable fingerprint such as sorted failing job names plus the top error line.
+2. **No-progress guard**: if that signature matches `last_ci_failure_signature` in the state file, the previous repair did not work. Set `paused: true` with `pause_reason: "stuck in CI fix loop: <signature>"`, append `"ci-fix-exhausted"` to `recent_statuses`, comment on the program issue with the signature and the failing run link, and end.
+3. **Otherwise repair**: make the smallest change that addresses the signature, staying inside the program's target-file list, and commit it via `push-to-pull-request-branch`. Record the signature as `last_ci_failure_signature` and increment `ci_fix_attempts`.
+4. **Budget: 3 repair attempts** (`ci_fix_attempts`) for one red head. On the fourth, stop repairing: revert the offending commit on the branch instead, note it in the iteration history, and let the next run ratify the revert.
+5. The repair is itself unverified until a later run reads `verified` for it — the same gate applies, with no exception for fixes.
+
+#### Step 5c: Accept (provisionally)
+
+**Only entered when Step 5a reported `none` or `verified`** and the metric improved.
 
 Improvement is **direction-aware**:
 - If `selected_metric_direction` is `"higher"` (default): the metric improved when `new_metric > best_metric`.
 - If `selected_metric_direction` is `"lower"`: the metric improved when `new_metric < best_metric`.
 
-Read `selected_metric_direction` from `/tmp/gh-aw/autoloop.json` to know which direction applies. The first run (no `best_metric` yet) always counts as an improvement regardless of direction.
+Read `selected_metric_direction` from `/tmp/gh-aw/autoloop.json` to know which direction applies. The first run (no `best_metric` yet) always counts as an improvement regardless of direction. **If the metric did not improve**, take the "metric did not improve" path below instead.
 
-1. Commit the changes to the long-running branch `autoloop/{program-name}` with a commit message referencing the actions run:
-   - Commit message subject line: `[Autoloop: {program-name}] Iteration <N>: <short description>`
-   - Commit message body (after a blank line): `Run: {run_url}` referencing the GitHub Actions run URL.
-2. Push the commit to the long-running branch.
-3. **Find or create the PR** so CI runs and `gh pr checks` has a target. Follow these steps in order:
-   a. Check `existing_pr` from `/tmp/gh-aw/autoloop.json`. If it is not null, that is the existing draft PR — use it as `$EXISTING_PR` below; **never** call `create-pull-request`.
-   b. If `existing_pr` is null, also check the `PR` field in the state file's **⚙️ Machine State** table as a fallback. Verify it is still open via the GitHub API; if it has been closed or merged, treat it as if no PR exists and proceed to step (c).
-   c. If no PR exists (both sources are null): create one with `create-pull-request`, specifying `branch: autoloop/{program-name}` (the value of `head_branch` from `autoloop.json`) explicitly — do not let the framework auto-generate a branch name. See Step 5c for the title/body format.
-4. Wait for CI on the new HEAD and reduce all check-runs to a single status — `success`, `failure`, or `pending`:
+Acceptance here is provisional: it becomes ratified only when a later run reads `state: verified` for this commit. Record it as ✅ (unratified) rather than claiming CI passed.
 
-   ```bash
-   PR=${EXISTING_PR:-$(gh pr list --head autoloop/{program-name} --json number -q '.[0].number')}
-   gh pr checks "$PR" --watch --interval 30 || true
-   status=$(gh pr checks "$PR" --json conclusion,state -q '.[] | (.conclusion // .state // "")' \
-     | awk '
-         BEGIN { r = "success" }
-         /^(FAILURE|CANCELLED|TIMED_OUT|ACTION_REQUIRED|STARTUP_FAILURE|STALE)$/ { r = "failure" }
-         /^(PENDING|QUEUED|IN_PROGRESS|WAITING|REQUESTED)$/ { if (r == "success") r = "pending" }
-         END { print r }')
-   ```
+1. Commit the change to the long-running branch `autoloop/{program-name}`:
+   - Subject: `[Autoloop: {program-name}] Iteration <N>: <short description>`
+   - Body (after a blank line): `Run: {run_url}`.
 
-   Three outcomes: `success`, `failure`, or `pending`. `pending` should be rare given `--watch`, but the awk fallback is defensive — never accept on `pending`. Treat `pending` as a non-terminal state: re-run the `gh pr checks --watch` step (it does not consume a fix attempt and the per-attempt `--watch` time still counts toward the 60-min wall-clock cap from Step 5b). If `pending` persists past the wall-clock cap, fall through to the `ci-timeout` handling in Step 5b.7.
-
-5. If `status == "success"`, proceed to **Step 5c**. If `status == "failure"`, proceed to **Step 5b**. If `status == "pending"`, re-run this step (subject to the wall-clock cap defined in Step 5b.7).
-
-#### Step 5b: Fix loop (up to 5 attempts per iteration)
-
-If `status == "failure"`, **fix and retry — do not revert, do not accept**:
-
-1. **Fetch the failing check-run logs** for the pushed SHA via `gh run view --log` or the Checks API.
-2. **Extract a structured failure summary**:
-   - Failing job names and the first error line for each.
-   - **A failure signature** — a stable, normalized fingerprint of the failures (e.g., sorted failing-test names + the top error code, like `TS2339:fromArrays:tests/stats/eval_query.test.ts`). The signature is what the no-progress guard compares.
-
-   *(The shared failure-signature extractor lives in the scheduler helper module — see issue #34 for the implementation.)*
-3. **No-progress guard**: if this attempt's failure signature exactly matches the previous attempt's signature, **stop**. The agent is stuck in a repeat-loop. Set `paused: true` on the state file with `pause_reason: "stuck in CI fix loop: <signature>"`, append `"ci-fix-exhausted"` to `recent_statuses`, comment on the program issue with the signature and the three most recent attempts, and end the iteration.
-4. **Attempt the fix**: feed the structured failure summary back to the agent as the next sub-task (e.g., "CI failed on `<sha>`. Here are the failures: `<…>`. Fix them and push again."). The agent commits the fix and pushes.
-5. **Loop back to Step 5a** with the new HEAD.
-6. **Budget: 5 fix attempts per iteration.** If the 5th attempt still leaves CI red, set `paused: true` with `pause_reason: "ci-fix-exhausted: <signature>"`, append `"ci-fix-exhausted"` to `recent_statuses`, comment on the program issue, and end the iteration.
-7. **Wall-clock cap: 60 min per iteration** including all CI waits across attempts. If exceeded mid-fix, set `paused: true` with `pause_reason: "ci-timeout"`, append `"ci-fix-exhausted"` to `recent_statuses`, leave the current branch state in place, and end the iteration.
-
-#### Step 5c: Accept
-
-**Only entered when `status == "success"`** from Step 5a (possibly after one or more fix attempts in Step 5b).
-
-1. The commit(s) are already on the long-running branch (pushed in Step 5a / 5b). No further pushing needed.
+   Use `push-to-pull-request-branch` when a PR already exists for the branch; otherwise the commit rides along with `create-pull-request` below.
 2. If a draft PR does not already exist for this branch (i.e., `existing_pr` from `autoloop.json` is null AND the state file's `PR` field is null or refers to a closed PR), create one — specify `branch: autoloop/{program-name}` (the value of `head_branch` from `autoloop.json`) explicitly so the framework does not auto-generate a branch name:
    - Title: `[Autoloop: {program-name}]`
    - Body includes: a summary of the program goal, link to the program issue, the current best metric, and AI disclosure: `🤖 *This PR is maintained by Autoloop. Each accepted iteration adds a commit to this branch.*`
@@ -565,7 +566,7 @@ If `status == "failure"`, **fix and retry — do not revert, do not accept**:
 4. Ensure the program issue exists (see [Program Issue](#program-issue) below) — for file-based programs that have no program issue yet (`selected_issue` is null in `/tmp/gh-aw/autoloop.json`), create one and record its number in the state file's `Issue` field.
 5. Update the state file `{program-name}.md` in the repo-memory folder:
    - Update the **⚙️ Machine State** table: reset `consecutive_errors` to 0, set `best_metric`, increment `iteration_count`, set `last_run` to current UTC timestamp, append `"accepted"` to `recent_statuses` (keep last 10), set `paused` to false.
-   - Prepend an entry to **📊 Iteration History** (newest first) with status ✅, metric, **signed delta** (`+<delta>` for `higher`-direction programs, `-<delta>` for `lower`-direction programs — both arrows point in the "improvement" direction), PR link, the fix-attempt count if `> 0`, and a one-line summary of what changed and why it worked.
+   - Prepend an entry to **📊 Iteration History** (newest first) with status ✅ *(unratified)*, metric, **signed delta** (`+<delta>` for `higher`-direction programs, `-<delta>` for `lower`-direction programs — both arrows point in the "improvement" direction), PR link, the fix-attempt count if `> 0`, and a one-line summary of what changed and why it worked. A later run flips it to ✅ when CI ratifies the commit.
    - Update **📚 Lessons Learned** if this iteration revealed something new about the problem or what works.
    - Update **🔭 Future Directions** if this iteration opened new promising paths.
 6. **Update the program issue**: edit the status comment and post a per-iteration comment on the program issue (see [Program Issue](#program-issue)). Note the fix-attempt count in the per-iteration comment if `> 0`.
@@ -577,7 +578,7 @@ If `status == "failure"`, **fix and retry — do not revert, do not accept**:
 
 #### Coordination with PR-health-keeper workflows
 
-If a repo ships a companion PR-health-keeper workflow (e.g., an "Evergreen" workflow that fixes failing CI on open PRs), it should be able to pick up paused Autoloop PRs using the same rules as human-authored PRs. The handoff is via the `pause_reason` field — `ci-fix-exhausted: <signature>`, `stuck in CI fix loop: <signature>`, and `ci-timeout` are all signals that the branch is red and needs an external nudge. Absent such a workflow, the loud pause + structured reason gives a human enough signal to intervene.
+If a repo ships a companion PR-health-keeper workflow (e.g., an "Evergreen" workflow that fixes failing CI on open PRs), it should be able to pick up paused Autoloop PRs using the same rules as human-authored PRs. The handoff is via the `pause_reason` field — `ci-fix-exhausted: <signature>` and `stuck in CI fix loop: <signature>` both signal that the branch is red and needs an external nudge. Absent such a workflow, the loud pause + structured reason gives a human enough signal to intervene.
 
 **If the metric did not improve**:
 1. Discard the code changes (do not commit them to the long-running branch).
@@ -796,6 +797,9 @@ When creating or updating a program's state file in the repo-memory folder, use 
 | Completed Reason | — |
 | Consecutive Errors | 0 |
 | Recent Statuses | — |
+| Last Verified SHA | — |
+| CI Fix Attempts | 0 |
+| Last CI Failure Signature | — |
 
 ---
 
@@ -863,11 +867,14 @@ All iterations in reverse chronological order (newest first).
 | PR | `#number` or `—` | Draft PR number for this program |
 | Issue | `#number` or `—` | The single program issue (`[Autoloop: {program-name}]`) for this program. Hosts the status comment, per-iteration comments, and human steering comments. |
 | Paused | `true` or `false` | Whether the program is paused |
-| Pause Reason | text or `—` | Why it is paused (if applicable). Common values include `manual`, `consecutive errors`, `ci-fix-exhausted: <signature>` (5 fix attempts didn't fix CI), `stuck in CI fix loop: <signature>` (no-progress guard tripped — same failure signature twice in a row), and `ci-timeout` (60-min wall-clock cap hit). |
+| Pause Reason | text or `—` | Why it is paused (if applicable). Common values include `manual`, `consecutive errors`, `ci-fix-exhausted: <signature>` (3 repair attempts didn't turn the branch green), and `stuck in CI fix loop: <signature>` (no-progress guard tripped — same failure signature twice in a row). |
 | Completed | `true` or `false` | Whether the program has reached its target metric |
 | Completed Reason | text or `—` | Why it completed (e.g., `target metric 0.95 reached with value 0.97`) |
 | Consecutive Errors | integer | Count of consecutive evaluation failures |
-| Recent Statuses | comma-separated words | Last 10 outcomes: `accepted`, `rejected`, `error`, or `ci-fix-exhausted`. The `ci-fix-exhausted` value is the coarse bucket for *any* iteration that ended because the CI gate could not be made green within the per-iteration budget — including no-progress-guard trips, 5-attempt budget exhaustion, and `ci-timeout`. The fine-grained reason is in `pause_reason`. |
+| Recent Statuses | comma-separated words | Last 10 outcomes: `accepted`, `rejected`, `error`, `waiting-on-ci`, or `ci-fix-exhausted`. The `ci-fix-exhausted` value is the coarse bucket for *any* iteration that ended because the branch could not be made green within the repair budget — including no-progress-guard trips. The fine-grained reason is in `pause_reason`. |
+| Last Verified SHA | sha or `—` | Branch head that `autoloop-ci.yml`'s build proved green, as reported by `/tmp/gh-aw/autoloop-ci.json`. Commits after it are accepted but not yet ratified. |
+| CI Fix Attempts | integer | Repairs made against the current red head. Reset to 0 on ratification; at 3 the next run reverts instead of repairing. |
+| Last CI Failure Signature | text or `—` | Fingerprint of the failure the last repair targeted. Repeats trip the no-progress guard. |
 
 ### Iteration History Entry Format
 
