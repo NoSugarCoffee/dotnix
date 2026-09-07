@@ -30,7 +30,10 @@ fi
 # Asked of the API rather than the checkout: a fetched ref goes stale the moment
 # another run pushes the branch, and ratifying a stale sha would bless a commit
 # that no longer is the head.
-head_sha=$(gh api "repos/$repo/branches/$branch" 2>/dev/null | jq -r '.commit.sha // empty')
+#
+# `|| true` because a missing branch is an expected answer, not an error: gh
+# exits non-zero on the 404 and pipefail would abort before the fallback below.
+head_sha=$( (gh api "repos/$repo/branches/$branch" 2>/dev/null || true) | jq -r '.commit.sha // empty')
 if [ -z "$head_sha" ]; then
   write none "$branch"
   exit 0

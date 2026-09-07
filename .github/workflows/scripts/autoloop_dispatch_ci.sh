@@ -24,8 +24,10 @@ while read -r branch head_sha; do
     continue
   fi
 
+  # Scoped to ci.yml, not the repository's runs: any other workflow having run
+  # for this sha would otherwise read as "built" and the gate would wait forever.
   # One branch's transient API error must not cost the others their build.
-  runs=$(gh api "repos/$repo/actions/runs?head_sha=$head_sha&per_page=1" |
+  runs=$(gh api "repos/$repo/actions/workflows/ci.yml/runs?head_sha=$head_sha&per_page=1" |
     jq -r '.total_count') || {
     echo "$branch: could not read runs for $head_sha" >&2
     status=1
