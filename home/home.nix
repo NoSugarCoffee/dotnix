@@ -58,6 +58,7 @@ in
         pkgs.claude-code
         pkgs.claude-session-registry
         pkgs.ccstatusline
+        pkgs.pi-coding-agent
         pkgs.apm
         pkgs.agent-access
         pkgs.bitwarden-cli
