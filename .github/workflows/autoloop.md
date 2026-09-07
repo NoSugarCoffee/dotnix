@@ -164,6 +164,7 @@ steps:
   - name: Verify the previous iteration's CI
     env:
       GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     run: |
       bash .github/workflows/scripts/autoloop_verify_ci.sh
@@ -537,10 +538,12 @@ On `verified`, record it before doing anything else: set `last_verified_sha` in 
 `state: failed` means the branch head does not build. Repairing it is the whole iteration — do not evaluate a new change, and do not revert as a first move, since a revert throws away mostly-correct work and creates `commit→revert→commit` churn.
 
 1. **Read the failure**: `gh run view <run_url's run id> --log-failed` for the failing jobs, and reduce it to a **failure signature** — a stable fingerprint such as sorted failing job names plus the top error line.
-2. **No-progress guard**: if that signature matches `last_ci_failure_signature` in the state file, the previous repair did not work. Set `paused: true` with `pause_reason: "stuck in CI fix loop: <signature>"`, append `"ci-fix-exhausted"` to `recent_statuses`, comment on the program issue with the signature and the failing run link, and end.
-3. **Otherwise repair**: make the smallest change that addresses the signature, staying inside the program's target-file list, and commit it via `push-to-pull-request-branch`. Record the signature as `last_ci_failure_signature` and increment `ci_fix_attempts`.
-4. **Budget: 3 repair attempts** (`ci_fix_attempts`) for one red head. On the fourth, stop repairing: revert the offending commit on the branch instead, note it in the iteration history, and let the next run ratify the revert.
+2. **Spend the budget check before repairing**: if `ci_fix_attempts` is already `3`, do not repair again. Revert the offending commit on the branch, note the revert in the iteration history, and let the next run ratify it. Deciding this after a repair would mean committing a fourth attempt and *then* being told to revert.
+3. **No-progress guard**: if the signature matches `last_ci_failure_signature`, the previous repair did not work. Set `paused: true` with `pause_reason: "stuck in CI fix loop: <signature>"`, append `"ci-fix-exhausted"` to `recent_statuses`, comment on the program issue with the signature and the failing run link, and end.
+4. **Otherwise repair**: make the smallest change that addresses the signature, staying inside the program's target-file list, and commit it via `push-to-pull-request-branch`. Record the signature as `last_ci_failure_signature` and increment `ci_fix_attempts`.
 5. The repair is itself unverified until a later run reads `verified` for it — the same gate applies, with no exception for fixes.
+
+The guard in 3 fires on a *repeated* signature and the budget in 2 on a *changing* one: three repairs that each surface a new failure exhaust the budget, while two that hit the same failure twice pause the program earlier.
 
 #### Step 5c: Accept (provisionally)
 

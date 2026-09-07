@@ -15,6 +15,12 @@ permissions:
   contents: read
   actions: write
 
+# Two dispatchers running at once would both see a head as unbuilt and dispatch
+# it twice; the check and the dispatch are not atomic.
+concurrency:
+  group: autoloop-ci-dispatch
+  cancel-in-progress: false
+
 jobs:
   dispatch:
     runs-on: ubuntu-latest
