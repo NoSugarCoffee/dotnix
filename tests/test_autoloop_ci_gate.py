@@ -15,17 +15,24 @@ VERIFY_SH = SCRIPTS / "autoloop_verify_ci.sh"
 DISPATCH_SH = SCRIPTS / "autoloop_dispatch_ci.sh"
 
 
-def _stub_gh(root: Path, responses: dict[str, str]) -> Path:
+NOT_FOUND = object()
+"""Marks a stubbed request that should fail the way `gh api` fails on a 404."""
+
+
+def _stub_gh(root: Path, responses: dict[str, str | object]) -> Path:
     """A `gh` that echoes a canned payload per subcommand, recording its calls.
 
     Keys are matched as prefixes of the joined arguments, in insertion order, so
-    list the most specific ones first.
+    list the most specific ones first. A NOT_FOUND value exits non-zero, which
+    real `gh` does on a missing resource and which a payload-only stub would hide.
     """
     bin_dir = root / "bin"
     bin_dir.mkdir(exist_ok=True)
     stub = bin_dir / "gh"
     cases = "\n".join(
-        f'  "{key}"*) cat <<\'PAYLOAD\'\n{value}\nPAYLOAD\n    ;;'
+        f'  "{key}"*) echo "gh: Not Found (HTTP 404)" >&2; exit 1 ;;'
+        if value is NOT_FOUND
+        else f'  "{key}"*) cat <<\'PAYLOAD\'\n{value}\nPAYLOAD\n    ;;'
         for key, value in responses.items()
     )
     stub.write_text(
@@ -67,11 +74,11 @@ def _verdict(root: Path, head_sha: str | None, runs: str) -> dict[str, object]:
     config_path = root / "autoloop.json"
     out = root / "ci.json"
     config_path.write_text(json.dumps({"head_branch": "autoloop/p"}))
-    branch = {} if head_sha is None else {"commit": {"sha": head_sha}}
+    branch = NOT_FOUND if head_sha is None else json.dumps({"commit": {"sha": head_sha}})
     bin_dir = _stub_gh(
         root,
         {
-            "api repos/o/r/branches/autoloop/p": json.dumps(branch),
+            "api repos/o/r/branches/autoloop/p": branch,
             "api repos/o/r/commits/main": json.dumps({"sha": "a" * 40}),
             "api repos/o/r/actions/workflows/ci.yml/runs": runs,
         },
@@ -93,6 +100,8 @@ def _verdict(root: Path, head_sha: str | None, runs: str) -> dict[str, object]:
 
 class VerifyCiTests(unittest.TestCase):
     def test_reports_none_when_the_branch_does_not_exist(self) -> None:
+        # The stub 404s the way gh does, exit code included: an earlier version
+        # of the script aborted on that instead of reporting `none`.
         with tempfile.TemporaryDirectory() as tmp:
             verdict = _verdict(Path(tmp), None, '{"workflow_runs": []}')
             self.assertEqual(verdict["state"], "none")
@@ -163,7 +172,12 @@ class DispatchCiTests(unittest.TestCase):
         bin_dir = _stub_gh(
             root,
             {
-                "api repos/o/r/actions/runs": json.dumps({"total_count": run_count}),
+                "api repos/o/r/actions/workflows/ci.yml/runs": json.dumps(
+                    {"total_count": run_count}
+                ),
+                # A run of some other workflow for the same sha must not read as
+                # "ci.yml already built this".
+                "api repos/o/r/actions/runs": json.dumps({"total_count": 99}),
                 "api repos/o/r/commits/main": json.dumps({"sha": "a" * 40}),
                 "api --paginate repos/o/r/branches": json.dumps(branches),
                 "api repos/o/r": json.dumps({"default_branch": "main"}),
