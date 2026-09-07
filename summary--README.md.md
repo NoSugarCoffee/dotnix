@@ -1,2 +1,2 @@
-`d8794f13e95898e2f5dc05f9abb9ba3a59360741da8ffa07a783b889b1e3a8b3`
-Overview and quick-start for reproducible Home Manager dotfiles on Linux/macOS; package groups include APM, agent-access, and ccstatusline, plus commands, fork instructions, shell/proxy/translation notes, and MIT license.
+`fc567f907d373f8f96379d330d628bbe8dd48bbf8cb17b42b9e4b96d5af9025c`
+Overview and quick-start for reproducible Home Manager dotfiles on Linux/macOS; package groups now include pi, plus commands, fork instructions, shell/proxy/translation notes, and MIT license.
