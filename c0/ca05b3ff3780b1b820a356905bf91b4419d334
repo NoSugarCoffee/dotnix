@@ -1,0 +1,28 @@
+pkgs/pi-coding-agent/default.nix
+  s_1ccc2e585dd5fb::t_abd87c2124aadf 71
+  s_1ccc2e585dd5fb::t_7563df58e54067 58-69
+  s_1ccc2e585dd5fb::t_e994c814d37f7e 1-57,70,73-85
+  s_1ccc2e585dd5fb::t_10b0e2e11fb84b 72
+README.md
+  s_1ccc2e585dd5fb::t_6b125b6acea9b0 61-62
+flake.nix
+  s_1ccc2e585dd5fb::t_c61ed3e5b508e1 60
+home/home.nix
+  s_1ccc2e585dd5fb::t_d4c40c45499a94 61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "c0ca05b3ff3780b1b820a356905bf91b4419d334",
+  "prompts": {},
+  "sessions": {
+    "s_1ccc2e585dd5fb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f855ad88-4844-4348-8bfc-b615e246a2a1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
