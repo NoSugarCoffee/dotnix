@@ -8,6 +8,9 @@
 }:
 let
   proxyUrl = "http://127.0.0.1:7890";
+  # Referenced by both the asdf pin and the @larksuite/cli paths below, which
+  # must agree on one Node tree.
+  nodeVersion = "26.7.0";
   noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
   # Pi user extensions: computer-use (screen/GUI), browser-native (web automation),
   # remote-pi (multi-agent mesh + mobile). These are not ordinary packages on PATH;
@@ -292,7 +295,7 @@ in
       }
 
       install_pinned golang 1.27.1
-      install_pinned nodejs 26.7.0
+      install_pinned nodejs ${nodeVersion}
       # Java default is a JRE (no javac); if you need compilation on the
       # default, bump this to the matching temurin-<major>.<...> JDK string.
       install_pinned java temurin-jre-26.0.2+10
@@ -307,24 +310,32 @@ in
       install_pinned maven 3.9.16
 
       # The Lark/Feishu CLI is an npm package with no nixpkgs derivation, so
-      # it rides on the asdf-managed Node: npm puts the binary inside the
-      # active Node version and `asdf reshim` exposes it via ~/.asdf/shims
+      # it rides on the asdf-managed Node: npm puts the binary inside a Node
+      # version's own tree and `asdf reshim` exposes it via ~/.asdf/shims
       # (already on PATH). Same best-effort model as above.
-      npm="$ASDF_DATA_DIR/shims/npm"
-      node_root=$("$asdf" where nodejs 2>/dev/null)
-      if [ -n "$node_root" ] && [ -d "$node_root/lib/node_modules/@larksuite/cli" ]; then
-        true
-      elif [ -x "$npm" ]; then
+      #
+      # Every path here names ${nodeVersion} explicitly rather than going
+      # through `asdf where nodejs` or the shims: those resolve against the
+      # cwd's .tool-versions, and activation can be run from any directory.
+      # A project pinning another Node would otherwise be asked whether the
+      # CLI is in *its* tree and have it installed there.
+      nodeRoot="$ASDF_DATA_DIR/installs/nodejs/${nodeVersion}"
+      npm="$nodeRoot/bin/npm"
+      if [ ! -x "$npm" ]; then
+        echo "warning: asdfLanguages: no npm in nodejs ${nodeVersion}, skipping @larksuite/cli" >&2
+      elif [ -d "$nodeRoot/lib/node_modules/@larksuite/cli" ]; then
+        # Present but unshimmed (wiped shims dir, interrupted reshim) leaves
+        # lark-cli off PATH; reshimming is free, reinstalling is not.
+        [ -x "$ASDF_DATA_DIR/shims/lark-cli" ] || $DRY_RUN_CMD "$asdf" reshim nodejs ${nodeVersion}
+      else
         # npm's internal scripts use `#!/usr/bin/env node`, so `node` must be
-        # resolvable in PATH -- not just via the explicit shim path we call
-        # here. The activation PATH above doesn't include the shims dir.
+        # resolvable in PATH -- and it must be the same Node whose tree we
+        # just tested, not whichever one the shims would pick.
         # --allow-scripts: npm >= 11.19 blocks postinstall scripts of global
         # installs by default, and this package needs its postinstall step.
-        PATH="$ASDF_DATA_DIR/shims:$PATH" $DRY_RUN_CMD "$npm" install --global --allow-scripts=@larksuite/cli @larksuite/cli \
-          && $DRY_RUN_CMD "$asdf" reshim nodejs \
+        PATH="$nodeRoot/bin:$PATH" $DRY_RUN_CMD "$npm" install --global --allow-scripts=@larksuite/cli @larksuite/cli \
+          && $DRY_RUN_CMD "$asdf" reshim nodejs ${nodeVersion} \
           || echo "warning: asdfLanguages: npm install @larksuite/cli failed" >&2
-      else
-        echo "warning: asdfLanguages: npm shim missing, skipping @larksuite/cli" >&2
       fi
       true # this subshell's own exit status must always be 0
     )
