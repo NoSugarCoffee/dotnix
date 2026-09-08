@@ -429,6 +429,16 @@ in
     # enableZshIntegration defaults to true, wiring the init hook into the
     # managed ~/.zshrc.
     zoxide.enable = true;
+    yazi = {
+      enable = true;
+      shellWrapperName = "y";
+      extraPackages = [
+        pkgs.fd
+        pkgs.ripgrep
+        pkgs.fzf
+        pkgs.file
+      ];
+    };
     # Installs zellij; the full config (a dump of the 0.43.1 defaults, kept
     # in zellij/config.kdl for easy keybinding edits) is written directly as
     # KDL rather than through programs.zellij.settings, whose nix-attrs form

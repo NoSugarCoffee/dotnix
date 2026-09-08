@@ -64,6 +64,7 @@ claude-session-registry (local: records live Claude Code conversations, replays 
 **Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
 [zellij](https://zellij.dev/) &middot;
 [zoxide](https://github.com/ajeetdsouza/zoxide) &middot;
+[yazi](https://github.com/sxyazi/yazi) (terminal file manager; `y` cds the shell to wherever you left it) &middot;
 [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions)
 
 **Editors & IDEs** &nbsp; [intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
