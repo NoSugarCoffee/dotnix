@@ -105,6 +105,9 @@ in
       # store path -- see the package for why).
       # jetbrains.air doesn't exist in nixpkgs at all; pkgs/jetbrains-air-darwin
       # repacks the official preview DMG.
+      # ego lite isn't in nixpkgs and is macOS-only upstream;
+      # pkgs/ego-lite-darwin repacks the official DMG and puts the bundled
+      # ego-browser CLI on PATH.
       ++ lib.optionals pkgs.stdenv.isDarwin [
         pkgs.google-chrome
         pkgs.clash-verge-rev-darwin
@@ -117,6 +120,7 @@ in
         pkgs.ping-island-darwin
         pkgs.obs-studio-darwin
         pkgs.jetbrains-air-darwin
+        pkgs.ego-lite-darwin
       ];
     file.".codex/config.toml" = {
       force = true;

@@ -81,7 +81,8 @@ go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
 [ipython](https://ipython.org/) &middot;
 [pip](https://pip.pypa.io/)
 
-**Browsers** &nbsp; [google-chrome](https://www.google.com/chrome/) `macOS`
+**Browsers** &nbsp; [google-chrome](https://www.google.com/chrome/) `macOS` &middot;
+[ego-lite](https://github.com/citrolabs/ego-lite) `macOS` (browser that shares your logged-in state with AI agents; provides the `ego-browser` automation CLI, official prebuilt DMG, not in nixpkgs)
 
 **Launchers** &nbsp; [albert](https://albertlauncher.github.io/) `macOS`
 
