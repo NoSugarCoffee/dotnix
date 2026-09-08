@@ -73,6 +73,7 @@ in
         pkgs.agent-access
         pkgs.bitwarden-cli
         pkgs.asdf-vm
+        pkgs.pnpm
         pkgs.git
         pkgs.gh
         pkgs.glab

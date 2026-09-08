@@ -76,7 +76,9 @@ claude-session-registry (local: records live Claude Code conversations, replays 
 [glab](https://gitlab.com/gitlab-org/cli)
 
 **Runtimes** &nbsp; [asdf](https://asdf-vm.com/) &middot;
-go &middot; nodejs &middot; java (Temurin JDK & JRE) &middot; maven &middot;
+go &middot; nodejs &middot;
+[pnpm](https://pnpm.io/) &middot;
+java (Temurin JDK & JRE) &middot; maven &middot;
 [python3](https://www.python.org/) &middot;
 [ipython](https://ipython.org/) &middot;
 [pip](https://pip.pypa.io/)
