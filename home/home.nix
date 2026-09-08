@@ -268,23 +268,6 @@ in
       }:/usr/bin:/bin:$PATH"
       asdf="${pkgs.asdf-vm}/bin/asdf"
 
-      install_latest() {
-        plugin="$1"
-        query="''${2:-}"
-        "$asdf" plugin add "$plugin"
-
-        version=$("$asdf" latest "$plugin" "$query") || {
-          echo "warning: asdfLanguages: could not resolve latest $plugin $query" >&2
-          return
-        }
-
-        if ! $DRY_RUN_CMD "$asdf" install "$plugin" "$version"; then
-          echo "warning: asdfLanguages: asdf install $plugin $version failed" >&2
-          return
-        fi
-        $DRY_RUN_CMD "$asdf" set -u "$plugin" "$version"
-      }
-
       install_pinned() {
         plugin="$1"
         version="$2"
@@ -308,12 +291,10 @@ in
         fi
       }
 
-      install_latest golang
-      install_latest nodejs
-      # Java default is pinned (no more "latest" drift). Freeze here matches
-      # what `asdf latest java temurin` resolved to at pin time -- it's a JRE
-      # (no javac); if you need compilation on the default, bump this to the
-      # matching temurin-<major>.<...> JDK string. Bump manually to move.
+      install_pinned golang 1.27.1
+      install_pinned nodejs 26.7.0
+      # Java default is a JRE (no javac); if you need compilation on the
+      # default, bump this to the matching temurin-<major>.<...> JDK string.
       install_pinned java temurin-jre-26.0.2+10
       # Temurin 21 LTS JDK kept alongside for projects that require the 21
       # line -- install-only, does not change `asdf global`. Switch per
@@ -323,14 +304,17 @@ in
       # Rides the same asdf-managed Java: mvn resolves java via PATH (the
       # asdf shims), so builds run under the temurin above rather than a
       # separate nixpkgs JDK that pkgs.maven would pin.
-      install_latest maven
+      install_pinned maven 3.9.16
 
       # The Lark/Feishu CLI is an npm package with no nixpkgs derivation, so
       # it rides on the asdf-managed Node: npm puts the binary inside the
       # active Node version and `asdf reshim` exposes it via ~/.asdf/shims
-      # (already on PATH). Same tracking-latest, best-effort model as above.
+      # (already on PATH). Same best-effort model as above.
       npm="$ASDF_DATA_DIR/shims/npm"
-      if [ -x "$npm" ]; then
+      node_root=$("$asdf" where nodejs 2>/dev/null)
+      if [ -n "$node_root" ] && [ -d "$node_root/lib/node_modules/@larksuite/cli" ]; then
+        true
+      elif [ -x "$npm" ]; then
         # npm's internal scripts use `#!/usr/bin/env node`, so `node` must be
         # resolvable in PATH -- not just via the explicit shim path we call
         # here. The activation PATH above doesn't include the shims dir.
