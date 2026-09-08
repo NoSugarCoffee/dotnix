@@ -1,0 +1,33 @@
+README.md
+  e0e5773e916af7a9 8,13,48,110,115,146
+  6a6cd1602b82c951 1-2,6,9,11,19,49,112-114,117
+  s_846eec72b373dd::t_6a760a446c079c 109
+  s_e287c1a98292c0::t_297858e689906e 84-86
+  s_43ce560717205d::t_b00b2694055aac 79-82
+home/home.nix
+  s_e287c1a98292c0::t_f98e125abefc10 79
+  s_43ce560717205d::t_bc3a9302ea4119 83-84
+  s_43ce560717205d::t_5023fc2a44d89f 131
+  s_43ce560717205d::t_509e76dd7d6d38 220-240,453-462
+  s_43ce560717205d::t_d15d9a6df94c63 133-134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.43-trip",
+  "base_commit_sha": "76d66e95fc87c4057315ba7b1d38d26310b8c0b3",
+  "prompts": {
+    "e0e5773e916af7a9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2cd445bc-ff25-43ac-ac6d-484295d2622e",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "NoSugarCoffee",
+      "messages_url": "https://usegitai.com/cas/0012f3a1459923371d48f69bd56c375ef7ed9eb5431ddf3dd74941ea778cdbb3",
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
