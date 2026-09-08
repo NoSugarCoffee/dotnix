@@ -18,6 +18,7 @@ let
     "npm:pi-computer-use"
     "npm:pi-agent-browser-native"
     "npm:remote-pi"
+    "npm:pi-a2a-adaptor"
   ];
   # plugins, and anything set via /config stay machine-owned (see the
   # claudeCodeSettings activation below for the merge semantics).
