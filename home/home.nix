@@ -80,6 +80,8 @@ in
         pkgs.git
         pkgs.gh
         pkgs.glab
+        pkgs.docker-client
+        pkgs.docker-compose
         pkgs.just
         pkgs.nix-zsh-completions
         pkgs.translate-selection
@@ -126,7 +128,10 @@ in
         pkgs.obs-studio-darwin
         pkgs.jetbrains-air-darwin
         pkgs.ego-lite-darwin
+        pkgs.colima
       ];
+    file.".docker/cli-plugins/docker-compose".source =
+      "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
     file.".codex/config.toml" = {
       force = true;
       text = ''
@@ -210,6 +215,27 @@ in
         RunAtLoad = true;
         KeepAlive = false;
         ProcessType = "Interactive";
+      };
+    };
+    colima = {
+      enable = pkgs.stdenv.isDarwin;
+      config = {
+        ProgramArguments = [
+          "${pkgs.colima}/bin/colima"
+          "start"
+        ];
+        EnvironmentVariables = {
+          PATH = "${pkgs.docker-client}/bin:/usr/bin:/bin";
+          HTTP_PROXY = proxyUrl;
+          HTTPS_PROXY = proxyUrl;
+          NO_PROXY = noProxy;
+          http_proxy = proxyUrl;
+          https_proxy = proxyUrl;
+          no_proxy = noProxy;
+        };
+        RunAtLoad = true;
+        KeepAlive = false;
+        ProcessType = "Background";
       };
     };
   };
