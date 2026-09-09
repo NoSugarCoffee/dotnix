@@ -3,20 +3,24 @@
 # same approach as claude-desktop-darwin. The bundle arrives notarized with
 # an intact seal, so it is copied verbatim.
 #
-# Upstream publishes no versioned download URL: the filename token is theirs
-# to rotate and the same path keeps serving whatever the current build is, so
-# the hash is what actually pins the release. On an upstream update the fetch
-# fails with a hash mismatch and version and hash must be bumped together
-# (nix store prefetch-file <url> for the new hash, then read
-# CFBundleShortVersionString out of the extracted app for the version).
+# Upstream publishes no versioned download URL, and the token below does NOT
+# roll: it is frozen to this release, while the download button now links
+# .../egolite.dmg, which as of 2026-09-09 serves this same 0.4.7.4 build
+# byte-for-byte. So a hash mismatch will not fire to announce a new release --
+# check upstream by hand. To bump, `nix store prefetch-file <url>` for the new
+# hash, then read CFBundleShortVersionString out of the extracted app.
 #
-# Caveat: `ego-browser upgrade` and the app's bundled Keystone updater cannot
-# work from a read-only store path -- bumping the pin above is the upgrade
-# path here.
+# `version` describes the DMG in the store, which is not necessarily the
+# version that runs: EgoUpdater ships releases the DMG channel never gets
+# (0.5.0.28 existed only as Omaha CRX3 packages behind update.citrolabs.ai)
+# and rewrites the installed app in place. It can do that because
+# home-manager copies the bundle out to a writable path rather than
+# symlinking the store, so the store copy is the one that cannot self-update.
 {
   lib,
   stdenvNoCC,
   fetchurl,
+  runtimeShell,
   undmg,
 }:
 let
@@ -50,18 +54,44 @@ stdenvNoCC.mkDerivation {
   # `ego-browser` is the whole point of the package for agent use, and it is
   # not a separate download: it is a self-contained helper (Mach-O with an
   # embedded Node) inside the app bundle. Upstream's GUI onboarding is what
-  # normally drops it into ~/.local/bin; symlinking it here puts it on PATH
-  # declaratively instead, and via Versions/Current so a version bump does
-  # not have to touch this path.
+  # normally drops it into ~/.local/bin; this puts it on PATH declaratively
+  # instead.
+  #
+  # It picks the bundle at run time instead of symlinking the store's, because
+  # a store symlink strands PATH on the DMG's build while the browser service
+  # it drives moves on with each EgoUpdater release. That skew is worth this
+  # much indirection because the service misreports it: 0.4.7.4 driving
+  # 0.5.0.28 failed `import --browser chrome` with
+  # SOURCE_DATABASE_COOKIES_TOO_OLD against a profile whose cookie schema
+  # matched ego's own exactly.
   installPhase = ''
     runHook preInstall
     app=$(find . -maxdepth 1 -name "*.app" -print -quit)
     test -n "$app"
     mkdir -p "$out/Applications" "$out/bin"
     cp -R "$app" "$out/Applications/"
-    ln -s \
-      "$out/Applications/ego lite.app/Contents/Frameworks/ego Framework.framework/Versions/Current/Helpers/ego-browser" \
-      "$out/bin/ego-browser"
+
+    cat > "$out/bin/ego-browser" <<'WRAPPER'
+    #!${runtimeShell}
+    helper='Contents/Frameworks/ego Framework.framework/Versions/Current/Helpers/ego-browser'
+    # Home Manager Apps first: that copy is the one EgoUpdater can write to,
+    # so it is the newest, and it is what LaunchServices actually opens.
+    for bundle in \
+      "$HOME/Applications/Home Manager Apps/ego lite.app" \
+      "$HOME/Applications/ego lite.app" \
+      "/Applications/ego lite.app" \
+      '@store@'; do
+      if [ -x "$bundle/$helper" ]; then
+        exec "$bundle/$helper" "$@"
+      fi
+    done
+    printf 'ego-browser: found no ego lite.app containing %s\n' "$helper" >&2
+    exit 1
+    WRAPPER
+
+    substituteInPlace "$out/bin/ego-browser" \
+      --replace-fail '@store@' "$out/Applications/ego lite.app"
+    chmod +x "$out/bin/ego-browser"
     runHook postInstall
   '';
 
