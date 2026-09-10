@@ -115,6 +115,8 @@ in
       # ego lite isn't in nixpkgs and is macOS-only upstream;
       # pkgs/ego-lite-darwin repacks the official DMG and puts the bundled
       # ego-browser CLI on PATH.
+      # PI-Desktop isn't in nixpkgs; pkgs/pi-desktop-darwin repacks the
+      # official DMG.
       ++ lib.optionals pkgs.stdenv.isDarwin [
         pkgs.google-chrome
         pkgs.clash-verge-rev-darwin
@@ -128,6 +130,7 @@ in
         pkgs.obs-studio-darwin
         pkgs.jetbrains-air-darwin
         pkgs.ego-lite-darwin
+        pkgs.pi-desktop-darwin
         pkgs.colima
       ];
     file.".docker/cli-plugins/docker-compose".source =
