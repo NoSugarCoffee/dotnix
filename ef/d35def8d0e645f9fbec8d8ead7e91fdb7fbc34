@@ -1,0 +1,26 @@
+flake.nix
+  s_d4066c518e11e9::t_913860e547e860 62
+README.md
+  s_d4066c518e11e9::t_3bbfd64a36d062 62-63
+pkgs/pi-desktop-darwin/default.nix
+  s_d4066c518e11e9::t_f0addf89168368 1-63
+home/home.nix
+  s_d4066c518e11e9::t_20f3f2f36d6f17 133
+  s_d4066c518e11e9::t_eb9701ce9d64d5 118-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "efd35def8d0e645f9fbec8d8ead7e91fdb7fbc34",
+  "prompts": {},
+  "sessions": {
+    "s_d4066c518e11e9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ffd09432-ef69-4e01-b304-27f3e2fca77d",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
