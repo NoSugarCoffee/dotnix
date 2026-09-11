@@ -3,19 +3,15 @@
 # same approach as claude-desktop-darwin. The bundle arrives notarized with
 # an intact seal, so it is copied verbatim.
 #
-# Upstream publishes no versioned download URL, and the token below does NOT
-# roll: it is frozen to this release, while the download button now links
-# .../egolite.dmg, which as of 2026-09-09 serves this same 0.4.7.4 build
-# byte-for-byte. So a hash mismatch will not fire to announce a new release --
-# check upstream by hand. To bump, `nix store prefetch-file <url>` for the new
-# hash, then read CFBundleShortVersionString out of the extracted app.
+# Upstream publishes no versioned download URL: the token below is rewritten
+# in place on each release, so a hash mismatch is the only upgrade signal and
+# it fires as a build failure. To bump, `nix store prefetch-file <url>` per
+# arch, then read CFBundleShortVersionString out of the extracted app.
 #
 # `version` describes the DMG in the store, which is not necessarily the
-# version that runs: EgoUpdater ships releases the DMG channel never gets
-# (0.5.0.28 existed only as Omaha CRX3 packages behind update.citrolabs.ai)
-# and rewrites the installed app in place. It can do that because
-# home-manager copies the bundle out to a writable path rather than
-# symlinking the store, so the store copy is the one that cannot self-update.
+# version that runs: EgoUpdater rewrites the installed app in place, and can
+# do that because home-manager copies the bundle out to a writable path
+# rather than symlinking the store.
 {
   lib,
   stdenvNoCC,
@@ -29,14 +25,14 @@ let
     x86_64-darwin = "x64";
   };
   archHash = {
-    aarch64-darwin = "sha256-wMP9OXtOHCXyCr3ZxqFSuPycehamCZDVDL2enkLCDp0=";
-    x86_64-darwin = "sha256-Tx5ew3zzC4snbk/H0C53BQ7XQYg1Kz/mrpU4+5IhNFo=";
+    aarch64-darwin = "sha256-mX+cctBV01jf4TSOOPzK7THyuBMf7CRl7zGko/Nx6Bw=";
+    x86_64-darwin = "sha256-sF/jEXBEfWR+kNOWrK/Jngqk0+/IIsKC8dmQC+KLGSc=";
   };
   system = stdenvNoCC.hostPlatform.system;
 in
 stdenvNoCC.mkDerivation {
   pname = "ego-lite";
-  version = "0.4.7.4";
+  version = "0.5.0.28";
 
   src = fetchurl {
     url = "https://cdn.ego.app/setup/macos/${archName.${system}}/egolite-Y7MbxKIuhzFB.dmg";
