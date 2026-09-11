@@ -1,2 +1,2 @@
-`d695e1b5ff5e0dadaf2015dff32655d54b1c83630a22131746ae6d723af3433d`
-Defines common and platform packages, including pi-coding-agent and ego-lite, Codex and merged Claude settings, zsh, session paths and proxy variables, macOS launchd agents, Pi extension installation, and best-effort asdf activation for Go/Node/Java/Maven. Keeps git identity, ccstatusline settings, and selected Claude keys machine-owned.
+`46d2ff6ea75b41af8dd0a2070c49d04699e9440025a1b8676eb7c164e9fe4a60`
+Defines common and platform packages, including pi-coding-agent, PI-Desktop, and ego-lite, Codex and merged Claude settings, zsh, session paths and proxy variables, macOS launchd agents, Pi extension installation, and best-effort asdf activation for Go/Node/Java/Maven. Keeps git identity, ccstatusline settings, and selected Claude keys machine-owned.
