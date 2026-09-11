@@ -1,0 +1,19 @@
+home/home.nix
+  s_2a03ab81f97678::t_612b69fc8ff6b9 136-145,147-150,152-153,155-156,158-159,161-164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "c0f74cfb2519b9d4bf50b564c46d2c5115c96581",
+  "prompts": {},
+  "sessions": {
+    "s_2a03ab81f97678": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f334aa7-fdfb-484b-a217-15217d8f97a2",
+        "model": "claude-opus-5"
+      },
+      "human_author": null
+    }
+  }
+}
