@@ -133,30 +133,35 @@ in
         pkgs.pi-desktop-darwin
         pkgs.colima
       ];
-    file.".docker/cli-plugins/docker-compose".source =
-      "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
-    file.".codex/config.toml" = {
-      force = true;
-      text = ''
-        # Managed by home-manager. Authentication is created by `codex login`.
+    file = {
+      "Applications/Google Chrome.app" = lib.mkIf pkgs.stdenv.isDarwin {
+        source = "${pkgs.google-chrome}/Applications/Google Chrome.app";
+      };
+      ".docker/cli-plugins/docker-compose".source =
+        "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
+      ".codex/config.toml" = {
+        force = true;
+        text = ''
+          # Managed by home-manager. Authentication is created by `codex login`.
 
-        model = "gpt-5-codex"
-        approval_policy = "on-request"
-        sandbox_mode = "workspace-write"
-        file_opener = "cursor"
+          model = "gpt-5-codex"
+          approval_policy = "on-request"
+          sandbox_mode = "workspace-write"
+          file_opener = "cursor"
 
-        [sandbox_workspace_write]
-        network_access = true
+          [sandbox_workspace_write]
+          network_access = true
 
-        [tui]
-        notifications = true
+          [tui]
+          notifications = true
 
-        [history]
-        persistence = "save-all"
+          [history]
+          persistence = "save-all"
 
-        [shell_environment_policy]
-        inherit = "all"
-      '';
+          [shell_environment_policy]
+          inherit = "all"
+        '';
+      };
     };
   };
   home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
