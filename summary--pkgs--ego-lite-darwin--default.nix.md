@@ -1,0 +1,2 @@
+`5548b86492a8a8261871c9fe4e2c55589abfb176402fa6526476a072692bd18a`
+Ego Lite 0.5.0.28 is a macOS-only official DMG repack with a wrapper exposing the bundled ego-browser helper. The wrapper prefers writable Home Manager or system app bundles before falling back to the store copy, allowing EgoUpdater to update the installed app. The derivation preserves the notarized bundle and pins per-architecture hashes.
