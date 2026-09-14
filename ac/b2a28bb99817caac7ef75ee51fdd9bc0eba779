@@ -1,0 +1,19 @@
+pkgs/ego-lite-darwin/default.nix
+  s_5a1d18cf0eb18f::t_a2d1f1ff301cb8 28-33,39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "acb2a28bb99817caac7ef75ee51fdd9bc0eba779",
+  "prompts": {},
+  "sessions": {
+    "s_5a1d18cf0eb18f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "291c17ca-3b31-4f99-a51e-f50e4cc83b37",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
