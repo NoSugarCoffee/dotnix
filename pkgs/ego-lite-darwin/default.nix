@@ -25,14 +25,18 @@ let
     x86_64-darwin = "x64";
   };
   archHash = {
-    aarch64-darwin = "sha256-mX+cctBV01jf4TSOOPzK7THyuBMf7CRl7zGko/Nx6Bw=";
-    x86_64-darwin = "sha256-sF/jEXBEfWR+kNOWrK/Jngqk0+/IIsKC8dmQC+KLGSc=";
+    aarch64-darwin = "sha256-VVXr/aWsZru3QsbdOJeobRZF1MjgGO0M0+rJxVKSFTw=";
+    x86_64-darwin = "sha256-8E+fngHdAVTeJPxwDCoVEP/Y+lDDtZ+NbnqPpgy6sYM=";
+  };
+  archVersion = {
+    aarch64-darwin = "0.5.0.32";
+    x86_64-darwin = "0.5.0.33";
   };
   system = stdenvNoCC.hostPlatform.system;
 in
 stdenvNoCC.mkDerivation {
   pname = "ego-lite";
-  version = "0.5.0.28";
+  version = archVersion.${system};
 
   src = fetchurl {
     url = "https://cdn.ego.app/setup/macos/${archName.${system}}/egolite-Y7MbxKIuhzFB.dmg";
