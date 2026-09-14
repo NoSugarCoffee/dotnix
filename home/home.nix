@@ -2,12 +2,17 @@
   claudeDesktopPackage,
   username,
   homeDirectory,
+  config,
   lib,
   pkgs,
   ...
 }:
 let
   proxyUrl = "http://127.0.0.1:7890";
+  gcOptions = [
+    "--delete-older-than"
+    "14d"
+  ];
   # Referenced by both the asdf pin and the @larksuite/cli paths below, which
   # must agree on one Node tree.
   nodeVersion = "26.7.0";
@@ -246,6 +251,9 @@ in
         ProcessType = "Background";
       };
     };
+    nix-gc.config.ProgramArguments = lib.mkForce (
+      [ "${config.nix.package}/bin/nix-collect-garbage" ] ++ gcOptions
+    );
   };
   # Keeps Go/Node at whatever asdf considers "latest"; Java is pinned to
   # explicit Temurin builds instead, because the JVM ecosystem is picky about
@@ -546,7 +554,7 @@ in
     gc = {
       automatic = true;
       dates = "weekly";
-      options = "--delete-older-than 14d";
+      options = lib.concatStringsSep " " gcOptions;
     };
     # Required by home-manager to generate nix.conf; it only names the nix
     # version used for config validation, nothing is installed.
