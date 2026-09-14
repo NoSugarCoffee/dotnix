@@ -1,2 +1,2 @@
-`a909f18d4ab900da9feed1ae8804878e9b4843d587778085258eed01be9c0214`
+`79e572330a5bfc33d6bc24feb57b5611886b76a8870f01535527c3a52c295e14`
 Defines common and platform packages, including pi-coding-agent, PI-Desktop, and ego-lite, Codex and merged Claude settings, zsh, session paths and proxy variables, macOS launchd agents, Pi extension installation, and best-effort asdf activation for Go/Node/Java/Maven. Keeps git identity, ccstatusline settings, and selected Claude keys machine-owned. macOS Ego Lite is installed as a writable Home Manager app bundle so EgoUpdater can replace it; its ego-browser wrapper prefers that current bundle.
