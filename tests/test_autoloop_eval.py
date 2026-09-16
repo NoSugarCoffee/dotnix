@@ -108,7 +108,8 @@ class AutoloopEvalTests(unittest.TestCase):
             out = root / "eval.json"
             config.write_text(
                 '{"selected": "darwin-packages-freshness",'
-                ' "head_branch": "autoloop/darwin-packages-freshness"}'
+                ' "head_branch": "autoloop/darwin-packages-freshness",'
+                ' "existing_pr": 42}'
             )
             result = _run(
                 work,
@@ -128,6 +129,67 @@ class AutoloopEvalTests(unittest.TestCase):
                 capture_output=True,
             ).stdout.strip()
             self.assertEqual(head, "autoloop/darwin-packages-freshness")
+
+    def test_ignores_the_autoloop_branch_when_no_pr_carries_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _origin, work = _init_repo(root)
+            _write_stub_eval(work, executable=True)
+
+            _git(work, "checkout", "-b", "autoloop/darwin-packages-freshness")
+            (work / "MARKER").write_text("branch\n")
+            _git(work, "add", "MARKER")
+            _git(work, "commit", "-m", "branch")
+            _git(work, "push", "-u", "origin", "autoloop/darwin-packages-freshness")
+            _git(work, "checkout", "main")
+
+            config = root / "autoloop.json"
+            out = root / "eval.json"
+            config.write_text(
+                '{"selected": "darwin-packages-freshness",'
+                ' "head_branch": "autoloop/darwin-packages-freshness",'
+                ' "existing_pr": null}'
+            )
+            result = _run(
+                work,
+                {
+                    "AUTOLOOP_JSON": str(config),
+                    "AUTOLOOP_EVAL_JSON": str(out),
+                },
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('"tree": "main"', out.read_text())
+            head = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=work,
+                check=True,
+                text=True,
+                capture_output=True,
+            ).stdout.strip()
+            self.assertEqual(head, "main")
+
+    def test_reports_an_absent_evaluator_instead_of_exiting_127(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _origin, work = _init_repo(root)
+
+            config = root / "autoloop.json"
+            out = root / "eval.json"
+            config.write_text(
+                '{"selected": "darwin-packages-freshness", "head_branch": null}'
+            )
+            result = _run(
+                work,
+                {
+                    "AUTOLOOP_JSON": str(config),
+                    "AUTOLOOP_EVAL_JSON": str(out),
+                },
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = out.read_text()
+            self.assertIn('"selected": "darwin-packages-freshness"', payload)
+            self.assertIn("eval_darwin_packages_freshness.sh", payload)
+            self.assertIn("absent from the evaluated tree", payload)
 
 
 if __name__ == "__main__":

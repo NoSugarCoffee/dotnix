@@ -69,11 +69,15 @@ def _completed_run(conclusion: str, url: str) -> str:
     )
 
 
-def _verdict(root: Path, head_sha: str | None, runs: str) -> dict[str, object]:
+def _verdict(
+    root: Path, head_sha: str | None, runs: str, existing_pr: int | None
+) -> dict[str, object]:
     """Run the verifier against a stubbed API. head_sha None means no branch."""
     config_path = root / "autoloop.json"
     out = root / "ci.json"
-    config_path.write_text(json.dumps({"head_branch": "autoloop/p"}))
+    config_path.write_text(
+        json.dumps({"head_branch": "autoloop/p", "existing_pr": existing_pr})
+    )
     branch = NOT_FOUND if head_sha is None else json.dumps({"commit": {"sha": head_sha}})
     bin_dir = _stub_gh(
         root,
@@ -103,21 +107,36 @@ class VerifyCiTests(unittest.TestCase):
         # The stub 404s the way gh does, exit code included: an earlier version
         # of the script aborted on that instead of reporting `none`.
         with tempfile.TemporaryDirectory() as tmp:
-            verdict = _verdict(Path(tmp), None, '{"workflow_runs": []}')
+            verdict = _verdict(Path(tmp), None, '{"workflow_runs": []}', 7)
             self.assertEqual(verdict["state"], "none")
             self.assertIsNone(verdict["head_sha"])
 
     def test_reports_none_when_the_branch_sits_at_the_default_branch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            verdict = _verdict(Path(tmp), "a" * 40, '{"workflow_runs": []}')
+            verdict = _verdict(Path(tmp), "a" * 40, '{"workflow_runs": []}', 7)
             self.assertEqual(verdict["state"], "none")
             self.assertEqual(verdict["branch"], "autoloop/p")
             self.assertEqual(verdict["head_sha"], "a" * 40)
 
+    def test_reports_none_when_no_pr_carries_the_branch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict = _verdict(
+                Path(tmp),
+                "b" * 40,
+                _completed_run("success", "https://example.invalid/run/9"),
+                None,
+            )
+            self.assertEqual(verdict["state"], "none")
+            self.assertEqual(verdict["branch"], "autoloop/p")
+            self.assertIsNone(verdict["head_sha"])
+
     def test_reports_verified_when_ci_passed_on_the_head(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             verdict = _verdict(
-                Path(tmp), "b" * 40, _completed_run("success", "https://example.invalid/run/1")
+                Path(tmp),
+                "b" * 40,
+                _completed_run("success", "https://example.invalid/run/1"),
+                7,
             )
             self.assertEqual(verdict["state"], "verified")
             self.assertEqual(verdict["head_sha"], "b" * 40)
@@ -130,6 +149,7 @@ class VerifyCiTests(unittest.TestCase):
                     Path(tmp),
                     "b" * 40,
                     _completed_run(conclusion, "https://example.invalid/run/2"),
+                    7,
                 )
                 self.assertEqual(verdict["state"], "failed", conclusion)
 
@@ -142,12 +162,13 @@ class VerifyCiTests(unittest.TestCase):
                     Path(tmp),
                     "b" * 40,
                     _completed_run(conclusion, "https://example.invalid/run/3"),
+                    7,
                 )
                 self.assertEqual(verdict["state"], "pending", conclusion)
 
     def test_reports_pending_when_no_run_covers_the_head(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            verdict = _verdict(Path(tmp), "b" * 40, '{"workflow_runs": []}')
+            verdict = _verdict(Path(tmp), "b" * 40, '{"workflow_runs": []}', 7)
             self.assertEqual(verdict["state"], "pending")
 
     def test_reports_pending_while_the_run_is_still_going(self) -> None:
@@ -163,7 +184,7 @@ class VerifyCiTests(unittest.TestCase):
                     ]
                 }
             )
-            verdict = _verdict(Path(tmp), "b" * 40, runs)
+            verdict = _verdict(Path(tmp), "b" * 40, runs, 7)
             self.assertEqual(verdict["state"], "pending")
 
 

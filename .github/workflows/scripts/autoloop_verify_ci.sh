@@ -27,6 +27,11 @@ if [ -z "$branch" ]; then
   exit 0
 fi
 
+if [ -z "$(jq -r '.existing_pr // empty' "$CONFIG")" ]; then
+  write none "$branch"
+  exit 0
+fi
+
 # Asked of the API rather than the checkout: a fetched ref goes stale the moment
 # another run pushes the branch, and ratifying a stale sha would bless a commit
 # that no longer is the head.
