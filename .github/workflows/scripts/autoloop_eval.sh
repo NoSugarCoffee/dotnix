@@ -41,8 +41,17 @@ esac
 # would re-propose them -- for nixpkgs-freshness that means handing the agent a
 # flake.lock derived from main, reverting every bump already on the branch.
 head_branch=$(jq -r '.head_branch // empty' "$CONFIG")
-if [ -n "$head_branch" ] && git rev-parse --verify --quiet "refs/remotes/origin/$head_branch" >/dev/null; then
+existing_pr=$(jq -r '.existing_pr // empty' "$CONFIG")
+if [ -n "$head_branch" ] && [ -n "$existing_pr" ] &&
+  git rev-parse --verify --quiet "refs/remotes/origin/$head_branch" >/dev/null; then
   git checkout -B "$head_branch" "refs/remotes/origin/$head_branch"
+fi
+
+if [ ! -f "$script" ]; then
+  jq -n --arg selected "$selected" --arg script "$script" \
+    '{selected: $selected, error: "evaluator \($script) is absent from the evaluated tree"}' > "$OUT"
+  echo "Evaluator $script is absent from the evaluated tree; wrote $OUT" >&2
+  exit 0
 fi
 
 result=$(bash "$script")

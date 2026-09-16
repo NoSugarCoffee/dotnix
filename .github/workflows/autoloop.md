@@ -263,7 +263,7 @@ The pre-step has already determined which program to run. Read `/tmp/gh-aw/autol
 - **`no_programs`**: If `true`, no program files exist at all.
 - **`not_due`**: If `true`, programs exist but none are due for this run.
 - **`head_branch`**: The canonical long-running branch name for the selected program — always exactly `autoloop/{program-name}`, never with a suffix or hash. Use this value verbatim when creating, checking out, or pushing to the branch.
-- **`existing_pr`**: The number of the open draft PR for `autoloop/{program-name}`, or `null` if no PR exists yet. Use this to enforce the single-PR-per-program invariant — see [Step 5a: Push and wait for CI](#step-5a-push-and-wait-for-ci) and [Step 5c: Accept](#step-5c-accept).
+- **`existing_pr`**: The number of the open draft PR for `autoloop/{program-name}`, or `null` if no PR exists yet. Use this to enforce the single-PR-per-program invariant — see [Step 5a: Push and wait for CI](#step-5a-push-and-wait-for-ci) and [Step 5c: Accept](#step-5c-accept). It is also what decides the ref the two runner-side steps look at: only an open PR means `autoloop/{program-name}` still carries in-flight work, so with `existing_pr: null` the evaluation measures the default branch and the CI verdict is `none`. Without that gate a leftover branch from a squash-merged PR — whose head is neither merged-looking nor current — gets measured and ratified as though it were this iteration's base.
 
 If `selected` is not null:
 1. Read the program file from the `selected_file` path.
