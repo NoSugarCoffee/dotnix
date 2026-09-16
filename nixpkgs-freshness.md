@@ -8,8 +8,8 @@
 
 | Field | Value |
 |-------|-------|
-| Last Run | 2026-09-06T00:00:00Z |
-| Iteration Count | 2 |
+| Last Run | 2026-09-16T21:30:29Z |
+| Iteration Count | 3 |
 | Best Metric | 0.6000 |
 | Target Metric | — |
 | Metric Direction | higher |
@@ -20,8 +20,8 @@
 | Pause Reason | — |
 | Completed | false |
 | Completed Reason | — |
-| Consecutive Errors | 0 |
-| Recent Statuses | accepted, error |
+| Consecutive Errors | 1 |
+| Recent Statuses | error, accepted, error |
 
 ## 📋 Program Info
 
@@ -45,8 +45,16 @@
 ## 🔭 Future Directions
 
 - Continue with the next stale root input on the next scheduled iteration; the remaining stale inputs are `nixpkgs` and `nixpkgs-unstable`.
+- Retry the runner-provided proposal only when its `base_flake_lock_blob` matches the synchronized branch; this iteration's proposal was based on an older lockfile.
 
 ## 📊 Iteration History
+
+### Iteration 3 — 2026-09-16 21:30 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/35152389042)
+
+- **Status**: ⚠️ Error
+- **Change**: Synchronized the long-running branch with `main`; the prefetched home-manager proposal failed its mandatory base-blob guard.
+- **Metric**: 0.4000 (previous best: 0.6000, no change)
+- **Notes**: The proposal was computed from an older lockfile than the branch after synchronization, so no lock metadata was copied or guessed.
 
 ### Iteration 1 — 2026-09-05 20:33 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/33990254940)
 
