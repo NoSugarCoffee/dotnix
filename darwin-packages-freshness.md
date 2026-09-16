@@ -8,20 +8,20 @@
 
 | Field | Value |
 |-------|-------|
-| Last Run | 2026-09-05T15:17:33Z |
-| Iteration Count | 1 |
+| Last Run | 2026-09-16T17:11:23Z |
+| Iteration Count | 2 |
 | Best Metric | 2 |
 | Target Metric | — |
 | Metric Direction | higher |
 | Branch | `autoloop/darwin-packages-freshness` |
 | PR | — |
-| Issue | #91 |
+| Issue | #93 |
 | Paused | false |
 | Pause Reason | — |
 | Completed | false |
 | Completed Reason | — |
 | Consecutive Errors | 0 |
-| Recent Statuses | accepted |
+| Recent Statuses | rejected, accepted |
 
 ---
 
@@ -31,7 +31,7 @@
 **Metric**: packages_current (higher is better)
 **Branch**: [`autoloop/darwin-packages-freshness`](https://github.com/NoSugarCoffee/dotnix/tree/autoloop/darwin-packages-freshness)
 **Pull Request**: —
-**Issue**: #91
+**Issue**: #93
 
 ---
 
@@ -60,6 +60,13 @@
 ---
 
 ## 📊 Iteration History
+
+### Iteration 2 — 2026-09-16 17:11 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/35126327517)
+
+- **Status**: ❌ Rejected
+- **Change**: Checked both Darwin package pins for upstream freshness.
+- **Metric**: 2 (previous best: 2, delta: +0)
+- **Notes**: The runner evaluation found both packages current and supplied no proposed update, so no target files were changed.
 
 ### Iteration 1 — 2026-09-05 15:17 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/33974198383)
 
