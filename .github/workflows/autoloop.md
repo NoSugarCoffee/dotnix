@@ -502,9 +502,10 @@ Each run executes **one iteration for the single selected program**:
 ### Step 4: Evaluate
 
 1. If `/tmp/gh-aw/autoloop-eval.json` exists, that file **is** the evaluation — it was produced on the runner with working `nix` and `gh` before the sandbox started. Read it and parse the metric from there. Do not re-run `gh api` or `nix store prefetch-file` inside the sandbox unless you have just changed a target file and the sandbox tools actually work.
-2. Otherwise run the evaluation command specified in the program file.
-3. Compare against `best_metric` from the state file.
-4. Both freshness programs hand you their change precomputed under `proposed`, because `nix` is not available inside the sandbox: for `darwin-packages-freshness` apply at most one of the prefetched hash bumps, and for `nixpkgs-freshness` apply the rewritten `flake.lock` exactly as that program's **Evaluation** section prescribes (guard with the `base_flake_lock_blob` check). Never guess a hash, a rev or a `narHash`, and do not try to run `nix` yourself.
+2. If that file carries an `error` field, it carries **no metric** — the runner could not evaluate the program at all (no runner-side evaluator exists for it, or the evaluator was absent from the tree that was measured). Do not try to parse a metric that is not there, and do not fall back to a sandbox re-run: `nix` is unreachable there, so any number reached that way would be unverifiable. This iteration cannot be evaluated, so take the **If evaluation could not run** path in [Step 5: Accept or Reject](#step-5-accept-or-reject) — propose nothing, commit nothing, and record the `error` text verbatim as the ⚠️ description.
+3. Otherwise run the evaluation command specified in the program file.
+4. Compare against `best_metric` from the state file.
+5. Both freshness programs hand you their change precomputed under `proposed`, because `nix` is not available inside the sandbox: for `darwin-packages-freshness` apply at most one of the prefetched hash bumps, and for `nixpkgs-freshness` apply the rewritten `flake.lock` exactly as that program's **Evaluation** section prescribes (guard with the `base_flake_lock_blob` check). Never guess a hash, a rev or a `narHash`, and do not try to run `nix` yourself.
 
 ### Step 5: Accept or Reject
 
