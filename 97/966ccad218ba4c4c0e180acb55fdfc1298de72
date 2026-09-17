@@ -1,0 +1,19 @@
+pkgs/pi-desktop-darwin/default.nix
+  s_f0b1ebf861b058::t_5efbb2d286b78f 24-25,31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.44-trip",
+  "base_commit_sha": "97966ccad218ba4c4c0e180acb55fdfc1298de72",
+  "prompts": {},
+  "sessions": {
+    "s_f0b1ebf861b058": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bb109af5-714f-4b3d-a147-1cc3a37ce992",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
