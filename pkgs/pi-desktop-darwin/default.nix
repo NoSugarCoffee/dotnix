@@ -21,14 +21,14 @@ let
     x86_64-darwin = "x64";
   };
   archHash = {
-    aarch64-darwin = "sha256-IqzoF6+vMtjSjqYqwmSv4eoLRETeRRoHxC/SFrD6WHk=";
-    x86_64-darwin = "sha256-ox3oazRYL2PoBSMbx8vn7QmO0AW4WjDLtuJoRjDW7PY=";
+    aarch64-darwin = "sha256-RGWgZ2mCBgJYWNLktEsFJQwxBEV5kYJrh6Rf2xExGfs=";
+    x86_64-darwin = "sha256-YyKJ11AahANSC66kjyZmw4nWSTim6sgB4IB7euSEPIk=";
   };
   system = stdenvNoCC.hostPlatform.system;
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "pi-desktop";
-  version = "0.14.6";
+  version = "0.14.8";
 
   src = fetchurl {
     url = "https://github.com/vastsa/PI-Desktop/releases/download/v${finalAttrs.version}/PI-Desktop-${finalAttrs.version}-${archName.${system}}.dmg";
