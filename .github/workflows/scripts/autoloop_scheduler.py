@@ -15,10 +15,15 @@ Side effects:
     * Always writes ``/tmp/gh-aw/autoloop.json``.
 
 Exit codes:
-    0  - a program was selected, or there are unconfigured programs to
-         report on (the agent step should run).
-    1  - nothing to do this run (no due programs, no unconfigured
-         programs); the workflow should skip the agent step.
+    0  - scheduling completed. The ``due`` step output (``GITHUB_OUTPUT``)
+         is ``true`` when a program was selected or unconfigured programs
+         need reporting, and ``false`` when nothing is due this run or no
+         program files exist at all.
+    1  - a forced program could not be run (unknown or unconfigured).
+
+Step outputs:
+    due  - ``true`` / ``false``; the workflow gates the runner-side
+           evaluation steps on it and the agent calls ``noop`` when false.
 
 Environment variables:
     GITHUB_TOKEN       - token used to query the issues API.
@@ -285,6 +290,18 @@ def check_skip_conditions(state):
 # ---------------------------------------------------------------------------
 # I/O helpers
 # ---------------------------------------------------------------------------
+
+
+def agent_has_work(selected, unconfigured):
+    return bool(selected) or bool(unconfigured)
+
+
+def write_step_output(name, value, output_path=None):
+    path = output_path if output_path is not None else os.environ.get("GITHUB_OUTPUT")
+    if not path:
+        return
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("{}={}\n".format(name, value))
 
 
 def read_program_state(program_name, repo_memory_dir=REPO_MEMORY_DIR):
@@ -674,6 +691,7 @@ def main():
                 },
                 f,
             )
+        write_step_output("due", "false")
         sys.exit(0)
 
     now = datetime.now(timezone.utc)
@@ -772,6 +790,8 @@ def main():
             print("  Warning: existing PR lookup failed for {}: {}".format(selected, e))
             existing_pr = None
 
+    not_due = not agent_has_work(selected, unconfigured)
+
     result = {
         "selected": selected,
         "selected_file": selected_file,
@@ -788,6 +808,7 @@ def main():
         "skipped": skipped,
         "unconfigured": unconfigured,
         "no_programs": False,
+        "not_due": not_due,
         "head_branch": head_branch,
         "existing_pr": existing_pr,
     }
@@ -801,9 +822,9 @@ def main():
     print("Programs skipped:      {}".format([s["name"] for s in skipped] or "(none)"))
     print("Programs unconfigured: {}".format(unconfigured or "(none)"))
 
-    if not selected and not unconfigured:
-        print("\nNo programs due this run. Exiting early.")
-        sys.exit(1)  # Non-zero exit skips the agent step
+    write_step_output("due", "false" if not_due else "true")
+    if not_due:
+        print("\nNo programs due this run; the agent has nothing to do.")
 
 
 if __name__ == "__main__":

@@ -151,6 +151,7 @@ steps:
         experimental-features = nix-command flakes
 
   - name: Check which programs are due
+    id: schedule
     env:
       GITHUB_TOKEN: ${{ github.token }}
       GITHUB_REPOSITORY: ${{ github.repository }}
@@ -162,6 +163,7 @@ steps:
   # change is layered on top of it. autoloop-ci.yml is what makes a verdict
   # possible at all; see the comment there.
   - name: Verify the previous iteration's CI
+    if: steps.schedule.outputs.due == 'true'
     env:
       GH_TOKEN: ${{ github.token }}
       GITHUB_REPOSITORY: ${{ github.repository }}
@@ -170,6 +172,7 @@ steps:
       bash .github/workflows/scripts/autoloop_verify_ci.sh
 
   - name: Evaluate selected program on the runner
+    if: steps.schedule.outputs.due == 'true'
     env:
       GH_TOKEN: ${{ github.token }}
       GITHUB_TOKEN: ${{ github.token }}
@@ -271,6 +274,8 @@ If `selected` is not null:
 3. Read the current state of all target files.
 4. Read the state file `{selected}.md` from the repo-memory folder for all state: the ⚙️ Machine State table (scheduling fields) plus the research sections (priorities, lessons, foreclosed avenues, iteration history).
 5. If `selected_issue` is not null, this is an issue-based program — also read the issue comments for any human steering input.
+
+If `not_due` is `true` (`selected` is null and `unconfigured` is empty) or `no_programs` is `true`, there is nothing to iterate on this run: call `noop` with a one-line reason and stop. Do not read state files, create or comment on issues, or push anything.
 
 ## Multiple Programs
 
