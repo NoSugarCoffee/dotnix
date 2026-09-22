@@ -82,6 +82,7 @@ class IdleRunTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile("w+", delete=False) as f:
             f.write("existing=1\n")
             path = f.name
+        self.addCleanup(os.unlink, path)
         sched.write_step_output("due", "false", output_path=path)
         with open(path, encoding="utf-8") as f:
             self.assertEqual(f.read(), "existing=1\ndue=false\n")

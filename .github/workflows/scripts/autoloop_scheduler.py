@@ -17,7 +17,8 @@ Side effects:
 Exit codes:
     0  - scheduling completed. The ``due`` step output (``GITHUB_OUTPUT``)
          is ``true`` when a program was selected or unconfigured programs
-         need reporting, and ``false`` when nothing is due this run.
+         need reporting, and ``false`` when nothing is due this run or no
+         program files exist at all.
     1  - a forced program could not be run (unknown or unconfigured).
 
 Step outputs:
@@ -690,7 +691,7 @@ def main():
                 },
                 f,
             )
-        write_step_output("due", "true")
+        write_step_output("due", "false")
         sys.exit(0)
 
     now = datetime.now(timezone.utc)
