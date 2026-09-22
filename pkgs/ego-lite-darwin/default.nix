@@ -25,12 +25,12 @@ let
     x86_64-darwin = "x64";
   };
   archHash = {
-    aarch64-darwin = "sha256-VVXr/aWsZru3QsbdOJeobRZF1MjgGO0M0+rJxVKSFTw=";
-    x86_64-darwin = "sha256-8E+fngHdAVTeJPxwDCoVEP/Y+lDDtZ+NbnqPpgy6sYM=";
+    aarch64-darwin = "sha256-fzPlNx5nauTc+Sp+8s3giG3su6nOsUYsvwr+Kp2liy0=";
+    x86_64-darwin = "sha256-mKPbzf/yKi78+MF+13vn6CdZG1qVLRFZvK+Q1owkp84=";
   };
   archVersion = {
-    aarch64-darwin = "0.5.0.32";
-    x86_64-darwin = "0.5.0.33";
+    aarch64-darwin = "0.5.1.11";
+    x86_64-darwin = "0.5.1.11";
   };
   system = stdenvNoCC.hostPlatform.system;
 in
