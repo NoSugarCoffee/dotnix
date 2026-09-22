@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
@@ -67,6 +70,27 @@ class DashboardIssueClassificationTests(unittest.TestCase):
             {"darwin-packages-freshness": 91},
         )
         self.assertEqual(issue_number, 8)
+
+
+class IdleRunTests(unittest.TestCase):
+    def test_nothing_selected_and_nothing_unconfigured_means_no_work(self):
+        self.assertFalse(sched.agent_has_work(None, []))
+        self.assertTrue(sched.agent_has_work("nixpkgs-freshness", []))
+        self.assertTrue(sched.agent_has_work(None, ["example"]))
+
+    def test_due_output_is_appended_to_github_output(self):
+        with tempfile.NamedTemporaryFile("w+", delete=False) as f:
+            f.write("existing=1\n")
+            path = f.name
+        sched.write_step_output("due", "false", output_path=path)
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "existing=1\ndue=false\n")
+
+    def test_missing_github_output_is_a_no_op(self):
+        env = dict(os.environ)
+        env.pop("GITHUB_OUTPUT", None)
+        with mock.patch.dict(os.environ, env, clear=True):
+            sched.write_step_output("due", "true")
 
 
 class RepoMemoryPathTests(unittest.TestCase):
