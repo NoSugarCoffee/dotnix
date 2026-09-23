@@ -8,8 +8,8 @@
 
 | Field | Value |
 |-------|-------|
-| Last Run | 2026-09-16T21:30:29Z |
-| Iteration Count | 3 |
+| Last Run | 2026-09-23T21:38:19Z |
+| Iteration Count | 4 |
 | Best Metric | 0.6000 |
 | Target Metric | — |
 | Metric Direction | higher |
@@ -20,8 +20,11 @@
 | Pause Reason | — |
 | Completed | false |
 | Completed Reason | — |
-| Consecutive Errors | 1 |
-| Recent Statuses | error, accepted, error |
+| Consecutive Errors | 2 |
+| Recent Statuses | error, error, accepted, error |
+| Last Verified SHA | — |
+| CI Fix Attempts | 0 |
+| Last CI Failure Signature | — |
 
 ## 📋 Program Info
 
@@ -45,9 +48,16 @@
 ## 🔭 Future Directions
 
 - Continue with the next stale root input on the next scheduled iteration; the remaining stale inputs are `nixpkgs` and `nixpkgs-unstable`.
-- Retry the runner-provided proposal only when its `base_flake_lock_blob` matches the synchronized branch; this iteration's proposal was based on an older lockfile.
+- Retry the runner-provided proposal only when its `base_flake_lock_blob` matches the synchronized branch; this iteration's proposal was based on `main` while the canonical branch still contains the prior accepted commit.
 
 ## 📊 Iteration History
+
+### Iteration 4 — 2026-09-23 21:38 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/35923411686)
+
+- **Status**: ⚠️ Error
+- **Change**: Attempted to apply the runner-provided `nixpkgs` lockfile proposal.
+- **Metric**: 0.6000 (previous best: 0.6000, no change)
+- **Notes**: The mandatory base-blob guard failed: the proposal was computed from `main` (`fac9c264…`), while the canonical branch already includes the prior accepted lockfile commit (`bdd2e768…`). No file was changed.
 
 ### Iteration 3 — 2026-09-16 21:30 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/35152389042)
 
