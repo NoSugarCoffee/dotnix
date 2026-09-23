@@ -8,8 +8,8 @@
 
 | Field | Value |
 |-------|-------|
-| Last Run | 2026-09-16T17:11:23Z |
-| Iteration Count | 2 |
+| Last Run | 2026-09-23T17:17:42Z |
+| Iteration Count | 3 |
 | Best Metric | 2 |
 | Target Metric | — |
 | Metric Direction | higher |
@@ -21,7 +21,7 @@
 | Completed | false |
 | Completed Reason | — |
 | Consecutive Errors | 0 |
-| Recent Statuses | rejected, accepted |
+| Recent Statuses | rejected, accepted, rejected |
 
 ---
 
@@ -60,6 +60,13 @@
 ---
 
 ## 📊 Iteration History
+
+### Iteration 3 — 2026-09-23 17:17 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/35894347666)
+
+- **Status**: ❌ Rejected
+- **Change**: Evaluated the proposed clash-verge-rev-darwin 2.5.5 pin and architecture hashes.
+- **Metric**: 1 (previous best: 2, delta: +0)
+- **Notes**: The runner evaluation reported clash-verge-rev-darwin stale, but the proposed update would leave only one of the two tracked packages current. No target files were changed.
 
 ### Iteration 2 — 2026-09-16 17:11 UTC — [Run](https://github.com/NoSugarCoffee/dotnix/actions/runs/35126327517)
 
