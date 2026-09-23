@@ -1,2 +1,2 @@
-`fcd1a45fb8414e00e8a6a3cf37751768914eac0a79a07fa8d2dd5007be832af2`
+`6fbde6f20ebe0705d8c85939a72b857353662b5c48b39583f64ac1133b697c2f`
 Local package set: agent-access and APM binaries; ccstatusline and Pi npm bundles; Unix Claude session registry and translate-selection; macOS repacks/builds for Albert, Clash Verge, Claude Desktop, ego-lite, JetBrains Air, OBS, Ping Island, PI-Desktop, and Pulsar. PI-Desktop 0.14.6 copies the official architecture-specific DMG bundle verbatim; the ego-lite browser wrapper prefers writable Home Manager or system app bundles before falling back to the store copy.
