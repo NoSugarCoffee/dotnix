@@ -1,0 +1,26 @@
+.autoloop/programs/nixpkgs-freshness.md
+  s_4bae0f31ef3930::t_8e2b12df1b3c46 2,4
+.autoloop/programs/darwin-packages-freshness.md
+  s_4bae0f31ef3930::t_32116a2083d67c 2
+.github/workflows/autoloop.md
+  s_4bae0f31ef3930::t_0bde3e0b30bcec 410,414
+  s_4bae0f31ef3930::t_37bc53fc22a3b5 512
+.github/workflows/autoloop.lock.yml
+  s_4bae0f31ef3930::t_bc82dbff9ca7ff 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "94d5ce569ceb5b59531da86f1657c92d85c74642",
+  "prompts": {},
+  "sessions": {
+    "s_4bae0f31ef3930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4df3f7b-8295-4a7b-9009-d2a578bda33f",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
