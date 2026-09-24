@@ -1,8 +1,7 @@
 ---
-schedule: weekly
+schedule: daily
 # Open-ended: upstream never stops moving, so there's no metric value at
-# which this program is "done" -- matches the cadence of the existing
-# read-only staleness check in .github/workflows/code-quality.md.
+# which this program is "done".
 ---
 
 # Nixpkgs and Flake Input Freshness

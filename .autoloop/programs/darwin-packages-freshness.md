@@ -1,5 +1,5 @@
 ---
-schedule: weekly
+schedule: daily
 # Open-ended: same reasoning as nixpkgs-freshness -- upstream releases never
 # stop, so there's no metric value at which this program is "done".
 ---
