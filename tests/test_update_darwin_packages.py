@@ -145,6 +145,33 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
         )
         self.assertIn(version[0].split('"')[1], outputs["summary"])
 
+    def test_fails_when_only_part_of_a_proposal_matches(self) -> None:
+        """A version bump landing without its hashes would pin a broken pair."""
+        work = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, work, ignore_errors=True)
+        (work / CLASH).parent.mkdir(parents=True, exist_ok=True)
+        original = (REPO / CLASH).read_text()
+        (work / CLASH).write_text(
+            original.replace('    aarch64-darwin = "sha256-', '  aarch64-darwin = "sha256-')
+        )
+
+        eval_file = work / "eval.json"
+        eval_file.write_text(json.dumps(_eval_json(clash=True, desktop=False)))
+        env = os.environ.copy()
+        env.update(DARWIN_EVAL_JSON=str(eval_file), GITHUB_OUTPUT=str(work / "out"))
+        proc = subprocess.run(
+            ["bash", str(SCRIPT)],
+            cwd=work,
+            env=env,
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("aarch64-darwin", proc.stderr)
+        self.assertNotIn('version = "9.9.9"', (work / CLASH).read_text())
+
     def test_fails_loudly_when_a_proposal_matches_nothing(self) -> None:
         """A silent no-op here would open an empty PR every night."""
         work = Path(tempfile.mkdtemp())

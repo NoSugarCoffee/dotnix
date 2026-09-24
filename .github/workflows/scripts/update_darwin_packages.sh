@@ -16,12 +16,19 @@ rewrite() {
   shift 2
   local tmp
   tmp=$(mktemp)
-  sed "$@" "$file" >"$tmp"
-  if cmp -s "$file" "$tmp"; then
-    rm -f "$tmp"
-    echo "${what}: the evaluation proposed a bump but no line in ${file} matched" >&2
-    exit 1
-  fi
+  cp "$file" "$tmp"
+  local expression
+  for expression in "$@"; do
+    local staged
+    staged=$(mktemp)
+    sed -e "$expression" "$tmp" >"$staged"
+    if cmp -s "$tmp" "$staged"; then
+      rm -f "$tmp" "$staged"
+      echo "${what}: no line in ${file} matched ${expression}" >&2
+      exit 1
+    fi
+    mv "$staged" "$tmp"
+  done
   mv "$tmp" "$file"
 }
 
@@ -37,9 +44,9 @@ if [ -n "$clash" ]; then
   x86_64=$(jq -r '.archHash["x86_64-darwin"]' <<<"$clash")
 
   rewrite pkgs/clash-verge-rev-darwin/default.nix clash-verge-rev \
-    -e "s|^\(  version = \)\"[^\"]*\";|\1\"${version}\";|" \
-    -e "s|^\(    aarch64-darwin = \)\"sha256-[^\"]*\";|\1\"${aarch64}\";|" \
-    -e "s|^\(    x86_64-darwin = \)\"sha256-[^\"]*\";|\1\"${x86_64}\";|"
+    "s|^\(  version = \)\"[^\"]*\";|\1\"${version}\";|" \
+    "s|^\(    aarch64-darwin = \)\"sha256-[^\"]*\";|\1\"${aarch64}\";|" \
+    "s|^\(    x86_64-darwin = \)\"sha256-[^\"]*\";|\1\"${x86_64}\";|"
 
   changed=true
   summary+="- \`clash-verge-rev-darwin\`: ${pinned} -> ${version}"$'\n'
@@ -52,7 +59,7 @@ if [ -n "$desktop" ]; then
   label=$(sed -n 's|^  version = "\([^"]*\)";|\1|p' "$file")
 
   rewrite "$file" claude-desktop \
-    -e "s|^\(    hash = \)\"sha256-[^\"]*\";|\1\"${hash}\";|"
+    "s|^\(    hash = \)\"sha256-[^\"]*\";|\1\"${hash}\";|"
 
   changed=true
   summary+="- \`claude-desktop-darwin\`: upstream shipped a new build at the unversioned URL; hash bumped to \`${hash}\`."$'\n'
@@ -67,7 +74,7 @@ if [ -n "$ego" ]; then
   for nix_arch in aarch64-darwin x86_64-darwin; do
     hash=$(jq -r --arg a "$nix_arch" '.archHash[$a] // empty' <<<"$ego")
     [ -n "$hash" ] || continue
-    args+=(-e "s|^\(    ${nix_arch} = \)\"sha256-[^\"]*\";|\1\"${hash}\";|")
+    args+=("s|^\(    ${nix_arch} = \)\"sha256-[^\"]*\";|\1\"${hash}\";|")
     summary+="- \`ego-lite-darwin\` (${nix_arch}): new build at the unversioned URL, hash bumped to \`${hash}\`."$'\n'
   done
 

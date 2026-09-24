@@ -457,32 +457,28 @@ Each run executes **one iteration for the single selected program**:
 
    ```bash
    git fetch origin main
+   existing_pr=$(jq -r '.existing_pr // empty' /tmp/gh-aw/autoloop.json)
    if git ls-remote --exit-code origin autoloop/{program-name}; then
-     # Branch exists — fetch it too so the ahead/behind counts below are
-     # computed against up-to-date local copies of the remote tips.
+     # Branch exists — fetch it too so the counts below are computed against
+     # up-to-date local copies of the remote tips.
      git fetch origin autoloop/{program-name}
 
-     ahead=$(git rev-list --count origin/main..origin/autoloop/{program-name})
-     behind=$(git rev-list --count origin/autoloop/{program-name}..origin/main)
-
-     if [ "$ahead" = "0" ] && [ "$behind" != "0" ]; then
-       # All of the branch's commits are already in main (typical case after a
-       # successful merge of the previous iteration's PR). A merge here would
-       # produce a noisy "Merge main into branch" commit that re-exposes every
-       # historical file as a patch touch — the failure mode that triggers
-       # gh-aw's E003 (>100 files) when a new PR is opened. Fast-forward the
-       # canonical branch to main instead. This is lossless because ahead=0
-       # proves every commit on the branch is already reachable from main.
+     if [ -z "$existing_pr" ]; then
+       # No open PR, so whatever sits on the branch is not in-flight work: it
+       # was squash-merged, or a PR was never opened for it. Either way the
+       # runner evaluated origin/main, so anything else here is a tree its
+       # proposal does not describe. Reset rather than merge — a merge would
+       # also produce a noisy "Merge main into branch" commit that re-exposes
+       # every historical file as a patch touch, which is what trips gh-aw's
+       # E003 (>100 files) when the next PR is opened.
        git checkout -B autoloop/{program-name} origin/main
        git push --force-with-lease origin autoloop/{program-name}
-     elif [ "$ahead" != "0" ] && [ "$behind" != "0" ]; then
-       # True divergence: branch has unique commits AND main has moved on.
-       git checkout -B autoloop/{program-name} origin/autoloop/{program-name}
-       git merge origin/main --no-edit -m "Merge main into autoloop/{program-name}"
      else
-       # Already at main (ahead=0, behind=0) or only ahead of main (ahead>0,
-       # behind=0). Nothing to merge — just check out the branch.
+       behind=$(git rev-list --count origin/autoloop/{program-name}..origin/main)
        git checkout -B autoloop/{program-name} origin/autoloop/{program-name}
+       if [ "$behind" != "0" ]; then
+         git merge origin/main --no-edit -m "Merge main into autoloop/{program-name}"
+       fi
      fi
    else
      # Branch does not exist — create it from the default branch
@@ -490,14 +486,13 @@ Each run executes **one iteration for the single selected program**:
    fi
    ```
 
-   The four cases:
+   The cases:
 
-   | ahead | behind | Action | Rationale |
+   | `existing_pr` | behind | Action | Rationale |
    |---|---|---|---|
-   | 0 | 0 | checkout (nothing to do) | branch is exactly at main |
-   | 0 | >0 | **fast-forward + force-push** | branch's commits already in main; merging would produce noisy merge commit |
-   | >0 | 0 | checkout (nothing to do) | unique work preserved; no upstream drift to merge |
-   | >0 | >0 | checkout + merge | true divergence |
+   | null | any | **reset to `origin/main` + force-push** | branch carries no in-flight work; the runner measured `origin/main`, so the iteration must start there |
+   | set | 0 | checkout (nothing to do) | in-flight work, no upstream drift to merge |
+   | set | >0 | checkout + merge | in-flight work and main has moved on |
 
    Use `--force-with-lease` rather than `--force` so that if anyone else is simultaneously pushing to the branch, the update is rejected rather than overwriting their commits.
 2. Make the proposed changes to the target files only.
@@ -559,6 +554,8 @@ Improvement is **direction-aware**:
 - If `selected_metric_direction` is `"lower"`: the metric improved when `new_metric < best_metric`.
 
 Read `selected_metric_direction` from `/tmp/gh-aw/autoloop.json` to know which direction applies. The first run (no `best_metric` yet) always counts as an improvement regardless of direction. **If the metric did not improve**, take the "metric did not improve" path below instead.
+
+One exception, and it is the normal case for a freshness program: when the iteration applied a precomputed `proposed` bump, `new_metric == best_metric` also counts as improvement. Such a metric is bounded — every input or package is either current or not — so restoring it to its previous best is the most any single bump can do, and requiring a strict increase would reject every repair after the metric has once been maxed out. Accept it; a `proposed` bump that leaves the landed metric *below* `best_metric` is still a rejection.
 
 Acceptance here is provisional: it becomes ratified only when a later run reads `state: verified` for this commit. Record it as ✅ (unratified) rather than claiming CI passed.
 
