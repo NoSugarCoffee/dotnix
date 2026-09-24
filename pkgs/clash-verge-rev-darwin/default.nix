@@ -14,14 +14,14 @@ let
     x86_64-darwin = "x64";
   };
   archHash = {
-    aarch64-darwin = "sha256-lNKUBZgLXR00Gd0d5IXbOiNNNc7wWPedzOWV4Btpchk=";
-    x86_64-darwin = "sha256-yfzsJ9PktP/+MfMUNpqqQBfYDBKTyLHLZdhd4iPpy2w=";
+    aarch64-darwin = "sha256-Z+HagO7p3KutUJnsYSi9jbd0JArIGW9ZIfUVlk2bULE=";
+    x86_64-darwin = "sha256-0xIhhma2ZUNQVdDU5+aXpJg1QqrS7sYzummv2i/PcYU=";
   };
   system = stdenvNoCC.hostPlatform.system;
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "clash-verge-rev";
-  version = "2.5.2";
+  version = "2.5.5";
 
   src = fetchurl {
     url = "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v${finalAttrs.version}/Clash.Verge_${finalAttrs.version}_${archName.${system}}.dmg";
