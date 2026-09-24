@@ -8,7 +8,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  actions: write
 
 concurrency:
   group: flake-update
@@ -26,10 +25,13 @@ jobs:
       - id: update
         uses: DeterminateSystems/update-flake-lock@v29
         with:
+          token: ${{ secrets.UPDATE_PAT }}
           branch: chore/flake-update
           pr-title: "chore(flake): update inputs"
           pr-labels: automation
       - if: steps.update.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref chore/flake-update
+          GH_TOKEN: ${{ secrets.UPDATE_PAT }}
+        run: |
+          gh pr merge ${{ steps.update.outputs.pull-request-number }} \
+            --auto --squash --delete-branch

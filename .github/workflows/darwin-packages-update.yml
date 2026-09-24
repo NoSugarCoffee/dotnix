@@ -8,7 +8,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  actions: write
 
 concurrency:
   group: darwin-packages-update
@@ -31,6 +30,7 @@ jobs:
         if: steps.bump.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
+          token: ${{ secrets.UPDATE_PAT }}
           branch: chore/darwin-packages-update
           title: "chore(pkgs): bump darwin DMG pins"
           body: ${{ steps.bump.outputs.summary }}
@@ -41,5 +41,7 @@ jobs:
           labels: automation
       - if: steps.pr.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --ref chore/darwin-packages-update
+          GH_TOKEN: ${{ secrets.UPDATE_PAT }}
+        run: |
+          gh pr merge ${{ steps.pr.outputs.pull-request-number }} \
+            --auto --squash --delete-branch
