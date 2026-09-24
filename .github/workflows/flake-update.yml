@@ -1,0 +1,35 @@
+name: Update flake inputs
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: flake-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - id: update
+        uses: DeterminateSystems/update-flake-lock@v29
+        with:
+          branch: chore/flake-update
+          pr-title: "chore(flake): update inputs"
+          pr-labels: automation
+      - if: steps.update.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref chore/flake-update

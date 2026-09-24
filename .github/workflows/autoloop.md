@@ -11,7 +11,6 @@ description: |
   - Maintains a single draft PR per program that accumulates all accepted iterations
 
 on:
-  schedule: every 6h
   workflow_dispatch:
     inputs:
       program:
@@ -407,11 +406,11 @@ Examples:
 ### How It Works
 
 1. On the **first accepted iteration**, the branch is created from the default branch.
-2. On **subsequent iterations**, the agent checks out the existing branch and ensures it is up to date with the default branch. If the branch's changes have already been merged into the default branch (i.e., `git diff origin/main..autoloop/{program-name}` is empty), the branch is **reset to `origin/main`** to avoid stale commits. Otherwise, the default branch is merged into it.
+2. On **subsequent iterations**, the agent checks out the existing branch and ensures it is up to date with the default branch. When `existing_pr` from `/tmp/gh-aw/autoloop.json` is `null`, the branch carries no in-flight work — its commits were squash-merged, or a PR was never opened for them — so the agent **resets it to `origin/main`**, which is also the ref the runner-side evaluation measured. Only when `existing_pr` is set does the agent merge the default branch into it instead. Never keep unmerged commits on a branch with no open PR: the runner evaluates `origin/main` in that state, so any proposal it hands over will fail its base-blob guard against the divergent tree.
 3. **Accepted iterations** are committed and pushed to the branch. Each commit message references the GitHub Actions run URL.
 4. **Rejected or errored iterations** do not commit — changes are discarded.
 5. A **single draft PR** is created for the branch on the first accepted iteration. Future accepted iterations push additional commits to the same PR.
-6. The branch may be **merged into the default branch** at any time (by a maintainer or CI). After merging, the branch continues to be used for future iterations — it is never deleted while the program is active. On the next iteration, the branch is automatically reset to the default branch (see step 2) so that already-merged commits do not cause patch conflicts.
+6. The branch may be **merged into the default branch** at any time (by a maintainer or CI). After merging, the branch continues to be used for future iterations — it is never deleted while the program is active. On the next iteration, `existing_pr` is `null` again and the branch is reset to the default branch (see step 2) so that already-merged commits do not cause patch conflicts.
 
 ### Cross-Linking
 
@@ -458,32 +457,28 @@ Each run executes **one iteration for the single selected program**:
 
    ```bash
    git fetch origin main
+   existing_pr=$(jq -r '.existing_pr // empty' /tmp/gh-aw/autoloop.json)
    if git ls-remote --exit-code origin autoloop/{program-name}; then
-     # Branch exists — fetch it too so the ahead/behind counts below are
-     # computed against up-to-date local copies of the remote tips.
+     # Branch exists — fetch it too so the counts below are computed against
+     # up-to-date local copies of the remote tips.
      git fetch origin autoloop/{program-name}
 
-     ahead=$(git rev-list --count origin/main..origin/autoloop/{program-name})
-     behind=$(git rev-list --count origin/autoloop/{program-name}..origin/main)
-
-     if [ "$ahead" = "0" ] && [ "$behind" != "0" ]; then
-       # All of the branch's commits are already in main (typical case after a
-       # successful merge of the previous iteration's PR). A merge here would
-       # produce a noisy "Merge main into branch" commit that re-exposes every
-       # historical file as a patch touch — the failure mode that triggers
-       # gh-aw's E003 (>100 files) when a new PR is opened. Fast-forward the
-       # canonical branch to main instead. This is lossless because ahead=0
-       # proves every commit on the branch is already reachable from main.
+     if [ -z "$existing_pr" ]; then
+       # No open PR, so whatever sits on the branch is not in-flight work: it
+       # was squash-merged, or a PR was never opened for it. Either way the
+       # runner evaluated origin/main, so anything else here is a tree its
+       # proposal does not describe. Reset rather than merge — a merge would
+       # also produce a noisy "Merge main into branch" commit that re-exposes
+       # every historical file as a patch touch, which is what trips gh-aw's
+       # E003 (>100 files) when the next PR is opened.
        git checkout -B autoloop/{program-name} origin/main
        git push --force-with-lease origin autoloop/{program-name}
-     elif [ "$ahead" != "0" ] && [ "$behind" != "0" ]; then
-       # True divergence: branch has unique commits AND main has moved on.
-       git checkout -B autoloop/{program-name} origin/autoloop/{program-name}
-       git merge origin/main --no-edit -m "Merge main into autoloop/{program-name}"
      else
-       # Already at main (ahead=0, behind=0) or only ahead of main (ahead>0,
-       # behind=0). Nothing to merge — just check out the branch.
+       behind=$(git rev-list --count origin/autoloop/{program-name}..origin/main)
        git checkout -B autoloop/{program-name} origin/autoloop/{program-name}
+       if [ "$behind" != "0" ]; then
+         git merge origin/main --no-edit -m "Merge main into autoloop/{program-name}"
+       fi
      fi
    else
      # Branch does not exist — create it from the default branch
@@ -491,14 +486,13 @@ Each run executes **one iteration for the single selected program**:
    fi
    ```
 
-   The four cases:
+   The cases:
 
-   | ahead | behind | Action | Rationale |
+   | `existing_pr` | behind | Action | Rationale |
    |---|---|---|---|
-   | 0 | 0 | checkout (nothing to do) | branch is exactly at main |
-   | 0 | >0 | **fast-forward + force-push** | branch's commits already in main; merging would produce noisy merge commit |
-   | >0 | 0 | checkout (nothing to do) | unique work preserved; no upstream drift to merge |
-   | >0 | >0 | checkout + merge | true divergence |
+   | null | any | **reset to `origin/main` + force-push** | branch carries no in-flight work; the runner measured `origin/main`, so the iteration must start there |
+   | set | 0 | checkout (nothing to do) | in-flight work, no upstream drift to merge |
+   | set | >0 | checkout + merge | in-flight work and main has moved on |
 
    Use `--force-with-lease` rather than `--force` so that if anyone else is simultaneously pushing to the branch, the update is rejected rather than overwriting their commits.
 2. Make the proposed changes to the target files only.
@@ -509,7 +503,7 @@ Each run executes **one iteration for the single selected program**:
 1. If `/tmp/gh-aw/autoloop-eval.json` exists, that file **is** the evaluation — it was produced on the runner with working `nix` and `gh` before the sandbox started. Read it and parse the metric from there. Do not re-run `gh api` or `nix store prefetch-file` inside the sandbox unless you have just changed a target file and the sandbox tools actually work.
 2. If that file carries an `error` field, it carries **no metric** — the runner could not evaluate the program at all (no runner-side evaluator exists for it, or the evaluator was absent from the tree that was measured). Do not try to parse a metric that is not there, and do not fall back to a sandbox re-run: `nix` is unreachable there, so any number reached that way would be unverifiable. This iteration cannot be evaluated, so take the **If evaluation could not run** path in [Step 5: Accept or Reject](#step-5-accept-or-reject) — propose nothing, commit nothing, and record the `error` text verbatim as the ⚠️ description.
 3. Otherwise run the evaluation command specified in the program file.
-4. Compare against `best_metric` from the state file.
+4. Compare against `best_metric` from the state file — but compare the metric the iteration will **land on**, not the one you were handed. `autoloop-eval.json` is produced before the sandbox starts, so it measures the tree *before* your change, and `nix` is unreachable inside the sandbox, so a post-change number cannot be re-measured. When the evaluation carries a `proposed` object, the projected metric is that baseline with the one input or package it covers moved from stale to current. Never reject a precomputed `proposed` bump on the grounds that the baseline fell below `best_metric`: a baseline drop *is* upstream shipping a release, which is exactly what the proposal repairs, and applying it is what restores the metric.
 5. Both freshness programs hand you their change precomputed under `proposed`, because `nix` is not available inside the sandbox: for `darwin-packages-freshness` apply at most one of the prefetched hash bumps, and for `nixpkgs-freshness` apply the rewritten `flake.lock` exactly as that program's **Evaluation** section prescribes (guard with the `base_flake_lock_blob` check). Never guess a hash, a rev or a `narHash`, and do not try to run `nix` yourself.
 
 ### Step 5: Accept or Reject
@@ -560,6 +554,8 @@ Improvement is **direction-aware**:
 - If `selected_metric_direction` is `"lower"`: the metric improved when `new_metric < best_metric`.
 
 Read `selected_metric_direction` from `/tmp/gh-aw/autoloop.json` to know which direction applies. The first run (no `best_metric` yet) always counts as an improvement regardless of direction. **If the metric did not improve**, take the "metric did not improve" path below instead.
+
+One exception, and it is the normal case for a freshness program: when the iteration applied a precomputed `proposed` bump, `new_metric == best_metric` also counts as improvement. Such a metric is bounded — every input or package is either current or not — so restoring it to its previous best is the most any single bump can do, and requiring a strict increase would reject every repair after the metric has once been maxed out. Accept it; a `proposed` bump that leaves the landed metric *below* `best_metric` is still a rejection.
 
 Acceptance here is provisional: it becomes ratified only when a later run reads `state: verified` for this commit. Record it as ✅ (unratified) rather than claiming CI passed.
 

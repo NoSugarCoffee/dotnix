@@ -1,0 +1,45 @@
+name: Update darwin packages
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: darwin-packages-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - id: bump
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/workflows/scripts/update_darwin_packages.sh
+      - id: pr
+        if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/darwin-packages-update
+          title: "chore(pkgs): bump darwin DMG pins"
+          body: ${{ steps.bump.outputs.summary }}
+          commit-message: |
+            chore(pkgs): bump darwin DMG pins
+
+            ${{ steps.bump.outputs.summary }}
+          labels: automation
+      - if: steps.pr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref chore/darwin-packages-update
