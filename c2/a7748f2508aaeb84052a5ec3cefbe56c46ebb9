@@ -1,0 +1,19 @@
+tests/test_autoloop_eval.py
+  s_4bae0f31ef3930::t_31f6267c5f6090 14-30,36,47,58-69,153,192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "c2a7748f2508aaeb84052a5ec3cefbe56c46ebb9",
+  "prompts": {},
+  "sessions": {
+    "s_4bae0f31ef3930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4df3f7b-8295-4a7b-9009-d2a578bda33f",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
