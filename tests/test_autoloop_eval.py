@@ -11,14 +11,29 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 EVAL_SH = REPO / ".github" / "workflows" / "scripts" / "autoloop_eval.sh"
 
+# A throwaway repo under /tmp still picks up the developer's ~/.gitconfig, and
+# tooling configured there writes into .git on its own schedule -- a trace2
+# listener adding refs/notes/ai is what made these tests flaky, recreating refs
+# while TemporaryDirectory walked the tree. Keep the fixtures hermetic instead.
+GIT_ISOLATION = {
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+}
+
+
+def _env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    merged = os.environ.copy()
+    merged.update(GIT_ISOLATION)
+    merged.update(extra or {})
+    return merged
+
 
 def _run(repo: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    merged = os.environ.copy()
-    merged.update(env)
     return subprocess.run(
         ["bash", str(EVAL_SH)],
         cwd=repo,
-        env=merged,
+        env=_env(env),
         check=False,
         text=True,
         capture_output=True,
@@ -29,6 +44,7 @@ def _git(repo: Path, *args: str) -> None:
     subprocess.run(
         ["git", *args],
         cwd=repo,
+        env=_env(),
         check=True,
         capture_output=True,
         text=True,
@@ -39,8 +55,18 @@ def _init_repo(root: Path) -> tuple[Path, Path]:
     origin = root / "origin.git"
     work = root / "work"
     origin.mkdir()
-    subprocess.run(["git", "init", "--bare", str(origin)], check=True, capture_output=True)
-    subprocess.run(["git", "clone", str(origin), str(work)], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "init", "--bare", "--initial-branch", "main", str(origin)],
+        env=_env(),
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "clone", str(origin), str(work)],
+        env=_env(),
+        check=True,
+        capture_output=True,
+    )
     _git(work, "config", "user.email", "test@example.com")
     _git(work, "config", "user.name", "Test")
     scripts = work / ".github" / "workflows" / "scripts"
@@ -124,6 +150,7 @@ class AutoloopEvalTests(unittest.TestCase):
             head = subprocess.run(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                 cwd=work,
+                env=_env(),
                 check=True,
                 text=True,
                 capture_output=True,
@@ -162,6 +189,7 @@ class AutoloopEvalTests(unittest.TestCase):
             head = subprocess.run(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                 cwd=work,
+                env=_env(),
                 check=True,
                 text=True,
                 capture_output=True,
