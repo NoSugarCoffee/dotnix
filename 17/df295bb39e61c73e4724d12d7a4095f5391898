@@ -1,0 +1,34 @@
+.github/workflows/darwin-packages-update.yml
+  s_4bae0f31ef3930::t_d329427d0de0f4 1-45
+tests/test_update_darwin_packages.py
+  s_4bae0f31ef3930::t_033abf3771bc30 1-17,19-22,24-25,29-39,42,44-45,47-56,58-116,147-176,179-185,187-193
+  s_4bae0f31ef3930::t_de3a098acf5de1 18,23,26-28,40-41,43,46,57,117-146
+  s_4bae0f31ef3930::t_5f1443fa429eba 177-178,186
+.github/workflows/scripts/eval_darwin_packages_freshness.sh
+  s_4bae0f31ef3930::t_99d3f5257f8ca6 19-35,52-54,60,65
+.github/workflows/flake-update.yml
+  s_4bae0f31ef3930::t_75943b16dfbbd1 1-35
+.github/workflows/autoloop.lock.yml
+  s_4bae0f31ef3930::t_563d1d57c18b6c 1
+.github/workflows/scripts/update_darwin_packages.sh
+  s_4bae0f31ef3930::t_6c0325756c5697 62-79
+  s_4bae0f31ef3930::t_e6e7eef676642e 13-26,28,39,42,54-55
+  s_4bae0f31ef3930::t_39aee6a7ba6c07 4-12,52,58-59
+  s_4bae0f31ef3930::t_da8d4b5941aaab 1-3,27,29-38,40-41,43-51,53,56-57,60-61,80-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "17df295bb39e61c73e4724d12d7a4095f5391898",
+  "prompts": {},
+  "sessions": {
+    "s_4bae0f31ef3930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4df3f7b-8295-4a7b-9009-d2a578bda33f",
+        "model": "claude-opus-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
