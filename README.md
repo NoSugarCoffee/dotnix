@@ -107,8 +107,7 @@ java (Temurin JDK & JRE) &middot; maven &middot;
 
 **Utilities** &nbsp; [just](https://just.systems/) &middot;
 [lark-cli](https://www.npmjs.com/package/@larksuite/cli) &middot;
-[cida](https://github.com/Xuanwo/cida) `macOS` (translate and polish text anywhere with an LLM; official notarized release zip, not in nixpkgs) &middot;
-translate-selection (local: translates the terminal selection via [translate-shell](https://github.com/soimort/translate-shell), bound to a kitty hotkey — see Notes)
+[cida](https://github.com/Xuanwo/cida) `macOS` (translate and polish text anywhere with an LLM; official notarized release zip, not in nixpkgs)
 
 ## 🔧 Commands
 
@@ -143,7 +142,6 @@ the whole rebranding step.
 - **asdf owns Go / Node / Java / Maven**, each pinned to an explicit version in `home/home.nix` (best-effort — network hiccups warn, don't abort). Nothing tracks "latest": a switch with the pinned versions already installed makes no network calls, and moving a version is a one-line bump. asdf-java uses vendor-prefixed versions rather than plain semver. Per-project pinning via `.tool-versions`.
 - **Python is from nixpkgs, not asdf**: asdf compiles CPython from source (needs Xcode CLT on macOS) and picks the experimental free-threaded variant as "latest".
 - **Docker on macOS runs on colima, not Docker Desktop.** Only the `docker` client and `docker-compose` are installed; the daemon lives inside a Linux VM that colima boots through Apple's Virtualization framework, entirely in user space — no privileged helper, no `sudo`, nothing outside the nix store (standalone home-manager cannot install a system LaunchDaemon anyway). A `launchd` agent runs `colima start` at login and colima points `docker`'s default context at the VM's socket, so `docker` just works; check with `colima status`. Compose is installed both ways — as `docker-compose` and, via a `~/.docker/cli-plugins` symlink, as the `docker compose` subcommand (the docker client only looks for plugins there, never in the nix profile). The VM's size is colima's own state, not nix's — change it with `colima stop && colima start --cpu 4 --memory 8`. The first start downloads a VM image, so it is slow once; the agent inherits the Clash proxy env for that. On Linux the daemon is a *system* service and out of scope here (NixOS: `virtualisation.docker.enable`) — the client still works against a remote `DOCKER_HOST`.
-- **Translate the selection** with `Cmd+Shift+T` (macOS) / `Ctrl+Shift+Alt+T` (Linux): the selected text is translated in a kitty overlay window, Chinese ↔ English with the direction auto-detected. Because zellij grabs the mouse there are two ways to select — `Shift`+drag makes the selection kitty's own, a plain drag makes it zellij's and copy-on-select puts it in the system clipboard; the hotkey reads whichever is present.
 - **Mainland-China mirrors**: `scripts/bootstrap-macos.sh` writes SJTU/TUNA/USTC substituters to `/etc/nix/nix.custom.conf` and restarts the daemon before running the switch. `cache.nixos.org` stays as the fallback. Verify with `nix config show | grep substitut`.
 
 ## 📄 License

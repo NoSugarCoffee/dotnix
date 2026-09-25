@@ -54,7 +54,6 @@
         jetbrains-air-darwin = final.callPackage ./pkgs/jetbrains-air-darwin { };
         ego-lite-darwin = final.callPackage ./pkgs/ego-lite-darwin { };
         claude-session-registry = final.callPackage ./pkgs/claude-session-registry { };
-        translate-selection = final.callPackage ./pkgs/translate-selection { };
         apm = final.callPackage ./pkgs/apm { };
         agent-access = final.callPackage ./pkgs/agent-access { };
         ccstatusline = final.callPackage ./pkgs/ccstatusline { };
