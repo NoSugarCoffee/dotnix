@@ -60,7 +60,8 @@ Cross-platform unless tagged. Codex config is written to `~/.codex/config.toml`
 claude-session-registry (local: records live Claude Code conversations, replays them into zellij tabs and attaches each session in a kitty tab) &middot;
 [ccstatusline](https://github.com/sirmalloc/ccstatusline) (Claude Code status line formatter; prebuilt npm release, not in nixpkgs) &middot;
 [pi](https://pi.dev/) (minimal coding agent harness; prebuilt npm release, not in nixpkgs) &middot;
-[pi-desktop](https://github.com/vastsa/PI-Desktop) `macOS` (local-first desktop workspace for coding agents; official prebuilt DMG, not in nixpkgs)
+[pi-desktop](https://github.com/vastsa/PI-Desktop) `macOS` (local-first desktop workspace for coding agents; official prebuilt DMG, not in nixpkgs) &middot;
+[orca](https://github.com/stablyai/orca) `macOS` (ADE for running parallel coding agents; official prebuilt DMG, not in nixpkgs)
 
 **Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
 [zellij](https://zellij.dev/) &middot;

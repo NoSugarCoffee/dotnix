@@ -32,7 +32,13 @@ for arch in aarch64:arm64 x86_64:x64; do
   fi
 done
 
-packages_current=$((cv_current + cd_current + ego_current))
+orca_pinned=$(grep -oP '(?<=version = ")[^"]+' pkgs/orca-darwin/default.nix | head -1)
+orca_latest_tag=$(gh api repos/stablyai/orca/releases/latest --jq '.tag_name')
+orca_latest="${orca_latest_tag#v}"
+orca_current=0
+[ "$orca_pinned" = "$orca_latest" ] && orca_current=1
+
+packages_current=$((cv_current + cd_current + ego_current + orca_current))
 
 proposed='{}'
 if [ "$cv_current" -eq 0 ]; then
@@ -52,15 +58,26 @@ fi
 if [ "$ego_current" -eq 0 ]; then
   proposed=$(echo "$proposed" | jq --argjson archHash "$ego_proposed" '. + { "ego-lite": { archHash: $archHash } }')
 fi
+if [ "$orca_current" -eq 0 ]; then
+  orca_aarch_hash=$(nix store prefetch-file --json "https://github.com/stablyai/orca/releases/download/v${orca_latest}/orca-macos-arm64.dmg" | jq -r '.hash')
+  orca_x64_hash=$(nix store prefetch-file --json "https://github.com/stablyai/orca/releases/download/v${orca_latest}/orca-macos-x64.dmg" | jq -r '.hash')
+  proposed=$(echo "$proposed" | jq \
+    --arg version "$orca_latest" \
+    --arg aarch "$orca_aarch_hash" \
+    --arg x64 "$orca_x64_hash" \
+    '. + { orca: { version: $version, archHash: { "aarch64-darwin": $aarch, "x86_64-darwin": $x64 } } }')
+fi
 
 jq -n \
   --argjson packages_current "$packages_current" \
   --arg cv_pinned "$cv_pinned" --arg cv_latest "$cv_latest" --argjson cv_current "$cv_current" \
   --argjson cd_current "$cd_current" \
   --argjson ego_current "$ego_current" \
+  --arg orca_pinned "$orca_pinned" --arg orca_latest "$orca_latest" --argjson orca_current "$orca_current" \
   --argjson proposed "$proposed" \
   '{packages_current: $packages_current,
     "clash-verge-rev": {pinned: $cv_pinned, latest: $cv_latest, current: ($cv_current == 1)},
     "claude-desktop": {current: ($cd_current == 1)},
     "ego-lite": {current: ($ego_current == 1)},
+    orca: {pinned: $orca_pinned, latest: $orca_latest, current: ($orca_current == 1)},
     proposed: $proposed}'

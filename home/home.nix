@@ -137,6 +137,7 @@ in
         pkgs.ego-lite-darwin
         pkgs.pi-desktop-darwin
         pkgs.cida-darwin
+        pkgs.orca-darwin
         pkgs.colima
       ];
     file = {

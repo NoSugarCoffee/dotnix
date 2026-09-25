@@ -36,21 +36,29 @@ proposed=$(jq -c '.proposed' <<<"$eval_json")
 summary=""
 changed=false
 
-clash=$(jq -c '.["clash-verge-rev"] // empty' <<<"$proposed")
-if [ -n "$clash" ]; then
-  pinned=$(jq -r '.["clash-verge-rev"].pinned' <<<"$eval_json")
-  version=$(jq -r '.version' <<<"$clash")
-  aarch64=$(jq -r '.archHash["aarch64-darwin"]' <<<"$clash")
-  x86_64=$(jq -r '.archHash["x86_64-darwin"]' <<<"$clash")
+bump_versioned() {
+  local name=$1
+  local package=$2
+  local bump
+  bump=$(jq -c --arg n "$name" '.[$n] // empty' <<<"$proposed")
+  [ -n "$bump" ] || return 0
+  local pinned version aarch64 x86_64
+  pinned=$(jq -r --arg n "$name" '.[$n].pinned' <<<"$eval_json")
+  version=$(jq -r '.version' <<<"$bump")
+  aarch64=$(jq -r '.archHash["aarch64-darwin"]' <<<"$bump")
+  x86_64=$(jq -r '.archHash["x86_64-darwin"]' <<<"$bump")
 
-  rewrite pkgs/clash-verge-rev-darwin/default.nix clash-verge-rev \
+  rewrite "pkgs/${package}/default.nix" "$name" \
     "s|^\(  version = \)\"[^\"]*\";|\1\"${version}\";|" \
     "s|^\(    aarch64-darwin = \)\"sha256-[^\"]*\";|\1\"${aarch64}\";|" \
     "s|^\(    x86_64-darwin = \)\"sha256-[^\"]*\";|\1\"${x86_64}\";|"
 
   changed=true
-  summary+="- \`clash-verge-rev-darwin\`: ${pinned} -> ${version}"$'\n'
-fi
+  summary+="- \`${package}\`: ${pinned} -> ${version}"$'\n'
+}
+
+bump_versioned clash-verge-rev clash-verge-rev-darwin
+bump_versioned orca orca-darwin
 
 desktop=$(jq -c '.["claude-desktop"] // empty' <<<"$proposed")
 if [ -n "$desktop" ]; then
@@ -92,5 +100,5 @@ fi
 } >>"${GITHUB_OUTPUT:-/dev/stdout}"
 
 if [ "$changed" = false ]; then
-  echo "Both darwin DMG pins are current."
+  echo "All darwin DMG pins are current."
 fi
