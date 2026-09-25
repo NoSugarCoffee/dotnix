@@ -136,6 +136,7 @@ in
         pkgs.jetbrains-air-darwin
         pkgs.ego-lite-darwin
         pkgs.pi-desktop-darwin
+        pkgs.cida-darwin
         pkgs.colima
       ];
     file = {
