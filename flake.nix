@@ -61,6 +61,7 @@
         pi-coding-agent = final.callPackage ./pkgs/pi-coding-agent { };
         pi-desktop-darwin = final.callPackage ./pkgs/pi-desktop-darwin { };
         cida-darwin = final.callPackage ./pkgs/cida-darwin { };
+        orca-darwin = final.callPackage ./pkgs/orca-darwin { };
         # from unstable: stable's albert (33.x) predates the source layout
         # pkgs/albert-darwin's patches target (35.x)
         albert-darwin =
