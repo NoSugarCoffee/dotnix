@@ -132,6 +132,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
     def test_bumps_orca_version_and_both_arch_hashes_without_touching_clash(self) -> None:
         proc, work, outputs = self._run(_eval_json(clash=False, desktop=False, orca=True))
         self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(outputs["changed"], "true")
         text = (work / ORCA).read_text()
 
         self.assertIn('  version = "9.9.9";', text)
@@ -170,6 +171,14 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
             version,
         )
         self.assertIn(version[0].split('"')[1], outputs["summary"])
+
+    def test_fails_instead_of_pinning_null_when_a_proposal_lacks_a_field(self) -> None:
+        payload = _eval_json(clash=False, desktop=False, orca=True)
+        del payload["proposed"]["orca"]["archHash"]["x86_64-darwin"]
+        proc, work, _ = self._run(payload)
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertEqual((work / ORCA).read_text(), (REPO / ORCA).read_text())
 
     def test_fails_when_only_part_of_a_proposal_matches(self) -> None:
         """A version bump landing without its hashes would pin a broken pair."""

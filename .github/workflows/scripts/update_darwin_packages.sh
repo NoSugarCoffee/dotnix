@@ -43,10 +43,10 @@ bump_versioned() {
   bump=$(jq -c --arg n "$name" '.[$n] // empty' <<<"$proposed")
   [ -n "$bump" ] || return 0
   local pinned version aarch64 x86_64
-  pinned=$(jq -r --arg n "$name" '.[$n].pinned' <<<"$eval_json")
-  version=$(jq -r '.version' <<<"$bump")
-  aarch64=$(jq -r '.archHash["aarch64-darwin"]' <<<"$bump")
-  x86_64=$(jq -r '.archHash["x86_64-darwin"]' <<<"$bump")
+  pinned=$(jq -er --arg n "$name" '.[$n].pinned' <<<"$eval_json")
+  version=$(jq -er '.version' <<<"$bump")
+  aarch64=$(jq -er '.archHash["aarch64-darwin"]' <<<"$bump")
+  x86_64=$(jq -er '.archHash["x86_64-darwin"]' <<<"$bump")
 
   rewrite "pkgs/${package}/default.nix" "$name" \
     "s|^\(  version = \)\"[^\"]*\";|\1\"${version}\";|" \
