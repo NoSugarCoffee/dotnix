@@ -89,7 +89,6 @@ in
         pkgs.docker-compose
         pkgs.just
         pkgs.nix-zsh-completions
-        pkgs.translate-selection
         (pkgs.python3.withPackages (ps: [
           ps.pip
           ps.ipython
@@ -513,16 +512,6 @@ in
         # access.
         allow_remote_control = "socket-only";
         listen_on = "unix:/tmp/kitty-remote-control";
-      };
-      # Translate the selected text in an overlay window. Two ways to select,
-      # because zellij grabs the mouse: shift+drag makes the selection kitty's
-      # own (which is what @selection reads), while a plain drag is zellij's and
-      # lands in the system clipboard via copy_on_select -- translate-selection
-      # falls back to reading that. Chinese and English, direction auto-detected.
-      # Linux can't use cmd, and ctrl+shift+t is kitty's own new_tab there.
-      keybindings = {
-        "${if pkgs.stdenv.isDarwin then "cmd+shift+t" else "ctrl+shift+alt+t"}" =
-          "launch --type=overlay --stdin-source=@selection ${pkgs.translate-selection}/bin/translate-selection";
       };
     };
     # git is installed as a plain package, not via programs.git: that module's
