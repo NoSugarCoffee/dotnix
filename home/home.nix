@@ -37,6 +37,7 @@ let
         HTTP_PROXY = proxyUrl;
         HTTPS_PROXY = proxyUrl;
         NO_PROXY = noProxy;
+        CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
       };
       permissions = {
         deny = [ "Read(.env)" ];
