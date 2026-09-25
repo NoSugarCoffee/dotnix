@@ -60,6 +60,7 @@
         ccstatusline = final.callPackage ./pkgs/ccstatusline { };
         pi-coding-agent = final.callPackage ./pkgs/pi-coding-agent { };
         pi-desktop-darwin = final.callPackage ./pkgs/pi-desktop-darwin { };
+        cida-darwin = final.callPackage ./pkgs/cida-darwin { };
         # from unstable: stable's albert (33.x) predates the source layout
         # pkgs/albert-darwin's patches target (35.x)
         albert-darwin =
