@@ -1,0 +1,21 @@
+.github/workflows/scripts/update_darwin_packages.sh
+  s_96b85d71a7b1c2::t_d06d9f7e4d2aa8 46-49
+tests/test_update_darwin_packages.py
+  s_96b85d71a7b1c2::t_20f6bc88780979 135,175-181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "3c11b9c2dcb913fa178366022937bdfe8f97fea4",
+  "prompts": {},
+  "sessions": {
+    "s_96b85d71a7b1c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "59ca955f-b7d1-4553-bccb-f732fba8c1ad",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
