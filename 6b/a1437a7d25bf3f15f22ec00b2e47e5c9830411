@@ -1,0 +1,31 @@
+.github/workflows/scripts/eval_darwin_packages_freshness.sh
+  s_96b85d71a7b1c2::t_464931ec063cd0 35-41,61-69,76,82
+tests/test_update_darwin_packages.py
+  s_96b85d71a7b1c2::t_0ff7a5e81b91ae 19,25-26,30,45-52,54,58,69,130-143
+pkgs/orca-darwin/default.nix
+  s_96b85d71a7b1c2::t_209f5cc761a8c2 1-52
+README.md
+  s_96b85d71a7b1c2::t_209f5cc761a8c2 63-64
+home/home.nix
+  s_96b85d71a7b1c2::t_209f5cc761a8c2 139
+.github/workflows/scripts/update_darwin_packages.sh
+  s_96b85d71a7b1c2::t_464931ec063cd0 39-51,57-61,103
+flake.nix
+  s_96b85d71a7b1c2::t_209f5cc761a8c2 63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "6ba1437a7d25bf3f15f22ec00b2e47e5c9830411",
+  "prompts": {},
+  "sessions": {
+    "s_96b85d71a7b1c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "59ca955f-b7d1-4553-bccb-f732fba8c1ad",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
