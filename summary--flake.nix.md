@@ -1,2 +1,2 @@
-`19020605083ba18835fc3fda7c2bf7de7de28448d0f056646168de57cd11cf00`
-Exports username, Home Manager configurations, apps, devShells, and an overlay for x86_64-linux and Intel/Apple Silicon macOS. Pins nixpkgs/Home Manager 26.05, imports unstable selectively, and exposes local packages including apm 0.31.0, pi-desktop-darwin 0.14.8, ego-lite, ccstatusline, and pi-coding-agent. The overlay also carries platform overrides for Scroll Reverser and unstable packages for Albert, MacShot, Cursor, Claude Code, and Codex.
+`8fa3164e4428bfdd5da31cecf1f14d25bf44ecf3ed3961aeaa2ca25e2395be6a`
+Exports username, Home Manager configurations, apps, devShells, and an overlay for x86_64-linux and Intel/Apple Silicon macOS. Pins nixpkgs/Home Manager 26.05, imports unstable selectively, and exposes local packages including Orca 1.4.212, Clash Verge Rev 2.5.6, apm, PI-Desktop, ego-lite, ccstatusline, and pi-coding-agent.
