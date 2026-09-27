@@ -551,6 +551,10 @@ in
     # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
     # the slow upstream is always tried first. This user-level list overrides
     # the order; nix falls back per-path to later entries automatically.
+    # pi.cachix.org serves the lukasl-dev/pi.nix builds (the flake's own
+    # nixConfig is opt-in via --accept-flake-config and never reaches an
+    # unattended switch); nix-community.cachix.org serves its bun2nix
+    # toolchain. Without them pkgs.pi-coding-agent builds from source.
     # HARD PREREQUISITE: the daemon silently ignores user-level substituters
     # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
     # macOS; on other machines add it manually to the system nix.conf
@@ -560,7 +564,13 @@ in
       "https://mirror.sjtu.edu.cn/nix-channels/store"
       "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
       "https://mirrors.ustc.edu.cn/nix-channels/store"
+      "https://pi.cachix.org/"
+      "https://nix-community.cachix.org/"
       "https://cache.nixos.org/"
+    ];
+    settings.extra-trusted-public-keys = [
+      "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
 }
