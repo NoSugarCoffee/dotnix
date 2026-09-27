@@ -1,0 +1,19 @@
+flake.nix
+  s_516fdcef744277::t_6aa93d09b40f85 25-29,37,102-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "9e120d84249f1f1209f1e5e322c6fa1af4ac40a3",
+  "prompts": {},
+  "sessions": {
+    "s_516fdcef744277": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0e348-c197-7246-bb70-687a7b187cac",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
