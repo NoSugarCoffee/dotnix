@@ -1,0 +1,20 @@
+home/home.nix
+  s_49a99159f41ab2::t_9aeaa9c7d2e33e 32-37,383-385,397-400
+  s_49a99159f41ab2::t_9102ca82693b41 27,381
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "0cbef0d21445cefac15aa1ba96d3c90c29868850",
+  "prompts": {},
+  "sessions": {
+    "s_49a99159f41ab2": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0e3e1-a595-7672-9d32-07072f5190ae",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
