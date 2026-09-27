@@ -1,0 +1,21 @@
+home/home.nix
+  s_49a99159f41ab2::t_9102ca82693b41 27
+  s_49a99159f41ab2::t_9aeaa9c7d2e33e 32-37
+  s_49a99159f41ab2::t_1da906e9c0c96d 381-384,390,393,398-415
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "60b922594491a8d2f72e06197f8e2fb96ed7406c",
+  "prompts": {},
+  "sessions": {
+    "s_49a99159f41ab2": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0e3e1-a595-7672-9d32-07072f5190ae",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": null
+    }
+  }
+}
