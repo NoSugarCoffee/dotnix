@@ -27,6 +27,12 @@
       url = "github:lukasl-dev/pi.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Source of prebuilt AI-agent packages that nixpkgs doesn't carry (e.g.
+    # paperclip). Intentionally *not* following our nixpkgs: its packages are
+    # built against its own nixpkgs-unstable pin and cached on
+    # cache.numtide.com, which only hits when the revisions match.
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
   outputs =
     {
@@ -35,6 +41,7 @@
       home-manager,
       claude-desktop,
       pi,
+      llm-agents,
       ...
     }:
     let
@@ -117,11 +124,26 @@
               claude-desktop.packages.${system}.claude-desktop
             else
               null;
+          # llm-agents.nix only builds for x86_64-linux, aarch64-linux and
+          # aarch64-darwin; on x86_64-darwin it has no packages at all.
+          paperclipPackage =
+            if
+              builtins.hasAttr system llm-agents.packages
+              && builtins.hasAttr "paperclip" llm-agents.packages.${system}
+            then
+              llm-agents.packages.${system}.paperclip
+            else
+              null;
         in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
           extraSpecialArgs = {
-            inherit claudeDesktopPackage username homeDirectory;
+            inherit
+              claudeDesktopPackage
+              paperclipPackage
+              username
+              homeDirectory
+              ;
           };
           modules = [ ./home/home.nix ];
         };

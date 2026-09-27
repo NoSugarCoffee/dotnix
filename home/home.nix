@@ -1,5 +1,6 @@
 {
   claudeDesktopPackage,
+  paperclipPackage,
   username,
   homeDirectory,
   config,
@@ -102,6 +103,7 @@ in
         # Provides the `cursor` CLI that ~/.codex/config.toml's file_opener uses.
         pkgs.code-cursor
       ]
+      ++ lib.optionals (paperclipPackage != null) [ paperclipPackage ]
       ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
