@@ -83,6 +83,9 @@ in
         pkgs.asdf-vm
         pkgs.pnpm
         pkgs.git
+        # `git open` (paulirish/git-open): opens the repo/PR/issue URL for the
+        # current branch in the browser. Picked up by git from PATH.
+        pkgs.git-open
         pkgs.gh
         pkgs.glab
         pkgs.docker-client
