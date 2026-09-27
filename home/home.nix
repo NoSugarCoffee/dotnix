@@ -132,7 +132,6 @@ in
         pkgs.pulsar-darwin
         pkgs.albert-darwin
         pkgs.scroll-reverser
-        pkgs.ping-island-darwin
         pkgs.obs-studio-darwin
         pkgs.jetbrains-air-darwin
         pkgs.ego-lite-darwin
@@ -213,19 +212,6 @@ in
       config = {
         ProgramArguments = [
           "${pkgs.scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
-        ];
-        RunAtLoad = true;
-        KeepAlive = false;
-        ProcessType = "Interactive";
-      };
-    };
-    # Ping Island has to be running to catch Claude Code session events, so it
-    # comes up with the login session like the other menu-bar-only agents.
-    ping-island = {
-      enable = pkgs.stdenv.isDarwin;
-      config = {
-        ProgramArguments = [
-          "${pkgs.ping-island-darwin}/Applications/Ping Island.app/Contents/MacOS/Ping Island"
         ];
         RunAtLoad = true;
         KeepAlive = false;
@@ -504,11 +490,10 @@ in
         # the server -- which, being a bare nix-store binary, can never hold a
         # grant. Start it per window with `zellij` / `zellij attach`;
         # claude-session-registry attaches explicitly and does not rely on this.
-        # kitty runs one process for every window it owns, so ping-island's
-        # NSRunningApplication-level activation can only raise "some" kitty
-        # window when jumping to a session, not necessarily the right one.
-        # Remote control on a fixed socket lets it target the exact window by
-        # KITTY_WINDOW_ID instead (see KittyController in the ping-island fork).
+        # kitty runs one process for every window it owns, so session-level
+        # activation can only raise "some" kitty window, not necessarily the
+        # right one. Remote control on a fixed socket lets callers target the
+        # exact window by KITTY_WINDOW_ID instead.
         # socket-only restricts control to this socket, not all local/network
         # access.
         allow_remote_control = "socket-only";
