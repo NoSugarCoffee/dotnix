@@ -1,0 +1,19 @@
+home/home.nix
+  s_516fdcef744277::t_2a5f71307b7521 554-557,567-568,571-573
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "7ea7d4d04218e0c36afaabf67958bdda612c60d9",
+  "prompts": {},
+  "sessions": {
+    "s_516fdcef744277": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0e348-c197-7246-bb70-687a7b187cac",
+        "model": "glm-5.3-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
