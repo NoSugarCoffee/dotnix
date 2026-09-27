@@ -22,6 +22,11 @@
       # Linux build working at the cost of an extra nixpkgs in the closure.
       inputs.flake-utils.follows = "flake-utils";
     };
+
+    pi = {
+      url = "github:lukasl-dev/pi.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs =
     {
@@ -29,6 +34,7 @@
       nixpkgs-unstable,
       home-manager,
       claude-desktop,
+      pi,
       ...
     }:
     let
@@ -57,8 +63,6 @@
         apm = final.callPackage ./pkgs/apm { };
         agent-access = final.callPackage ./pkgs/agent-access { };
         ccstatusline = final.callPackage ./pkgs/ccstatusline { };
-        pi-coding-agent = final.callPackage ./pkgs/pi-coding-agent { };
-        pi-desktop-darwin = final.callPackage ./pkgs/pi-desktop-darwin { };
         cida-darwin = final.callPackage ./pkgs/cida-darwin { };
         orca-darwin = final.callPackage ./pkgs/orca-darwin { };
         # from unstable: stable's albert (33.x) predates the source layout
@@ -95,7 +99,10 @@
         import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [ localPackagesOverlay ];
+          overlays = [
+            localPackagesOverlay
+            pi.overlays.default
+          ];
         };
       mkHomeConfiguration =
         system:
