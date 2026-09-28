@@ -24,10 +24,16 @@ let
   # `pi install`. An activation script ensures they exist after a fresh machine
   # bootstrap, so switching PCs doesn't require manual re-installation.
   piExtensions = [
-    "npm:pi-computer-use"
+    "npm:@injaneity/pi-computer-use"
     "npm:pi-agent-browser-native"
     "npm:remote-pi"
     "npm:pi-a2a-adaptor"
+  ];
+  # Superseded extension sources that must not linger: machines provisioned
+  # before the switch to @injaneity/pi-computer-use still have the unscoped
+  # package in settings. `pi remove` drops it from ~/.pi/agent/settings.json.
+  piLegacyExtensions = [
+    "npm:pi-computer-use"
   ];
   # plugins, and anything set via /config stay machine-owned (see the
   # claudeCodeSettings activation below for the merge semantics).
@@ -372,22 +378,41 @@ in
       true # this subshell's own exit status must always be 0
     )
   '';
-  # Pi extensions are installed imperatively (npm:pi-computer-use,
-  # npm:pi-agent-browser-native, npm:remote-pi) via `pi install`. On a fresh
-  # machine they are missing entirely. This activation checks `pi list` first
-  # and installs only the ones that are absent, so it is a cheap no-op on
+  # Pi extensions (the sources in piExtensions above) are installed
+  # imperatively via `pi install`. On a fresh machine they are missing entirely.
+  # This activation checks `pi list` first, installs only the ones that are
+  # absent, and removes any superseded sources, so it is a cheap no-op on
   # every-day switches.
   home.activation.piPackages = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     (
       set +e
       pi="${pkgs.pi-coding-agent}/bin/pi"
+      grep="${pkgs.gnugrep}/bin/grep"
       installed=$($pi list 2>/dev/null)
       for ext in ${lib.concatStringsSep " " piExtensions}; do
-        if ${pkgs.gnugrep}/bin/grep -Fq "$ext" <<< "$installed"; then
+        if $grep -Fq "$ext" <<< "$installed"; then
           continue
         fi
         $DRY_RUN_CMD "$pi" install "$ext" || echo "warning: piPackages: failed to install $ext" >&2
       done
+      # Prune superseded sources only once every desired extension is present.
+      # The install loop swallows failures, so without this guard a transient
+      # npm/network error could remove the old source and leave the machine
+      # with no computer-use extension at all.
+      complete=1
+      installed=$($pi list 2>/dev/null)
+      for ext in ${lib.concatStringsSep " " piExtensions}; do
+        $grep -Fq "$ext" <<< "$installed" || complete=0
+      done
+      if [ "$complete" = 1 ]; then
+        for ext in ${lib.concatStringsSep " " piLegacyExtensions}; do
+          if $grep -Fq "$ext" <<< "$installed"; then
+            $DRY_RUN_CMD "$pi" remove "$ext" || echo "warning: piPackages: failed to remove $ext" >&2
+          fi
+        done
+      else
+        echo "piPackages: not all extensions installed; skipping legacy cleanup" >&2
+      fi
       true
     )
   '';
