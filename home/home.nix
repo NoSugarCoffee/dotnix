@@ -19,21 +19,25 @@ let
   nodeVersion = "26.7.0";
   noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
   # Pi user extensions: computer-use (screen/GUI), browser-native (web automation),
-  # remote-pi (multi-agent mesh + mobile). These are not ordinary packages on PATH;
-  # they are Pi agent capabilities installed into ~/.pi/agent/npm/node_modules/ via
+  # a2a-adaptor (agent-to-agent calls), provider-kiro (Kiro API model provider,
+  # OAuth-authenticated). These are not ordinary packages on PATH; they are Pi
+  # agent capabilities installed into ~/.pi/agent/npm/node_modules/ via
   # `pi install`. An activation script ensures they exist after a fresh machine
   # bootstrap, so switching PCs doesn't require manual re-installation.
   piExtensions = [
     "npm:@injaneity/pi-computer-use"
     "npm:pi-agent-browser-native"
-    "npm:remote-pi"
     "npm:pi-a2a-adaptor"
+    "npm:pi-provider-kiro"
   ];
-  # Superseded extension sources that must not linger: machines provisioned
+  # Extension sources that must not linger on the machine, either because they
+  # were superseded or because they were dropped outright: machines provisioned
   # before the switch to @injaneity/pi-computer-use still have the unscoped
-  # package in settings. `pi remove` drops it from ~/.pi/agent/settings.json.
-  piLegacyExtensions = [
+  # package, and remote-pi was removed deliberately. `pi remove` drops them from
+  # ~/.pi/agent/settings.json.
+  piRemovedExtensions = [
     "npm:pi-computer-use"
+    "npm:remote-pi"
   ];
   # plugins, and anything set via /config stay machine-owned (see the
   # claudeCodeSettings activation below for the merge semantics).
@@ -381,8 +385,8 @@ in
   # Pi extensions (the sources in piExtensions above) are installed
   # imperatively via `pi install`. On a fresh machine they are missing entirely.
   # This activation checks `pi list` first, installs only the ones that are
-  # absent, and removes any superseded sources, so it is a cheap no-op on
-  # every-day switches.
+  # absent, and removes any sources listed in piRemovedExtensions, so it is a
+  # cheap no-op on every-day switches.
   home.activation.piPackages = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     (
       set +e
@@ -395,23 +399,23 @@ in
         fi
         $DRY_RUN_CMD "$pi" install "$ext" || echo "warning: piPackages: failed to install $ext" >&2
       done
-      # Prune superseded sources only once every desired extension is present.
-      # The install loop swallows failures, so without this guard a transient
-      # npm/network error could remove the old source and leave the machine
-      # with no computer-use extension at all.
+      # Prune removed/superseded sources only once every desired extension is
+      # present. The install loop swallows failures, so without this guard a
+      # transient npm/network error could remove the old source and leave the
+      # machine with no computer-use extension at all.
       complete=1
       installed=$($pi list 2>/dev/null)
       for ext in ${lib.concatStringsSep " " piExtensions}; do
         $grep -Fq "$ext" <<< "$installed" || complete=0
       done
       if [ "$complete" = 1 ]; then
-        for ext in ${lib.concatStringsSep " " piLegacyExtensions}; do
+        for ext in ${lib.concatStringsSep " " piRemovedExtensions}; do
           if $grep -Fq "$ext" <<< "$installed"; then
             $DRY_RUN_CMD "$pi" remove "$ext" || echo "warning: piPackages: failed to remove $ext" >&2
           fi
         done
       else
-        echo "piPackages: not all extensions installed; skipping legacy cleanup" >&2
+        echo "piPackages: not all extensions installed; skipping removal of piRemovedExtensions" >&2
       fi
       true
     )
