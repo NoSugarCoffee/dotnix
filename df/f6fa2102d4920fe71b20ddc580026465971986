@@ -1,0 +1,21 @@
+home/home.nix
+  s_c3d409d8845925::t_58de7ded79a9eb 22-24,33-34,36-38,40,412
+  s_c3d409d8845925::t_bb0ebe7406593f 31
+  s_c3d409d8845925::t_36b8e9712e6cc1 388-389,402-405,418
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "dff6fa2102d4920fe71b20ddc580026465971986",
+  "prompts": {},
+  "sessions": {
+    "s_c3d409d8845925": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0e810-776c-77e2-81bd-6fe534195c77",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
