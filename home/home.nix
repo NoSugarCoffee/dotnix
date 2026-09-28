@@ -20,24 +20,30 @@ let
   noProxy = "localhost,127.0.0.1,10.96.0.0/12,192.168.59.0/24,192.168.49.0/24,192.168.39.0/24,.ctripcorp.com,.tripqate.com,.larkenterprise.com";
   # Pi user extensions: computer-use (screen/GUI), browser-native (web automation),
   # a2a-adaptor (agent-to-agent calls), provider-kiro (Kiro API model provider,
-  # OAuth-authenticated). These are not ordinary packages on PATH; they are Pi
-  # agent capabilities installed into ~/.pi/agent/npm/node_modules/ via
-  # `pi install`. An activation script ensures they exist after a fresh machine
-  # bootstrap, so switching PCs doesn't require manual re-installation.
+  # OAuth-authenticated), auto-name (names the Pi session and the containing
+  # tmux/herdr/zellij surfaces from the conversation). These are not ordinary
+  # packages on PATH; they are Pi agent capabilities installed into
+  # ~/.pi/agent/npm/node_modules/ via `pi install`. An activation script ensures
+  # they exist after a fresh machine bootstrap, so switching PCs doesn't require
+  # manual re-installation.
   piExtensions = [
     "npm:@injaneity/pi-computer-use"
     "npm:pi-agent-browser-native"
     "npm:pi-a2a-adaptor"
     "npm:pi-provider-kiro"
+    "npm:@normful/pi-auto-name"
   ];
   # Extension sources that must not linger on the machine, either because they
   # were superseded or because they were dropped outright: machines provisioned
   # before the switch to @injaneity/pi-computer-use still have the unscoped
-  # package, and remote-pi was removed deliberately. `pi remove` drops them from
-  # ~/.pi/agent/settings.json.
+  # package, remote-pi was removed deliberately, and pi-zellij-tab-namer was
+  # superseded by @normful/pi-auto-name (it called modelRegistry.getApiKey,
+  # removed in current Pi, so it silently never renamed anything). `pi remove`
+  # drops them from ~/.pi/agent/settings.json.
   piRemovedExtensions = [
     "npm:pi-computer-use"
     "npm:remote-pi"
+    "npm:pi-zellij-tab-namer"
   ];
   # plugins, and anything set via /config stay machine-owned (see the
   # claudeCodeSettings activation below for the merge semantics).
@@ -399,6 +405,18 @@ in
         fi
         $DRY_RUN_CMD "$pi" install "$ext" || echo "warning: piPackages: failed to install $ext" >&2
       done
+      # @normful/pi-auto-name 1.1.0 resolves the current zellij tab as the first
+      # pane whose numeric id matches ZELLIJ_PANE_ID, without skipping plugin
+      # panes. Plugin and terminal pane ids collide (both report the same
+      # integer), so a floating plugin pane (e.g. About Zellij) makes it rename
+      # the plugin's tab instead of the active one. Skip plugin panes.
+      # Idempotent: only rewrites the source while the unpatched form is present,
+      # so it re-applies after a `pi update`/reinstall on the next switch.
+      surfaces="${homeDirectory}/.pi/agent/npm/node_modules/@normful/pi-auto-name/src/surfaces.ts"
+      if [ -f "$surfaces" ] && $grep -Fq 'panes.find((p) => p.id === paneId)' "$surfaces"; then
+        $DRY_RUN_CMD "${pkgs.gnused}/bin/sed" -i -e 's/Array<{ id?: number; tab_id?: number }>/Array<{ id?: number; tab_id?: number; is_plugin?: boolean }>/' -e 's/panes\.find((p) => p\.id === paneId)/panes.find((p) => !p.is_plugin \&\& p.id === paneId)/' "$surfaces"
+        echo "piPackages: patched pi-auto-name zellij tab lookup (skip plugin panes)"
+      fi
       # Prune removed/superseded sources only once every desired extension is
       # present. The install loop swallows failures, so without this guard a
       # transient npm/network error could remove the old source and leave the
