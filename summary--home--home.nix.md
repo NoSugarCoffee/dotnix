@@ -1,2 +1,2 @@
-`3a792516713f4174db38e62bc4dc73cab9291b10a3880f95a07d772fb6b09e20`
-Defines common and platform packages, including the macOS Orca and Clash Verge Rev repacks, pi-coding-agent, PI-Desktop, and ego-lite; configures Codex and merged Claude settings, zsh, session paths and proxy variables, macOS launchd agents, Pi extension installation, and best-effort asdf activation. Keeps git identity, ccstatusline settings, and selected Claude keys machine-owned.
+`3c52dde21f98f0febc495b56a86f76a7049b0379fb4a0b696465a37f5600be11`
+Defines shared and platform-specific Home Manager packages, Codex and merged Claude settings, zsh, session paths and proxy variables, macOS launchd agents, and best-effort asdf activation. Pi activation installs computer-use, browser-native, A2A, and Kiro provider extensions, then removes superseded computer-use and remote-pi sources only after desired extensions are complete. Keeps git identity, ccstatusline layout, and selected Claude keys machine-owned.
