@@ -165,21 +165,21 @@ in
         "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
     };
   };
-  # ~/.codex/config.toml is deliberately left unmanaged: Codex writes the file
-  # itself when you answer the TUI's "Trust this folder" prompt (it persists a
-  # [projects."<path>"] trust entry there), and a read-only store symlink makes
-  # that write fail with EACCES -- so every session re-prompts. Same reason as
-  # ~/.config/ccstatusline/settings.json. Instead ./codex/config.toml seeds the
-  # file once, only when it doesn't exist (a fresh machine, or the switch that
-  # removes the old symlink); after that Codex owns it and switches never touch
-  # it. Ordered after linkGeneration so the old generation's symlink is already
-  # gone when the existence check runs.
+  # Codex writes project trust decisions to ~/.codex/config.toml, so it must
+  # remain a regular writable file. Seed it on a fresh machine, then sync only
+  # the managed approval and sandbox settings on every switch. Keep all other
+  # settings, including [projects."<path>"] entries, machine-owned.
+  # Ordered after linkGeneration so an old store symlink is already gone.
   home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.codex
     $DRY_RUN_CMD chmod 700 $HOME/.codex
     if [ ! -e "$HOME/.codex/config.toml" ] && [ ! -L "$HOME/.codex/config.toml" ]; then
       $DRY_RUN_CMD install -m 600 ${./codex/config.toml} "$HOME/.codex/config.toml"
     fi
+  '';
+  home.activation.codexManagedSettings = lib.hm.dag.entryAfter [ "codexHomeDir" ] ''
+    $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${./codex/merge-config.py} \
+      ${./codex/config.toml} "$HOME/.codex/config.toml"
   '';
   # Claude Code writes settings.json itself (/config, plugin toggles), so it
   # can't be a read-only store symlink. Instead the managed subset is merged

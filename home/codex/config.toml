@@ -1,11 +1,11 @@
 # Initial Codex settings. home-manager copies this to ~/.codex/config.toml only
-# when that file doesn't exist yet; after that Codex owns the file (it persists
-# per-folder trust decisions there) and later switches leave it alone. Edits
-# here therefore only reach machines that don't have the file yet.
+# when that file doesn't exist yet. On every switch, it also syncs the approval
+# and sandbox settings below while preserving Codex's trust decisions and other
+# machine-owned settings.
 
 model = "gpt-5-codex"
-approval_policy = "on-request"
-sandbox_mode = "workspace-write"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
 file_opener = "cursor"
 
 [sandbox_workspace_write]

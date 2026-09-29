@@ -48,9 +48,10 @@ just switch
 ## 📦 Managed packages
 
 Cross-platform unless tagged. Codex owns `~/.codex/config.toml` (it persists
-per-folder trust decisions there). It is seeded once from
-[`home/codex/config.toml`](home/codex/config.toml) when missing, then never
-touched by a switch.
+per-folder trust decisions there). It is seeded from
+[`home/codex/config.toml`](home/codex/config.toml) when missing. Each switch
+syncs its approval and sandbox settings to allow full access without prompts;
+other settings and trust decisions remain machine-owned.
 
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
 [claude-code](https://github.com/anthropics/claude-code) &middot;
