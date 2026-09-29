@@ -1,0 +1,23 @@
+home/codex/config.toml
+  s_10602b358214b6::t_068024b01c3539 1-23
+README.md
+  s_10602b358214b6::t_0b434f8a6c7e11 50-52
+home/home.nix
+  s_10602b358214b6::t_5ec1aa75dbb988 168-173,260
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "cb35e4dcd6eb6dd9f9b82a2a001301c9b872d11a",
+  "prompts": {},
+  "sessions": {
+    "s_10602b358214b6": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0ed95-831b-7429-94c2-e4ab27d5e5e1",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
