@@ -1,0 +1,23 @@
+README.md
+  s_10602b358214b6::t_379060f3489d44 51-53
+home/codex/config.toml
+  s_10602b358214b6::t_6822406912fe9f 1-4
+home/home.nix
+  s_10602b358214b6::t_b9a59c93777db6 172-177,180-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "ed43bb2a26aa10371a24567d3a1af658b1e5dfae",
+  "prompts": {},
+  "sessions": {
+    "s_10602b358214b6": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0ed95-831b-7429-94c2-e4ab27d5e5e1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
