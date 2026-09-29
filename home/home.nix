@@ -163,31 +163,14 @@ in
       };
       ".docker/cli-plugins/docker-compose".source =
         "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
-      ".codex/config.toml" = {
-        force = true;
-        text = ''
-          # Managed by home-manager. Authentication is created by `codex login`.
-
-          model = "gpt-5-codex"
-          approval_policy = "on-request"
-          sandbox_mode = "workspace-write"
-          file_opener = "cursor"
-
-          [sandbox_workspace_write]
-          network_access = true
-
-          [tui]
-          notifications = true
-
-          [history]
-          persistence = "save-all"
-
-          [shell_environment_policy]
-          inherit = "all"
-        '';
-      };
     };
   };
+  # ~/.codex/config.toml is deliberately left unmanaged: Codex writes the file
+  # itself when you answer the TUI's "Trust this folder" prompt (it persists a
+  # [projects."<path>"] trust entry there), and a read-only store symlink makes
+  # that write fail with EACCES -- so every session re-prompts. Same reason as
+  # ~/.config/ccstatusline/settings.json. A copyable export of the settings
+  # that used to be managed here lives at ./codex/config.toml.
   home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.codex
     $DRY_RUN_CMD chmod 700 $HOME/.codex
@@ -274,7 +257,7 @@ in
   # Runs after linkGeneration (not just installPackages) on purpose: these
   # downloads can be slow (a full Python source build, or any of them over a
   # slow connection), and linkGeneration is what actually creates file links
-  # like ~/.config/nix/nix.conf and ~/.codex/config.toml. Running asdf first
+  # like ~/.config/nix/nix.conf. Running asdf first
   # would block those files from existing until the slowest download finishes.
   home.activation.asdfLanguages = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     ( # Subshell: everything in here, including the PATH override, is scoped
