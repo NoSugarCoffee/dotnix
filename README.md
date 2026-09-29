@@ -47,8 +47,10 @@ just switch
 
 ## 📦 Managed packages
 
-Cross-platform unless tagged. Codex config is written to `~/.codex/config.toml`
-(model `gpt-5-codex`, approval policy `on-request`).
+Cross-platform unless tagged. Codex owns `~/.codex/config.toml` (it persists
+per-folder trust decisions there). It is seeded once from
+[`home/codex/config.toml`](home/codex/config.toml) when missing, then never
+touched by a switch.
 
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
 [claude-code](https://github.com/anthropics/claude-code) &middot;
