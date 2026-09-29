@@ -48,8 +48,9 @@ just switch
 ## 📦 Managed packages
 
 Cross-platform unless tagged. Codex owns `~/.codex/config.toml` (it persists
-per-folder trust decisions there), so it is left unmanaged; a copyable export of
-the intended settings lives at [`home/codex/config.toml`](home/codex/config.toml).
+per-folder trust decisions there). It is seeded once from
+[`home/codex/config.toml`](home/codex/config.toml) when missing, then never
+touched by a switch.
 
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
 [claude-code](https://github.com/anthropics/claude-code) &middot;

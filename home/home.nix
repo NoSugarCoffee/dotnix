@@ -169,11 +169,17 @@ in
   # itself when you answer the TUI's "Trust this folder" prompt (it persists a
   # [projects."<path>"] trust entry there), and a read-only store symlink makes
   # that write fail with EACCES -- so every session re-prompts. Same reason as
-  # ~/.config/ccstatusline/settings.json. A copyable export of the settings
-  # that used to be managed here lives at ./codex/config.toml.
-  home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  # ~/.config/ccstatusline/settings.json. Instead ./codex/config.toml seeds the
+  # file once, only when it doesn't exist (a fresh machine, or the switch that
+  # removes the old symlink); after that Codex owns it and switches never touch
+  # it. Ordered after linkGeneration so the old generation's symlink is already
+  # gone when the existence check runs.
+  home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.codex
     $DRY_RUN_CMD chmod 700 $HOME/.codex
+    if [ ! -e "$HOME/.codex/config.toml" ] && [ ! -L "$HOME/.codex/config.toml" ]; then
+      $DRY_RUN_CMD install -m 600 ${./codex/config.toml} "$HOME/.codex/config.toml"
+    fi
   '';
   # Claude Code writes settings.json itself (/config, plugin toggles), so it
   # can't be a read-only store symlink. Instead the managed subset is merged

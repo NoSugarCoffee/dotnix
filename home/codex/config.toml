@@ -1,9 +1,7 @@
-# Reference settings for Codex, kept here so a fresh machine can restore them.
-#
-# This is NOT installed by home-manager: Codex rewrites ~/.codex/config.toml
-# itself (answering the TUI's "Trust this folder" prompt persists per-folder
-# trust there), and a read-only store symlink makes that write fail with EACCES.
-# After `codex login` on a new machine, copy this file to ~/.codex/config.toml.
+# Initial Codex settings. home-manager copies this to ~/.codex/config.toml only
+# when that file doesn't exist yet; after that Codex owns the file (it persists
+# per-folder trust decisions there) and later switches leave it alone. Edits
+# here therefore only reach machines that don't have the file yet.
 
 model = "gpt-5-codex"
 approval_policy = "on-request"
