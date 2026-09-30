@@ -83,6 +83,7 @@
           code-cursor
           claude-code
           codex
+          chatgpt
           ;
         # nixpkgs' undmg leaves AppleDouble sidecars (._Foo) inside the app
         # bundle. Those files are not in the Developer ID seal, so Gatekeeper

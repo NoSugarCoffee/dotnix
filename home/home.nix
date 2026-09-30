@@ -156,6 +156,11 @@ in
         pkgs.cida-darwin
         pkgs.orca-darwin
         pkgs.colima
+      ]
+      # The official ChatGPT desktop app includes Codex and ships for Apple
+      # Silicon. Use unstable for a release after Codex joined the app.
+      ++ lib.optionals (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") [
+        pkgs.chatgpt
       ];
     file = {
       "Applications/Google Chrome.app" = lib.mkIf pkgs.stdenv.isDarwin {
