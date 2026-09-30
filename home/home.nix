@@ -45,39 +45,10 @@ let
     "npm:remote-pi"
     "npm:pi-zellij-tab-namer"
   ];
-  # plugins, and anything set via /config stay machine-owned (see the
-  # claudeCodeSettings activation below for the merge semantics).
+  # Claude Code's managed keys share the proxy settings declared here. Its
+  # other settings stay machine-owned (see the activation merge below).
   claudeManagedSettings = pkgs.writeText "claude-managed-settings.json" (
-    builtins.toJSON {
-      "$schema" = "https://json.schemastore.org/claude-code-settings.json";
-      env = {
-        HTTP_PROXY = proxyUrl;
-        HTTPS_PROXY = proxyUrl;
-        NO_PROXY = noProxy;
-        CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-      };
-      permissions = {
-        deny = [ "Read(.env)" ];
-        # Sessions start with no permission prompts at all.
-        defaultMode = "bypassPermissions";
-      };
-      # Skips the are-you-sure prompt bypassPermissions otherwise shows.
-      skipDangerousModePermissionPrompt = true;
-      # "opus" is the rolling alias for the newest Opus model, so this
-      # tracks upgrades without pinning a dated model id.
-      model = "opus";
-      theme = "dark";
-      tui = "fullscreen";
-      remoteControlAtStartup = true;
-      # Names the ccstatusline binary as Claude Code's status line. Widget
-      # layout is not managed here: ccstatusline writes
-      # ~/.config/ccstatusline/settings.json itself (see the note above nix.gc).
-      statusLine = {
-        type = "command";
-        command = "ccstatusline";
-        padding = 0;
-      };
-    }
+    builtins.toJSON (import ./claude/settings.nix { inherit proxyUrl noProxy; })
   );
 in
 {
