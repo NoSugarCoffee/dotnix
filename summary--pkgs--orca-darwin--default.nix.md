@@ -1,2 +1,2 @@
-`6d9fe7218f67295d979b2077cb6f6bd185e3cf6b21e482a37695c3eb76a9d193`
-macOS-only Orca 1.4.212 repack from official arm64 and x64 DMGs. Uses undmg, preserves the upstream app bundle, declares MIT licensing and binary-native provenance, and links the upstream changelog.
+`4e1a6ca3561e041c416289dce9bccbe15ce0d38ea7204f70a2f4c5ea1b814b1b`
+macOS-only Orca 1.4.217 repack from official arm64 and x64 DMGs. It uses `undmg`, preserves the app bundle without patch/build/fixup steps, and declares MIT licensing and binary-native provenance.
