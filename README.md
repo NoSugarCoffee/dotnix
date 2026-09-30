@@ -78,6 +78,7 @@ claude-session-registry (local: records live Claude Code conversations, replays 
 [pulsar](https://pulsar-edit.dev/) `macOS`
 
 **Version control** &nbsp; [git](https://git-scm.com/) &middot;
+[git-open](https://github.com/paulirish/git-open) (opens the current repository, branch, pull request, or issue in a browser via `git open`) &middot;
 [gh](https://cli.github.com/) &middot;
 [glab](https://gitlab.com/gitlab-org/cli)
 
