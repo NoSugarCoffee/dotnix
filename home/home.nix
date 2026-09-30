@@ -167,8 +167,8 @@ in
   };
   # Codex writes project trust decisions to ~/.codex/config.toml, so it must
   # remain a regular writable file. Seed it on a fresh machine, then sync only
-  # the managed approval and sandbox settings on every switch. Keep all other
-  # settings, including [projects."<path>"] entries, machine-owned.
+  # the managed model, approval, and sandbox settings on every switch. Keep all
+  # other settings, including [projects."<path>"] entries, machine-owned.
   # Ordered after linkGeneration so an old store symlink is already gone.
   home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.codex

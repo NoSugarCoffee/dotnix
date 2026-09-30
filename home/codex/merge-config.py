@@ -9,8 +9,8 @@ import tempfile
 import tomllib
 
 
-MANAGED_KEYS = ("approval_policy", "sandbox_mode")
-ASSIGNMENT = re.compile(r"^\s*(approval_policy|sandbox_mode)\s*=")
+MANAGED_KEYS = ("model", "approval_policy", "sandbox_mode")
+ASSIGNMENT = re.compile(r"^\s*(" + "|".join(MANAGED_KEYS) + r")\s*=")
 TABLE = re.compile(r"^\s*\[")
 
 
