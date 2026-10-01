@@ -1,2 +1,2 @@
-`4e1a6ca3561e041c416289dce9bccbe15ce0d38ea7204f70a2f4c5ea1b814b1b`
-macOS-only Orca 1.4.217 repack from official arm64 and x64 DMGs. It uses `undmg`, preserves the app bundle without patch/build/fixup steps, and declares MIT licensing and binary-native provenance.
+`2ebf41dc0977d1b8611b7b9c1f36103d1dfca9c3d0df5646608d539e8c26f55e`
+Orca 1.4.218 is a dual-architecture macOS official DMG repack for parallel coding agents. It uses undmg, copies the app bundle without patch/build/fixup, and declares MIT binary-native provenance.
