@@ -111,7 +111,7 @@ java (Temurin JDK & JRE) &middot; maven &middot;
 
 **Utilities** &nbsp; [just](https://just.systems/) &middot;
 [lark-cli](https://www.npmjs.com/package/@larksuite/cli) &middot;
-[cida](https://github.com/Xuanwo/cida) `macOS` (translate and polish text anywhere with an LLM; official notarized release zip, not in nixpkgs)
+[cida](https://github.com/Xuanwo/cida) `macOS` (translate and polish text anywhere with an LLM; official notarized release DMG, not in nixpkgs)
 
 ## 🔧 Commands
 

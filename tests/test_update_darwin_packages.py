@@ -14,6 +14,7 @@ REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / ".github" / "workflows" / "scripts" / "update_darwin_packages.sh"
 
 CLASH = Path("pkgs/clash-verge-rev-darwin/default.nix")
+CIDA = Path("pkgs/cida-darwin/default.nix")
 DESKTOP = Path("pkgs/claude-desktop-darwin/default.nix")
 EGO = Path("pkgs/ego-lite-darwin/default.nix")
 ORCA = Path("pkgs/orca-darwin/default.nix")
@@ -24,10 +25,12 @@ FRESH_DESKTOP = "sha256-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="
 FRESH_EGO_AARCH64 = "sha256-DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD="
 FRESH_ORCA_AARCH64 = "sha256-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE="
 FRESH_ORCA_X86_64 = "sha256-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF="
+FRESH_CIDA = "sha256-GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG="
 
 
 def _eval_json(
-    *, clash: bool, desktop: bool, ego: bool = False, orca: bool = False, pinned: str = "2.5.2"
+    *, clash: bool, desktop: bool, ego: bool = False, orca: bool = False,
+    cida: bool = False, pinned: str = "2.5.2"
 ) -> dict[str, object]:
     proposed: dict[str, object] = {}
     if clash:
@@ -50,12 +53,15 @@ def _eval_json(
                 "x86_64-darwin": FRESH_ORCA_X86_64,
             },
         }
+    if cida:
+        proposed["cida"] = {"version": "9.9.9", "build": "999", "hash": FRESH_CIDA}
     return {
-        "packages_current": 4 - len(proposed),
+        "packages_current": 5 - len(proposed),
         "clash-verge-rev": {"pinned": pinned, "latest": "9.9.9", "current": not clash},
         "claude-desktop": {"current": not desktop},
         "ego-lite": {"current": not ego},
         "orca": {"pinned": "1.4.211", "latest": "9.9.9", "current": not orca},
+        "cida": {"pinned": "1.0.0", "latest": "9.9.9", "current": not cida},
         "proposed": proposed,
     }
 
@@ -66,7 +72,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
     ) -> tuple[subprocess.CompletedProcess[str], Path, dict[str, str]]:
         work = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, work, ignore_errors=True)
-        for rel in (CLASH, DESKTOP, EGO, ORCA):
+        for rel in (CLASH, CIDA, DESKTOP, EGO, ORCA):
             (work / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(REPO / rel, work / rel)
 
@@ -143,6 +149,17 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
         self.assertEqual((work / CLASH).read_text(), (REPO / CLASH).read_text())
         self.assertIn("`orca-darwin`: 1.4.211 -> 9.9.9", outputs["summary"])
 
+    def test_bumps_cida_version_build_and_hash(self) -> None:
+        proc, work, outputs = self._run(_eval_json(clash=False, desktop=False, cida=True))
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        text = (work / CIDA).read_text()
+
+        self.assertIn('  version = "9.9.9";', text)
+        self.assertIn('  build = "999";', text)
+        self.assertIn(f'    hash = "{FRESH_CIDA}";', text)
+        self.assertEqual(outputs["changed"], "true")
+        self.assertIn("`cida-darwin`: 1.0.0 -> 9.9.9 (build 999)", outputs["summary"])
+
     def test_bumps_only_the_ego_arch_that_actually_changed(self) -> None:
         """Upstream can republish one arch without the other."""
         proc, work, outputs = self._run(_eval_json(clash=False, desktop=False, ego=True))
@@ -179,6 +196,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
 
         self.assertNotEqual(proc.returncode, 0)
         self.assertEqual((work / ORCA).read_text(), (REPO / ORCA).read_text())
+        self.assertEqual((work / CIDA).read_text(), (REPO / CIDA).read_text())
 
     def test_fails_when_only_part_of_a_proposal_matches(self) -> None:
         """A version bump landing without its hashes would pin a broken pair."""
