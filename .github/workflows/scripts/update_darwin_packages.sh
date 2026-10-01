@@ -60,6 +60,22 @@ bump_versioned() {
 bump_versioned clash-verge-rev clash-verge-rev-darwin
 bump_versioned orca orca-darwin
 
+cida=$(jq -c '.cida // empty' <<<"$proposed")
+if [ -n "$cida" ]; then
+  version=$(jq -er '.version' <<<"$cida")
+  build=$(jq -er '.build' <<<"$cida")
+  hash=$(jq -er '.hash' <<<"$cida")
+  pinned=$(jq -er '.cida.pinned' <<<"$eval_json")
+
+  rewrite "pkgs/cida-darwin/default.nix" cida \
+    "s|^\(  version = \)\"[^\"]*\";|\1\"${version}\";|" \
+    "s|^\(  build = \)\"[^\"]*\";|\1\"${build}\";|" \
+    "s|^\(    hash = \)\"sha256-[^\"]*\";|\1\"${hash}\";|"
+
+  changed=true
+  summary+="- \`cida-darwin\`: ${pinned} -> ${version} (build ${build})"$'\n'
+fi
+
 desktop=$(jq -c '.["claude-desktop"] // empty' <<<"$proposed")
 if [ -n "$desktop" ]; then
   file="pkgs/claude-desktop-darwin/default.nix"

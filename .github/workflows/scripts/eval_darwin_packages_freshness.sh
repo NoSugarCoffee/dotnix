@@ -38,7 +38,21 @@ orca_latest="${orca_latest_tag#v}"
 orca_current=0
 [ "$orca_pinned" = "$orca_latest" ] && orca_current=1
 
-packages_current=$((cv_current + cd_current + ego_current + orca_current))
+cida_file="pkgs/cida-darwin/default.nix"
+cida_pinned=$(grep -oP '(?<=version = ")[^"]+' "$cida_file" | head -1)
+cida_pinned_build=$(grep -oP '(?<=build = ")[^"]+' "$cida_file" | head -1)
+cida_release=$(gh api repos/Xuanwo/cida/releases/latest)
+cida_latest_tag=$(jq -er '.tag_name' <<<"$cida_release")
+cida_latest="${cida_latest_tag#v}"
+cida_asset=$(jq -er --arg version "$cida_latest" \
+  '[.assets[].name | select(test("^Cida-" + $version + "-[0-9]+[.]dmg$"))] |
+   if length == 1 then .[0] else error("expected one Cida DMG asset") end' <<<"$cida_release")
+cida_latest_build="${cida_asset#Cida-"${cida_latest}"-}"
+cida_latest_build="${cida_latest_build%.dmg}"
+cida_current=0
+[ "$cida_pinned" = "$cida_latest" ] && [ "$cida_pinned_build" = "$cida_latest_build" ] && cida_current=1
+
+packages_current=$((cv_current + cd_current + ego_current + orca_current + cida_current))
 
 proposed='{}'
 if [ "$cv_current" -eq 0 ]; then
@@ -67,6 +81,12 @@ if [ "$orca_current" -eq 0 ]; then
     --arg x64 "$orca_x64_hash" \
     '. + { orca: { version: $version, archHash: { "aarch64-darwin": $aarch, "x86_64-darwin": $x64 } } }')
 fi
+if [ "$cida_current" -eq 0 ]; then
+  cida_url="https://github.com/Xuanwo/cida/releases/download/${cida_latest_tag}/${cida_asset}"
+  cida_hash=$(nix store prefetch-file --json "$cida_url" | jq -er '.hash')
+  proposed=$(jq --arg version "$cida_latest" --arg build "$cida_latest_build" --arg hash "$cida_hash" \
+    '. + { cida: { version: $version, build: $build, hash: $hash } }' <<<"$proposed")
+fi
 
 jq -n \
   --argjson packages_current "$packages_current" \
@@ -74,10 +94,12 @@ jq -n \
   --argjson cd_current "$cd_current" \
   --argjson ego_current "$ego_current" \
   --arg orca_pinned "$orca_pinned" --arg orca_latest "$orca_latest" --argjson orca_current "$orca_current" \
+  --arg cida_pinned "$cida_pinned" --arg cida_latest "$cida_latest" --argjson cida_current "$cida_current" \
   --argjson proposed "$proposed" \
   '{packages_current: $packages_current,
     "clash-verge-rev": {pinned: $cv_pinned, latest: $cv_latest, current: ($cv_current == 1)},
     "claude-desktop": {current: ($cd_current == 1)},
     "ego-lite": {current: ($ego_current == 1)},
     orca: {pinned: $orca_pinned, latest: $orca_latest, current: ($orca_current == 1)},
+    cida: {pinned: $cida_pinned, latest: $cida_latest, current: ($cida_current == 1)},
     proposed: $proposed}'
