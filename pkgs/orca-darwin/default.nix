@@ -10,14 +10,14 @@ let
     x86_64-darwin = "x64";
   };
   archHash = {
-    aarch64-darwin = "sha256-T/vVbOI3jtNGiJnyyuPM/vup1Z82mo3EM39j4N3u0X4=";
-    x86_64-darwin = "sha256-4xq+CssOLEVAQXv1aycxlHTHYjTLlIIaui9kEi3y0K4=";
+    aarch64-darwin = "sha256-MJXEVf+HN59O0cMwm4HcRldSeLhgcHV78D1TosCxgDY=";
+    x86_64-darwin = "sha256-NQxcIwFXbUyrcKPg9L4/Awn4MM8CFkROb4pLwkfXplI=";
   };
   system = stdenvNoCC.hostPlatform.system;
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "orca";
-  version = "1.4.218";
+  version = "1.4.219";
 
   src = fetchurl {
     url = "https://github.com/stablyai/orca/releases/download/v${finalAttrs.version}/orca-macos-${archName.${system}}.dmg";

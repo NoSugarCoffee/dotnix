@@ -5,12 +5,12 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "cida";
-  version = "1.4.0";
-  build = "200";
+  version = "1.5.1";
+  build = "211";
 
   src = fetchurl {
     url = "https://github.com/Xuanwo/cida/releases/download/v${finalAttrs.version}/Cida-${finalAttrs.version}-${finalAttrs.build}.dmg";
-    hash = "sha256-HT+bQ0qL8hx6fx+raTMKX/SwmjcXBK2R5wGZIqRC0/c=";
+    hash = "sha256-y4goaPUfh8KgRW+MtV+IO+s+hcGkQKpUe6p/3bBH6P4=";
   };
 
   sourceRoot = ".";
