@@ -217,11 +217,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1791278312,
-        "narHash": "sha256-NF6MCCwMHHOGA3hIpULAn2EYcwS5DyKaoVt3fLZ2Ynk=",
+        "lastModified": 1791352800,
+        "narHash": "sha256-3exhcZ9ebN8cVVP+RJe2omsc0l6Mb6ju/kmqCwJJQpo=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "67594822423fde48c6487df95e6154173fd0f146",
+        "rev": "c9ef0fb47c91abf5c637218b69a018d3b37bb8d9",
         "type": "github"
       },
       "original": {
@@ -263,11 +263,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1791191277,
-        "narHash": "sha256-i8KuaINOYLvB2oQikGvtRmdZRxATRxsI9Yad2pp7dEA=",
+        "lastModified": 1791336361,
+        "narHash": "sha256-o9ZUW4SlEAvFPIyJWnqChhOT/VHpHg8TAvEgmqK1fSI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "aa48d347080940b8a2b8d2f48228674e280a3514",
+        "rev": "7dd199b0e2993e37b4775ed66b1c291699608c9f",
         "type": "github"
       },
       "original": {
@@ -337,11 +337,11 @@
         "nixpkgs-x86_64-darwin": "nixpkgs-x86_64-darwin"
       },
       "locked": {
-        "lastModified": 1791199779,
-        "narHash": "sha256-RlCAvBZOsEo3CoDuKZy0iGf6RoGfc5c8vHcy7w2qxuo=",
+        "lastModified": 1791287920,
+        "narHash": "sha256-U/C8MxHzUaSi+BT5hMPAjyuDvf6H+QR3G5k93ALySPE=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "ec613cdf7e1a8df386aa254473d775ee5abd6098",
+        "rev": "6b4ac7c76a25dd3fb14553ace2277e809099308b",
         "type": "github"
       },
       "original": {
