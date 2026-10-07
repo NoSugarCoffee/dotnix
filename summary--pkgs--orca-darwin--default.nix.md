@@ -1,2 +1,2 @@
-`88cebb203bf312119be45744be71f0232ba76fd2c5e56f07e0bb1fa8ce2d`
-Orca 1.4.221 is a dual-architecture macOS official DMG repack for parallel coding agents. It uses undmg, copies the app bundle without patch/build/fixup, and declares MIT binary-native provenance.
+`70bd51982cf21f022897bb0e6fc62bdf6ae6e2f7030e8b122c24aafe0d77c475`
+Orca 1.4.222 is a dual-architecture macOS official DMG repack for parallel coding agents. It uses undmg, copies the app bundle without patch/build/fixup, and declares MIT binary-native provenance.
