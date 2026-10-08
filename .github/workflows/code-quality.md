@@ -149,8 +149,7 @@ Each issue should:
 - Anything the build already catches: `ci.yml` runs `nix flake check`, builds
   the activation package on both platforms, and smoke-tests activation and the
   interactive-zsh PATH.
-- Pinned version and hash literals in `pkgs/*-darwin/default.nix`. Those track
-  upstream DMG releases and are expected to lag; bumping them is a separate,
-  manual job.
+- Pinned versions and hashes in `pkgs/*/pin.json`. `release-pins-update.yml`
+  bumps them nightly, so a lagging pin is not a finding.
 - Suggestions to add tooling the repository has deliberately rejected — check
   `README.md` "Notes" and the git history before proposing a new dependency.

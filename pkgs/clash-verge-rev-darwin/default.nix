@@ -1,7 +1,7 @@
 # nixpkgs' clash-verge-rev is Linux-only, so this repacks the official
 # prebuilt macOS app from upstream's release DMGs -- same approach nixpkgs
-# takes for google-chrome on darwin. Version and hashes are pinned; bump
-# both together when updating (nix store prefetch-file <url> for hashes).
+# takes for google-chrome on darwin. Version and hashes live in
+# pin.json, bumped by release_pins.py.
 {
   lib,
   stdenvNoCC,
@@ -9,24 +9,11 @@
   undmg,
 }:
 let
-  archName = {
-    aarch64-darwin = "aarch64";
-    x86_64-darwin = "x64";
-  };
-  archHash = {
-    aarch64-darwin = "sha256-nZSE2JeTegoDu+cq+Ir0XTz8IKxYJErtfZA51L5tklY=";
-    x86_64-darwin = "sha256-I5N7nRHniHKBoaBS29y1/CSkIXnQ9WhLYYagpV+hpt0=";
-  };
-  system = stdenvNoCC.hostPlatform.system;
+  pin = import ../release-pin.nix { inherit lib fetchurl; } ./pin.json stdenvNoCC.hostPlatform.system;
 in
-stdenvNoCC.mkDerivation (finalAttrs: {
+stdenvNoCC.mkDerivation {
   pname = "clash-verge-rev";
-  version = "2.5.7";
-
-  src = fetchurl {
-    url = "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v${finalAttrs.version}/Clash.Verge_${finalAttrs.version}_${archName.${system}}.dmg";
-    hash = archHash.${system};
-  };
+  inherit (pin) version src;
 
   nativeBuildInputs = [ undmg ];
   sourceRoot = ".";
@@ -50,6 +37,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://www.clashverge.dev/";
     license = lib.licenses.gpl3Plus;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-    platforms = builtins.attrNames archName;
+    inherit (pin) platforms;
   };
-})
+}

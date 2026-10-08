@@ -4,9 +4,9 @@
 # an intact seal, so it is copied verbatim.
 #
 # Upstream publishes no versioned download URL: the token below is rewritten
-# in place on each release, so a hash mismatch is the only upgrade signal and
-# it fires as a build failure. To bump, `nix store prefetch-file <url>` per
-# arch, then read CFBundleShortVersionString out of the extracted app.
+# in place on each release, so release_pins.py re-prefetches it nightly and
+# bumps the hashes in pin.json; the version label there has to be corrected by
+# hand from CFBundleShortVersionString.
 #
 # `version` describes the DMG in the store, which is not necessarily the
 # version that runs: EgoUpdater rewrites the installed app in place, and can
@@ -20,28 +20,11 @@
   undmg,
 }:
 let
-  archName = {
-    aarch64-darwin = "arm64";
-    x86_64-darwin = "x64";
-  };
-  archHash = {
-    aarch64-darwin = "sha256-zpLwDGheOuGz55O6JoBN7Ygzi68gTadzVelH2mZvNgU=";
-    x86_64-darwin = "sha256-yQuxi7+QbZ22OR3udjDtZHjWHFJeQnScR8I3m8G/JWs=";
-  };
-  archVersion = {
-    aarch64-darwin = "0.5.1.13";
-    x86_64-darwin = "0.5.1.13";
-  };
-  system = stdenvNoCC.hostPlatform.system;
+  pin = import ../release-pin.nix { inherit lib fetchurl; } ./pin.json stdenvNoCC.hostPlatform.system;
 in
 stdenvNoCC.mkDerivation {
   pname = "ego-lite";
-  version = archVersion.${system};
-
-  src = fetchurl {
-    url = "https://cdn.ego.app/setup/macos/${archName.${system}}/egolite-Y7MbxKIuhzFB.dmg";
-    hash = archHash.${system};
-  };
+  inherit (pin) version src;
 
   nativeBuildInputs = [ undmg ];
   sourceRoot = ".";
@@ -101,6 +84,6 @@ stdenvNoCC.mkDerivation {
     license = lib.licenses.unfree;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
     mainProgram = "ego-browser";
-    platforms = lib.attrNames archName;
+    inherit (pin) platforms;
   };
 }
