@@ -58,7 +58,6 @@ bump_versioned() {
 }
 
 bump_versioned clash-verge-rev clash-verge-rev-darwin
-bump_versioned orca orca-darwin
 
 cida=$(jq -c '.cida // empty' <<<"$proposed")
 if [ -n "$cida" ]; then
@@ -74,20 +73,6 @@ if [ -n "$cida" ]; then
 
   changed=true
   summary+="- \`cida-darwin\`: ${pinned} -> ${version} (build ${build})"$'\n'
-fi
-
-desktop=$(jq -c '.["claude-desktop"] // empty' <<<"$proposed")
-if [ -n "$desktop" ]; then
-  file="pkgs/claude-desktop-darwin/default.nix"
-  hash=$(jq -r '.hash' <<<"$desktop")
-  label=$(sed -n 's|^  version = "\([^"]*\)";|\1|p' "$file")
-
-  rewrite "$file" claude-desktop \
-    "s|^\(    hash = \)\"sha256-[^\"]*\";|\1\"${hash}\";|"
-
-  changed=true
-  summary+="- \`claude-desktop-darwin\`: upstream shipped a new build at the unversioned URL; hash bumped to \`${hash}\`."$'\n'
-  summary+="  The \`version = \"${label}\"\` label has no authoritative upstream source and was left as is."$'\n'
 fi
 
 ego=$(jq -c '.["ego-lite"] // empty' <<<"$proposed")

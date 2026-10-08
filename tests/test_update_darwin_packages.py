@@ -15,22 +15,16 @@ SCRIPT = REPO / ".github" / "workflows" / "scripts" / "update_darwin_packages.sh
 
 CLASH = Path("pkgs/clash-verge-rev-darwin/default.nix")
 CIDA = Path("pkgs/cida-darwin/default.nix")
-DESKTOP = Path("pkgs/claude-desktop-darwin/default.nix")
 EGO = Path("pkgs/ego-lite-darwin/default.nix")
-ORCA = Path("pkgs/orca-darwin/default.nix")
 
 FRESH_AARCH64 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 FRESH_X86_64 = "sha256-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB="
-FRESH_DESKTOP = "sha256-CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC="
 FRESH_EGO_AARCH64 = "sha256-DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD="
-FRESH_ORCA_AARCH64 = "sha256-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE="
-FRESH_ORCA_X86_64 = "sha256-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF="
 FRESH_CIDA = "sha256-GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG="
 
 
 def _eval_json(
-    *, clash: bool, desktop: bool, ego: bool = False, orca: bool = False,
-    cida: bool = False, pinned: str = "2.5.2"
+    *, clash: bool, ego: bool = False, cida: bool = False, pinned: str = "2.5.2"
 ) -> dict[str, object]:
     proposed: dict[str, object] = {}
     if clash:
@@ -41,26 +35,14 @@ def _eval_json(
                 "x86_64-darwin": FRESH_X86_64,
             },
         }
-    if desktop:
-        proposed["claude-desktop"] = {"hash": FRESH_DESKTOP}
     if ego:
         proposed["ego-lite"] = {"archHash": {"aarch64-darwin": FRESH_EGO_AARCH64}}
-    if orca:
-        proposed["orca"] = {
-            "version": "9.9.9",
-            "archHash": {
-                "aarch64-darwin": FRESH_ORCA_AARCH64,
-                "x86_64-darwin": FRESH_ORCA_X86_64,
-            },
-        }
     if cida:
         proposed["cida"] = {"version": "9.9.9", "build": "999", "hash": FRESH_CIDA}
     return {
-        "packages_current": 5 - len(proposed),
+        "packages_current": 3 - len(proposed),
         "clash-verge-rev": {"pinned": pinned, "latest": "9.9.9", "current": not clash},
-        "claude-desktop": {"current": not desktop},
         "ego-lite": {"current": not ego},
-        "orca": {"pinned": "1.4.211", "latest": "9.9.9", "current": not orca},
         "cida": {"pinned": "1.0.0", "latest": "9.9.9", "current": not cida},
         "proposed": proposed,
     }
@@ -72,7 +54,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
     ) -> tuple[subprocess.CompletedProcess[str], Path, dict[str, str]]:
         work = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, work, ignore_errors=True)
-        for rel in (CLASH, CIDA, DESKTOP, EGO, ORCA):
+        for rel in (CLASH, CIDA, EGO):
             (work / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(REPO / rel, work / rel)
 
@@ -97,7 +79,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
         return proc, work, _parse_output(output.read_text())
 
     def test_bumps_version_and_both_arch_hashes(self) -> None:
-        proc, work, outputs = self._run(_eval_json(clash=True, desktop=False))
+        proc, work, outputs = self._run(_eval_json(clash=True))
         self.assertEqual(proc.returncode, 0, proc.stderr)
         text = (work / CLASH).read_text()
 
@@ -109,48 +91,21 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
 
     def test_leaves_the_arch_name_table_alone(self) -> None:
         """archName's keys are the same nix attrs as archHash's, one block up."""
-        _, work, _ = self._run(_eval_json(clash=True, desktop=False))
+        _, work, _ = self._run(_eval_json(clash=True))
         text = (work / CLASH).read_text()
 
         self.assertIn('    aarch64-darwin = "aarch64";', text)
         self.assertIn('    x86_64-darwin = "x64";', text)
 
-    def test_bumps_the_desktop_hash_and_keeps_its_version_label(self) -> None:
-        proc, work, outputs = self._run(_eval_json(clash=False, desktop=True))
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        text = (work / DESKTOP).read_text()
-        original = (REPO / DESKTOP).read_text()
-
-        self.assertIn(f'    hash = "{FRESH_DESKTOP}";', text)
-        label = [ln for ln in original.splitlines() if ln.startswith("  version = ")]
-        self.assertEqual([ln for ln in text.splitlines() if ln.startswith("  version = ")], label)
-        self.assertIn(label[0].split('"')[1], outputs["summary"])
-
-    def test_reports_no_change_when_both_pins_are_current(self) -> None:
-        proc, work, outputs = self._run(_eval_json(clash=False, desktop=False))
+    def test_reports_no_change_when_all_pins_are_current(self) -> None:
+        proc, work, outputs = self._run(_eval_json(clash=False))
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(outputs["changed"], "false")
         self.assertEqual((work / CLASH).read_text(), (REPO / CLASH).read_text())
-        self.assertEqual((work / DESKTOP).read_text(), (REPO / DESKTOP).read_text())
         self.assertEqual((work / EGO).read_text(), (REPO / EGO).read_text())
-        self.assertEqual((work / ORCA).read_text(), (REPO / ORCA).read_text())
-
-    def test_bumps_orca_version_and_both_arch_hashes_without_touching_clash(self) -> None:
-        proc, work, outputs = self._run(_eval_json(clash=False, desktop=False, orca=True))
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(outputs["changed"], "true")
-        text = (work / ORCA).read_text()
-
-        self.assertIn('  version = "9.9.9";', text)
-        self.assertIn(f'    aarch64-darwin = "{FRESH_ORCA_AARCH64}";', text)
-        self.assertIn(f'    x86_64-darwin = "{FRESH_ORCA_X86_64}";', text)
-        self.assertIn('    aarch64-darwin = "arm64";', text)
-        self.assertIn('    x86_64-darwin = "x64";', text)
-        self.assertEqual((work / CLASH).read_text(), (REPO / CLASH).read_text())
-        self.assertIn("`orca-darwin`: 1.4.211 -> 9.9.9", outputs["summary"])
 
     def test_bumps_cida_version_build_and_hash(self) -> None:
-        proc, work, outputs = self._run(_eval_json(clash=False, desktop=False, cida=True))
+        proc, work, outputs = self._run(_eval_json(clash=False, cida=True))
         self.assertEqual(proc.returncode, 0, proc.stderr)
         text = (work / CIDA).read_text()
 
@@ -162,7 +117,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
 
     def test_bumps_only_the_ego_arch_that_actually_changed(self) -> None:
         """Upstream can republish one arch without the other."""
-        proc, work, outputs = self._run(_eval_json(clash=False, desktop=False, ego=True))
+        proc, work, outputs = self._run(_eval_json(clash=False, ego=True))
         self.assertEqual(proc.returncode, 0, proc.stderr)
         text = (work / EGO).read_text()
         original = (REPO / EGO).read_text()
@@ -177,7 +132,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
 
     def test_keeps_ego_arch_name_and_version_tables_intact(self) -> None:
         """archName, archHash and archVersion share their keys across three blocks."""
-        _, work, outputs = self._run(_eval_json(clash=False, desktop=False, ego=True))
+        _, work, outputs = self._run(_eval_json(clash=False, ego=True))
         text = (work / EGO).read_text()
 
         self.assertIn('    aarch64-darwin = "arm64";', text)
@@ -190,12 +145,12 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
         self.assertIn(version[0].split('"')[1], outputs["summary"])
 
     def test_fails_instead_of_pinning_null_when_a_proposal_lacks_a_field(self) -> None:
-        payload = _eval_json(clash=False, desktop=False, orca=True)
-        del payload["proposed"]["orca"]["archHash"]["x86_64-darwin"]
+        payload = _eval_json(clash=True)
+        del payload["proposed"]["clash-verge-rev"]["archHash"]["x86_64-darwin"]
         proc, work, _ = self._run(payload)
 
         self.assertNotEqual(proc.returncode, 0)
-        self.assertEqual((work / ORCA).read_text(), (REPO / ORCA).read_text())
+        self.assertEqual((work / CLASH).read_text(), (REPO / CLASH).read_text())
         self.assertEqual((work / CIDA).read_text(), (REPO / CIDA).read_text())
 
     def test_fails_when_only_part_of_a_proposal_matches(self) -> None:
@@ -209,7 +164,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
         )
 
         eval_file = work / "eval.json"
-        eval_file.write_text(json.dumps(_eval_json(clash=True, desktop=False)))
+        eval_file.write_text(json.dumps(_eval_json(clash=True)))
         env = os.environ.copy()
         env.update(DARWIN_EVAL_JSON=str(eval_file), GITHUB_OUTPUT=str(work / "out"))
         proc = subprocess.run(
@@ -233,7 +188,7 @@ class UpdateDarwinPackagesTest(unittest.TestCase):
         (work / CLASH).write_text("{ }\n")
 
         eval_file = work / "eval.json"
-        eval_file.write_text(json.dumps(_eval_json(clash=True, desktop=False)))
+        eval_file.write_text(json.dumps(_eval_json(clash=True)))
         env = os.environ.copy()
         env.update(DARWIN_EVAL_JSON=str(eval_file), GITHUB_OUTPUT=str(work / "out"))
         proc = subprocess.run(

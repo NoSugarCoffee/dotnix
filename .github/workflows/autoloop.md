@@ -44,16 +44,13 @@ model: openai/gpt-5.6-luna
 # allowlisted explicitly. cache.nixos.org/channels.nixos.org only matter to the
 # runner-side evaluation steps, which are not firewalled -- kept so that an
 # evaluation script re-run inside the sandbox fails on the missing `nix` binary
-# rather than on a confusing egress denial; storage.googleapis.com is the vendor
-# host claude-desktop-darwin's DMG lives on (its own release notes have no
-# versioned URL, so this stays hardcoded rather than derived from an input).
+# rather than on a confusing egress denial.
 network:
   allowed:
     - defaults
     - openrouter.ai
     - cache.nixos.org
     - channels.nixos.org
-    - storage.googleapis.com
 
 # Luna's OpenRouter rate. The AWF proxy rejects models missing from its
 # built-in pricing table with HTTP 400, and a provider-prefixed slug is not

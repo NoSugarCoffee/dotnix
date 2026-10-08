@@ -1,6 +1,5 @@
 {
-  claudeDesktopPackage,
-  paperclipPackage,
+  llmAgentsPackages,
   username,
   homeDirectory,
   config,
@@ -64,9 +63,7 @@ in
         pkgs.codex
         pkgs.claude-code
         pkgs.claude-session-registry
-        pkgs.ccstatusline
         pkgs.pi-coding-agent
-        pkgs.apm
         pkgs.agent-access
         pkgs.bitwarden-cli
         pkgs.asdf-vm
@@ -90,8 +87,7 @@ in
         # Provides the `cursor` CLI that ~/.codex/config.toml's file_opener uses.
         pkgs.code-cursor
       ]
-      ++ lib.optionals (paperclipPackage != null) [ paperclipPackage ]
-      ++ lib.optionals (claudeDesktopPackage != null) [ claudeDesktopPackage ]
+      ++ llmAgentsPackages
       # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
       # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
       # the official prebuilt DMG instead.
@@ -100,8 +96,6 @@ in
         pkgs.clash-verge-rev
         pkgs.obs-studio
       ]
-      # claude-desktop's flake input is Linux-only; pkgs/claude-desktop-darwin
-      # repacks the official DMG for macOS.
       # pulsar is Linux-only in nixpkgs; pkgs/pulsar-darwin repacks the
       # official prebuilt zip for macOS.
       # obs-studio is Linux-only in nixpkgs; pkgs/obs-studio-darwin repacks
@@ -116,7 +110,6 @@ in
         pkgs.google-chrome
         pkgs.clash-verge-rev-darwin
         pkgs.maccy
-        pkgs.claude-desktop-darwin
         pkgs.macshot
         pkgs.pulsar-darwin
         pkgs.albert-darwin
@@ -125,7 +118,6 @@ in
         pkgs.jetbrains-air-darwin
         pkgs.ego-lite-darwin
         pkgs.cida-darwin
-        pkgs.orca-darwin
         pkgs.colima
       ]
       # The official ChatGPT desktop app includes Codex and ships for Apple
@@ -569,11 +561,13 @@ in
       "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://pi.cachix.org/"
       "https://nix-community.cachix.org/"
+      "https://cache.numtide.com/"
       "https://cache.nixos.org/"
     ];
     settings.extra-trusted-public-keys = [
       "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
   };
 }
