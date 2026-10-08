@@ -50,7 +50,8 @@ just switch
 Cross-platform unless tagged. Codex owns `~/.codex/config.toml` (it persists
 per-folder trust decisions there). It is seeded from
 [`home/codex/config.toml`](home/codex/config.toml) when missing. Each switch
-syncs its default model, approval, and sandbox settings to allow full access
+syncs the model, approval, and sandbox settings in
+[`home/codex/managed.toml`](home/codex/managed.toml) to allow full access
 without prompts; other settings and trust decisions remain machine-owned.
 
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
