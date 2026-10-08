@@ -20,3 +20,17 @@ No work-internal hostnames, tokens, or identities in commits or PR bodies. Work-
 - **Use a git worktree, not `git switch`, when opening a second PR while the current branch has in-flight work.** `git worktree add ../dotnix-<slug> -b feat/<slug> main` keeps the two checkouts physically separate and avoids stash/pop churn.
 - **Commits and PRs only on explicit request.** Draft the change, show the diff, wait for "commit" / "open a PR".
 - **Keep the README managed-packages table in sync with `home.nix`.** A PR-reviewer bot flags drift on every PR — if a package is added or removed in `home.nix`, update the table in the same commit.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on NoSugarCoffee/dotnix, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels are used as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root, both created when first needed. See `docs/agents/domain.md`.
