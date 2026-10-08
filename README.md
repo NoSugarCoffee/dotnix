@@ -47,55 +47,13 @@ just switch
 
 ## 📦 Managed packages
 
-Cross-platform unless tagged.
-
-**AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
-[claude-code](https://github.com/anthropics/claude-code) &middot;
-[ChatGPT](https://learn.chatgpt.com/docs/app) `macOS` &middot;
-[claude-desktop](https://claude.ai/download) &middot;
-[pi](https://pi.dev/) &middot;
-[apm](https://microsoft.github.io/apm/) &middot;
-[ccstatusline](https://github.com/sirmalloc/ccstatusline) &middot;
-[paperclip](https://paperclip.ing) &middot;
-[orca](https://github.com/stablyai/orca) &middot;
-[agent-access](https://github.com/bitwarden/agent-access) &middot;
-[bitwarden-cli](https://bitwarden.com/help/cli/) &middot;
-claude-session-registry (local; reopens Claude Code sessions in zellij)
-
-**Terminal** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
-[zellij](https://zellij.dev/) &middot;
-[zoxide](https://github.com/ajeetdsouza/zoxide) &middot;
-[yazi](https://github.com/sxyazi/yazi) &middot;
-[nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions)
-
-**Editors** &nbsp; [intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
-[cursor](https://cursor.com/) &middot;
-[jetbrains-air](https://air.dev/) `macOS` &middot;
-[pulsar](https://pulsar-edit.dev/) `macOS`
-
-**Dev** &nbsp; [git](https://git-scm.com/) &middot;
-[git-open](https://github.com/paulirish/git-open) &middot;
-[gh](https://cli.github.com/) &middot;
-[glab](https://gitlab.com/gitlab-org/cli) &middot;
-[docker](https://www.docker.com/) (client) &middot;
-[docker-compose](https://docs.docker.com/compose/) &middot;
-[colima](https://github.com/abiosoft/colima) `macOS` &middot;
-[asdf](https://asdf-vm.com/) (go, nodejs, java, maven) &middot;
-[pnpm](https://pnpm.io/) &middot;
-[python3](https://www.python.org/) (ipython, pip) &middot;
-[just](https://just.systems/) &middot;
-[lark-cli](https://www.npmjs.com/package/@larksuite/cli)
-
-**Desktop** &nbsp; [google-chrome](https://www.google.com/chrome/) `macOS` &middot;
-[ego-lite](https://github.com/citrolabs/ego-lite) `macOS` &middot;
-[albert](https://albertlauncher.github.io/) `macOS` &middot;
-[maccy](https://maccy.app/) `macOS` &middot;
-[copyq](https://hluk.github.io/CopyQ/) `Linux` &middot;
-[macshot](https://github.com/sw33tLie/macshot) `macOS` &middot;
-[obs-studio](https://obsproject.com/) &middot;
-[scroll-reverser](https://pilotmoon.com/scrollreverser/) `macOS` &middot;
-[clash-verge-rev](https://www.clashverge.dev/) &middot;
-[cida](https://github.com/Xuanwo/cida) `macOS`
+| | 🍎 🐧 Both | 🍎 macOS only | 🐧 Linux only |
+|---|---|---|---|
+| **AI** | [codex](https://github.com/openai/codex) · [claude-code](https://github.com/anthropics/claude-code) · [claude-desktop](https://claude.ai/download) · [pi](https://pi.dev/) · [apm](https://microsoft.github.io/apm/) · [ccstatusline](https://github.com/sirmalloc/ccstatusline) · [paperclip](https://paperclip.ing) · [orca](https://github.com/stablyai/orca) · [agent-access](https://github.com/bitwarden/agent-access) · [bitwarden-cli](https://bitwarden.com/help/cli/) · claude-session-registry | [ChatGPT](https://learn.chatgpt.com/docs/app) | — |
+| **Terminal** | [kitty](https://sw.kovidgoyal.net/kitty/) · [zellij](https://zellij.dev/) · [zoxide](https://github.com/ajeetdsouza/zoxide) · [yazi](https://github.com/sxyazi/yazi) · [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | — | — |
+| **Editors** | [intellij-idea-ultimate](https://www.jetbrains.com/idea/) · [cursor](https://cursor.com/) | [jetbrains-air](https://air.dev/) · [pulsar](https://pulsar-edit.dev/) | — |
+| **Dev** | [git](https://git-scm.com/) · [git-open](https://github.com/paulirish/git-open) · [gh](https://cli.github.com/) · [glab](https://gitlab.com/gitlab-org/cli) · [docker](https://www.docker.com/) (client) · [docker-compose](https://docs.docker.com/compose/) · [asdf](https://asdf-vm.com/) (go, nodejs, java, maven) · [pnpm](https://pnpm.io/) · [python3](https://www.python.org/) (ipython, pip) · [just](https://just.systems/) · [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | [colima](https://github.com/abiosoft/colima) | — |
+| **Desktop** | [obs-studio](https://obsproject.com/) · [clash-verge-rev](https://www.clashverge.dev/) | [google-chrome](https://www.google.com/chrome/) · [ego-lite](https://github.com/citrolabs/ego-lite) · [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [macshot](https://github.com/sw33tLie/macshot) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) | [copyq](https://hluk.github.io/CopyQ/) |
 
 ## 🔧 Commands
 
