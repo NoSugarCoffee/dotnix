@@ -56,15 +56,15 @@ without prompts; other settings and trust decisions remain machine-owned.
 **AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
 [ChatGPT desktop app](https://learn.chatgpt.com/docs/app) (includes Codex; `macOS Apple Silicon`) &middot;
 [claude-code](https://github.com/anthropics/claude-code) &middot;
-[apm](https://microsoft.github.io/apm/) (agent package manager; official prebuilt release, not in nixpkgs) &middot;
+[apm](https://microsoft.github.io/apm/) (agent package manager; from numtide/llm-agents.nix, not in nixpkgs) &middot;
 [agent-access](https://github.com/bitwarden/agent-access) (Bitwarden credential broker for agents; official prebuilt release, not in nixpkgs) &middot;
 [bitwarden-cli](https://bitwarden.com/help/cli/) (vault backing agent-access) &middot;
-[claude-desktop](https://claude.ai/download) &middot;
+[claude-desktop](https://claude.ai/download) (from numtide/llm-agents.nix) &middot;
 claude-session-registry (local: records live Claude Code conversations, replays them into zellij tabs and attaches each session in a kitty tab) &middot;
-[ccstatusline](https://github.com/sirmalloc/ccstatusline) (Claude Code status line formatter; prebuilt npm release, not in nixpkgs) &middot;
+[ccstatusline](https://github.com/sirmalloc/ccstatusline) (Claude Code status line formatter; from numtide/llm-agents.nix, not in nixpkgs) &middot;
 [pi](https://pi.dev/) (minimal coding agent harness; prebuilt npm release, not in nixpkgs) &middot;
 [paperclip](https://paperclip.ing) (open-source control plane for managing teams of AI agents; from numtide/llm-agents.nix, not in nixpkgs) &middot;
-[orca](https://github.com/stablyai/orca) `macOS` (ADE for running parallel coding agents; official prebuilt DMG, not in nixpkgs)
+[orca](https://github.com/stablyai/orca) (ADE for running parallel coding agents; from numtide/llm-agents.nix, not in nixpkgs)
 
 **Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
 [zellij](https://zellij.dev/) &middot;

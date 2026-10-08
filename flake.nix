@@ -12,26 +12,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    flake-utils.url = "github:numtide/flake-utils";
-
-    claude-desktop = {
-      url = "github:k3d3/claude-desktop-linux-flake";
-      # Intentionally *not* following our nixpkgs: this flake's build recipe
-      # still references `nodePackages.asar`, which nixpkgs removed on
-      # 2026-03-03. Letting it use its own pinned (older) nixpkgs keeps the
-      # Linux build working at the cost of an extra nixpkgs in the closure.
-      inputs.flake-utils.follows = "flake-utils";
-    };
-
     pi = {
       url = "github:lukasl-dev/pi.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Source of prebuilt AI-agent packages that nixpkgs doesn't carry (e.g.
-    # paperclip). Intentionally *not* following our nixpkgs: its packages are
-    # built against its own nixpkgs-unstable pin and cached on
-    # cache.numtide.com, which only hits when the revisions match.
+    # Source of prebuilt AI-agent packages that nixpkgs doesn't carry or
+    # carries late (apm, ccstatusline, claude-desktop, orca, paperclip).
+    # Intentionally *not* following our nixpkgs: its packages are built
+    # against its own nixpkgs-unstable pin and cached on cache.numtide.com,
+    # which only hits when the revisions match.
     llm-agents.url = "github:numtide/llm-agents.nix";
   };
   outputs =
@@ -39,7 +29,6 @@
       nixpkgs,
       nixpkgs-unstable,
       home-manager,
-      claude-desktop,
       pi,
       llm-agents,
       ...
@@ -60,17 +49,13 @@
       forAllSystems = lib.genAttrs systems;
       localPackagesOverlay = final: _prev: {
         clash-verge-rev-darwin = final.callPackage ./pkgs/clash-verge-rev-darwin { };
-        claude-desktop-darwin = final.callPackage ./pkgs/claude-desktop-darwin { };
         pulsar-darwin = final.callPackage ./pkgs/pulsar-darwin { };
         obs-studio-darwin = final.callPackage ./pkgs/obs-studio-darwin { };
         jetbrains-air-darwin = final.callPackage ./pkgs/jetbrains-air-darwin { };
         ego-lite-darwin = final.callPackage ./pkgs/ego-lite-darwin { };
         claude-session-registry = final.callPackage ./pkgs/claude-session-registry { };
-        apm = final.callPackage ./pkgs/apm { };
         agent-access = final.callPackage ./pkgs/agent-access { };
-        ccstatusline = final.callPackage ./pkgs/ccstatusline { };
         cida-darwin = final.callPackage ./pkgs/cida-darwin { };
-        orca-darwin = final.callPackage ./pkgs/orca-darwin { };
         # from unstable: stable's albert (33.x) predates the source layout
         # pkgs/albert-darwin's patches target (35.x)
         albert-darwin =
@@ -114,34 +99,25 @@
       mkHomeConfiguration =
         system:
         let
-          isLinux = lib.elem system [
-            "x86_64-linux"
-            "aarch64-linux"
-          ];
           isDarwin = lib.hasSuffix "darwin" system;
           homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
-          claudeDesktopPackage =
-            if (isLinux && builtins.hasAttr system claude-desktop.packages) then
-              claude-desktop.packages.${system}.claude-desktop
-            else
-              null;
           # llm-agents.nix only builds for x86_64-linux, aarch64-linux and
           # aarch64-darwin; on x86_64-darwin it has no packages at all.
-          paperclipPackage =
-            if
-              builtins.hasAttr system llm-agents.packages
-              && builtins.hasAttr "paperclip" llm-agents.packages.${system}
-            then
-              llm-agents.packages.${system}.paperclip
-            else
-              null;
+          llmAgentsPackages = lib.optionals (llm-agents.packages ? ${system}) (
+            lib.attrVals [
+              "apm"
+              "ccstatusline"
+              "claude-desktop"
+              "orca"
+              "paperclip"
+            ] llm-agents.packages.${system}
+          );
         in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
           extraSpecialArgs = {
             inherit
-              claudeDesktopPackage
-              paperclipPackage
+              llmAgentsPackages
               username
               homeDirectory
               ;

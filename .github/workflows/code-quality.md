@@ -122,10 +122,10 @@ Two things to get right:
   A transitive node belongs to whichever flake pulled it in and usually cannot
   be moved without updating that flake.
 - **Read `flake.nix` before reporting a transitive nixpkgs.** The
-  `claude-desktop` input deliberately does not follow this repo's nixpkgs,
-  because its build recipe still calls `nodePackages.asar`, which nixpkgs
-  removed on 2026-03-03. That node being old is what keeps the Linux build
-  working. Do not report a pin whose comment explains why it is pinned.
+  `llm-agents` input deliberately does not follow this repo's nixpkgs, so its
+  packages keep hitting cache.numtide.com. That node lagging this repo's
+  nixpkgs is expected. Do not report a pin whose comment explains why it is
+  pinned.
 
 ## What to Create
 
