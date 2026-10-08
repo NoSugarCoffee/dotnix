@@ -3,15 +3,12 @@
   stdenvNoCC,
   fetchurl,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+let
+  pin = import ../release-pin.nix { inherit lib fetchurl; } ./pin.json stdenvNoCC.hostPlatform.system;
+in
+stdenvNoCC.mkDerivation {
   pname = "cida";
-  version = "1.5.1";
-  build = "211";
-
-  src = fetchurl {
-    url = "https://github.com/Xuanwo/cida/releases/download/v${finalAttrs.version}/Cida-${finalAttrs.version}-${finalAttrs.build}.dmg";
-    hash = "sha256-y4goaPUfh8KgRW+MtV+IO+s+hcGkQKpUe6p/3bBH6P4=";
-  };
+  inherit (pin) version src;
 
   sourceRoot = ".";
 
@@ -42,6 +39,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://github.com/Xuanwo/cida";
     license = lib.licenses.asl20;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-    platforms = [ "aarch64-darwin" ];
+    inherit (pin) platforms;
   };
-})
+}

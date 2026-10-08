@@ -1,4 +1,4 @@
-name: Update darwin packages
+name: Update release pins
 
 on:
   schedule:
@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: darwin-packages-update
+  group: release-pins-update
   cancel-in-progress: false
 
 jobs:
@@ -25,17 +25,17 @@ jobs:
       - id: bump
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash .github/workflows/scripts/update_darwin_packages.sh
+        run: python3 .github/workflows/scripts/release_pins.py
       - id: pr
         if: steps.bump.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.UPDATE_PAT }}
-          branch: chore/darwin-packages-update
-          title: "chore(pkgs): bump darwin DMG pins"
+          branch: chore/release-pins-update
+          title: "chore(pkgs): bump release pins"
           body: ${{ steps.bump.outputs.summary }}
           commit-message: |
-            chore(pkgs): bump darwin DMG pins
+            chore(pkgs): bump release pins
 
             ${{ steps.bump.outputs.summary }}
           labels: automation

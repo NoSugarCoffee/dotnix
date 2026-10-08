@@ -2,8 +2,7 @@
 # official prebuilt macOS app from upstream's GitHub release zip -- same
 # approach as clash-verge-rev-darwin, but a .zip instead of a .dmg since
 # that's all upstream publishes per-arch. Only the Apple Silicon build is
-# packaged here; add an x86_64-darwin hash (nix store prefetch-file the
-# Intel.Mac zip from the same release) if that arch is ever needed.
+# packaged here.
 {
   lib,
   stdenvNoCC,
@@ -11,14 +10,12 @@
   makeWrapper,
   unzip,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+let
+  pin = import ../release-pin.nix { inherit lib fetchurl; } ./pin.json stdenvNoCC.hostPlatform.system;
+in
+stdenvNoCC.mkDerivation {
   pname = "pulsar";
-  version = "1.132.1";
-
-  src = fetchurl {
-    url = "https://github.com/pulsar-edit/pulsar/releases/download/v${finalAttrs.version}/Silicon.Mac.Pulsar-${finalAttrs.version}-arm64-mac.zip";
-    hash = "sha256-y7WjrOD2Kn67zgqwFH7MhHMPnLTihEvqdrTSVvU58tY=";
-  };
+  inherit (pin) version src;
 
   nativeBuildInputs = [
     makeWrapper
@@ -54,6 +51,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://pulsar-edit.dev/";
     license = lib.licenses.mit;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-    platforms = [ "aarch64-darwin" ];
+    inherit (pin) platforms;
   };
-})
+}

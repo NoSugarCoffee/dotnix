@@ -1,24 +1,21 @@
 # JetBrains Air (agentic development environment) isn't in nixpkgs, so this
 # repacks the official prebuilt macOS app from JetBrains' DMG -- same approach
 # as claude-desktop-darwin. Air is still a preview product: JetBrains ships
-# per-arch DMGs and prunes older preview builds from the CDN, so the version
-# needs bumping fairly often. New version + hash come from
-# `curl -s 'https://data.services.jetbrains.com/products?code=AIR'`, whose
-# first release entry carries both the macos_aarch64 link and its checksum.
+# per-arch DMGs and prunes older preview builds from the CDN, so pin.json
+# needs bumping fairly often; release_pins.py follows the JetBrains products
+# API for it.
 {
   lib,
   stdenvNoCC,
   fetchurl,
   undmg,
 }:
-stdenvNoCC.mkDerivation (finalAttrs: {
+let
+  pin = import ../release-pin.nix { inherit lib fetchurl; } ./pin.json stdenvNoCC.hostPlatform.system;
+in
+stdenvNoCC.mkDerivation {
   pname = "jetbrains-air";
-  version = "262.579.44";
-
-  src = fetchurl {
-    url = "https://download.jetbrains.com/air/installers/macos_aarch64/Air-${finalAttrs.version}-aarch64.dmg";
-    hash = "sha256-dbYfKKYZ4au7mlXs8lBmSpxnDzJfS7KiEtvbbanG4fk=";
-  };
+  inherit (pin) version src;
 
   nativeBuildInputs = [ undmg ];
   sourceRoot = ".";
@@ -42,6 +39,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://air.dev/";
     license = lib.licenses.unfree;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-    platforms = [ "aarch64-darwin" ];
+    inherit (pin) platforms;
   };
-})
+}
