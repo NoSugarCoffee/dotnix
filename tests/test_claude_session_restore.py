@@ -4,22 +4,19 @@ from __future__ import annotations
 
 import importlib.util
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
-SOURCE = (
-    Path(__file__).resolve().parents[1]
-    / "pkgs"
-    / "claude-session-registry"
-    / "restore.py"
-)
-_spec = importlib.util.spec_from_file_location("claude_session_restore", SOURCE)
+PACKAGE = Path(__file__).resolve().parents[1] / "pkgs" / "claude-session-registry"
+sys.path.insert(0, str(PACKAGE))
+_spec = importlib.util.spec_from_file_location("claude_session_restore", PACKAGE / "restore.py")
 restore = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(restore)
+import registry  # noqa: E402
 
-
-def conversation(cwd: str, zellij_session: str = "") -> restore.Conversation:
-    return restore.Conversation(
+def conversation(cwd: str, zellij_session: str = "") -> registry.Conversation:
+    return registry.Conversation(
         session_id="069d51bc-ff63-4183-912e-99640196f2bd",
         cwd=Path(cwd),
         transcript=Path("/dev/null"),
@@ -34,11 +31,11 @@ class TargetSessionTests(unittest.TestCase):
 
     def test_synthesized_name_fits_the_socket_path_budget(self):
         target = conversation("/Users/liangliangdai").target_session
-        self.assertLessEqual(len(target), restore.SYNTHESIZED_NAME_LIMIT)
+        self.assertLessEqual(len(target), registry.SYNTHESIZED_NAME_LIMIT)
 
     def test_long_directory_name_is_truncated_to_the_budget(self):
         target = conversation("/Users/x/a-very-long-project-directory-name")
-        self.assertLessEqual(len(target), restore.SYNTHESIZED_NAME_LIMIT)
+        self.assertLessEqual(len(target), registry.SYNTHESIZED_NAME_LIMIT)
 
     def test_directories_sharing_a_basename_get_distinct_names(self):
         first = conversation("/Users/x/one/shared-basename").target_session
