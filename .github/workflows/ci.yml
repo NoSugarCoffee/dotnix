@@ -64,7 +64,7 @@ jobs:
               run statix     statix check .
               run deadnix    deadnix --fail .
               run nixfmt     nixfmt --check $(git ls-files "*.nix")
-              run ruff       ruff check pkgs/claude-session-registry
+              run ruff       ruff check $(git ls-files "*.py")
               run shellcheck shellcheck scripts/bootstrap-macos.sh \
                 $(git ls-files ".github/workflows/scripts/*.sh")
 
