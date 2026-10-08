@@ -1,11 +1,6 @@
-# Initial Codex settings. home-manager copies this to ~/.codex/config.toml only
-# when that file doesn't exist yet. On every switch, it also syncs the model,
-# approval, and sandbox settings below while preserving Codex's trust decisions
-# and other machine-owned settings.
+# Initial Codex settings, seeded into ~/.codex/config.toml only when that file
+# doesn't exist yet. The keys in managed.toml are synced on every switch.
 
-model = "gpt-6-sol"
-approval_policy = "never"
-sandbox_mode = "danger-full-access"
 file_opener = "cursor"
 
 [sandbox_workspace_write]

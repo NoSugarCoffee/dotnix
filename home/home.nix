@@ -133,38 +133,22 @@ in
         "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
     };
   };
-  # Codex writes project trust decisions to ~/.codex/config.toml, so it must
-  # remain a regular writable file. Seed it on a fresh machine, then sync only
-  # the managed model, approval, and sandbox settings on every switch. Keep all
-  # other settings, including [projects."<path>"] entries, machine-owned.
+  # Codex and Claude Code both write their own settings files (trust
+  # decisions, /config, plugin toggles), so neither can be a store symlink.
+  # managed_settings.py seeds the file on a fresh machine and resets only the
+  # declared keys on every switch; everything else stays machine-owned.
   # Ordered after linkGeneration so an old store symlink is already gone.
-  home.activation.codexHomeDir = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+  home.activation.codexManagedSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.codex
     $DRY_RUN_CMD chmod 700 $HOME/.codex
-    if [ ! -e "$HOME/.codex/config.toml" ] && [ ! -L "$HOME/.codex/config.toml" ]; then
-      $DRY_RUN_CMD install -m 600 ${./codex/config.toml} "$HOME/.codex/config.toml"
-    fi
+    $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${./managed_settings.py} \
+      --format toml --managed ${./codex/managed.toml} --seed ${./codex/config.toml} \
+      --mode 600 "$HOME/.codex/config.toml"
   '';
-  home.activation.codexManagedSettings = lib.hm.dag.entryAfter [ "codexHomeDir" ] ''
-    $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${./codex/merge-config.py} \
-      ${./codex/config.toml} "$HOME/.codex/config.toml"
-  '';
-  # Claude Code writes settings.json itself (/config, plugin toggles), so it
-  # can't be a read-only store symlink. Instead the managed subset is merged
-  # in on every switch: managed keys reset to their declared values, every
-  # other key (hooks, plugins, /config tweaks) is preserved. The file stays
-  # a normal writable file owned by the machine.
   home.activation.claudeCodeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    claudeSettings="$HOME/.claude/settings.json"
-    $DRY_RUN_CMD mkdir -p "$HOME/.claude"
-    if [ -f "$claudeSettings" ]; then
-      ${pkgs.jq}/bin/jq -s '.[0] * .[1]' "$claudeSettings" ${claudeManagedSettings} > "$claudeSettings.hm-tmp" \
-        && $DRY_RUN_CMD mv "$claudeSettings.hm-tmp" "$claudeSettings"
-      rm -f "$claudeSettings.hm-tmp"
-    else
-      $DRY_RUN_CMD cp ${claudeManagedSettings} "$claudeSettings"
-      $DRY_RUN_CMD chmod 644 "$claudeSettings"
-    fi
+    $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${./managed_settings.py} \
+      --format json --managed ${claudeManagedSettings} \
+      --mode 644 "$HOME/.claude/settings.json"
   '';
   launchd.agents = {
     # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
