@@ -1,0 +1,21 @@
+tests/test_managed_settings.py
+  s_e65fba65e21e76::t_06546d4ed8e589 1-131
+home/managed_settings.py
+  s_e65fba65e21e76::t_aa4d2832d8de6a 1-26,28-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "55e9ee7954d4e4c5e4e9dd35aecd17e40d998260",
+  "prompts": {},
+  "sessions": {
+    "s_e65fba65e21e76": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0788637-7538-4c70-a08c-3b64b173f162",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
