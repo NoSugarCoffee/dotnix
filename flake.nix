@@ -53,7 +53,6 @@
         obs-studio-darwin = final.callPackage ./pkgs/obs-studio-darwin { };
         jetbrains-air-darwin = final.callPackage ./pkgs/jetbrains-air-darwin { };
         ego-lite-darwin = final.callPackage ./pkgs/ego-lite-darwin { };
-        claude-session-registry = final.callPackage ./pkgs/claude-session-registry { };
         agent-access = final.callPackage ./pkgs/agent-access { };
         cida-darwin = final.callPackage ./pkgs/cida-darwin { };
         # from unstable: stable's albert (33.x) predates the source layout

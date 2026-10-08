@@ -62,7 +62,6 @@ in
       [
         pkgs.codex
         pkgs.claude-code
-        pkgs.claude-session-registry
         pkgs.pi-coding-agent
         pkgs.agent-access
         pkgs.bitwarden-cli
@@ -461,8 +460,7 @@ in
         # with ppid 1, so a pane's process is a child of that server rather than
         # of kitty.app, and macOS attributes permissions (Screen Recording) to
         # the server -- which, being a bare nix-store binary, can never hold a
-        # grant. Start it per window with `zellij` / `zellij attach`;
-        # claude-session-registry attaches explicitly and does not rely on this.
+        # grant. Start it per window with `zellij` / `zellij attach`.
         # kitty runs one process for every window it owns, so session-level
         # activation can only raise "some" kitty window, not necessarily the
         # right one. Remote control on a fixed socket lets callers target the
