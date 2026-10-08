@@ -1,0 +1,23 @@
+pkgs/release-pin.nix
+  s_e65fba65e21e76::t_5371641d03d357 1-25
+tests/test_release_pins.py
+  s_e65fba65e21e76::t_b391db91cec2fd 1-211
+.github/workflows/scripts/release_pins.py
+  s_e65fba65e21e76::t_0a5baba1bff5b1 1-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "53a2d19eebf73cf4054f6de42a10c6860e7d036f",
+  "prompts": {},
+  "sessions": {
+    "s_e65fba65e21e76": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d0788637-7538-4c70-a08c-3b64b173f162",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
