@@ -1,0 +1,20 @@
+home/home.nix
+  s_016f350f46217f::t_60c6ccb8bb467d 38-39
+  s_016f350f46217f::t_30f35cc143b787 45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "7050a46d4efb852b53d89a4c7965480cab475fb3",
+  "prompts": {},
+  "sessions": {
+    "s_016f350f46217f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e48a6e28-e300-49c9-8ce5-f16bcf1cafb6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
