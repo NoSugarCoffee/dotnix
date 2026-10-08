@@ -362,6 +362,11 @@ in
       true
     )
   '';
+  home.activation.piManagedSettings = lib.hm.dag.entryAfter [ "piPackages" ] ''
+    $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${./managed_settings.py} \
+      --format json --managed ${./pi/managed.json} \
+      --mode 644 "$HOME/.pi/agent/settings.json"
+  '';
   # asdf itself comes from home.packages; this exposes the shims it installs
   # into (~/.asdf/shims) so `go`/`node`/`python`/`java` resolve without
   # extra shell config.
