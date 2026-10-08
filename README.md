@@ -47,72 +47,13 @@ just switch
 
 ## 📦 Managed packages
 
-Cross-platform unless tagged. Codex owns `~/.codex/config.toml` (it persists
-per-folder trust decisions there). It is seeded from
-[`home/codex/config.toml`](home/codex/config.toml) when missing. Each switch
-syncs the model, approval, and sandbox settings in
-[`home/codex/managed.toml`](home/codex/managed.toml) to allow full access
-without prompts; other settings and trust decisions remain machine-owned.
-
-**AI tooling** &nbsp; [codex](https://github.com/openai/codex) &middot;
-[ChatGPT desktop app](https://learn.chatgpt.com/docs/app) (includes Codex; `macOS Apple Silicon`) &middot;
-[claude-code](https://github.com/anthropics/claude-code) &middot;
-[apm](https://microsoft.github.io/apm/) (agent package manager; from numtide/llm-agents.nix, not in nixpkgs) &middot;
-[agent-access](https://github.com/bitwarden/agent-access) (Bitwarden credential broker for agents; official prebuilt release, not in nixpkgs) &middot;
-[bitwarden-cli](https://bitwarden.com/help/cli/) (vault backing agent-access) &middot;
-[claude-desktop](https://claude.ai/download) (from numtide/llm-agents.nix) &middot;
-claude-session-registry (local: records live Claude Code conversations, replays them into zellij tabs and attaches each session in a kitty tab) &middot;
-[ccstatusline](https://github.com/sirmalloc/ccstatusline) (Claude Code status line formatter; from numtide/llm-agents.nix, not in nixpkgs) &middot;
-[pi](https://pi.dev/) (minimal coding agent harness; prebuilt npm release, not in nixpkgs) &middot;
-[paperclip](https://paperclip.ing) (open-source control plane for managing teams of AI agents; from numtide/llm-agents.nix, not in nixpkgs) &middot;
-[orca](https://github.com/stablyai/orca) (ADE for running parallel coding agents; from numtide/llm-agents.nix, not in nixpkgs)
-
-**Terminals & shells** &nbsp; [kitty](https://sw.kovidgoyal.net/kitty/) &middot;
-[zellij](https://zellij.dev/) &middot;
-[zoxide](https://github.com/ajeetdsouza/zoxide) &middot;
-[yazi](https://github.com/sxyazi/yazi) (terminal file manager; `y` cds the shell to wherever you left it) &middot;
-[nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions)
-
-**Editors & IDEs** &nbsp; [intellij-idea-ultimate](https://www.jetbrains.com/idea/) &middot;
-[jetbrains-air](https://air.dev/) `macOS` &middot;
-[cursor](https://cursor.com/) &middot;
-[pulsar](https://pulsar-edit.dev/) `macOS`
-
-**Version control** &nbsp; [git](https://git-scm.com/) &middot;
-[git-open](https://github.com/paulirish/git-open) (opens the current repository, branch, pull request, or issue in a browser via `git open`) &middot;
-[gh](https://cli.github.com/) &middot;
-[glab](https://gitlab.com/gitlab-org/cli)
-
-**Containers** &nbsp; [docker](https://www.docker.com/) (client only) &middot;
-[docker-compose](https://docs.docker.com/compose/) &middot;
-[colima](https://github.com/abiosoft/colima) `macOS` (runs the Linux VM the daemon lives in — see Notes)
-
-**Runtimes** &nbsp; [asdf](https://asdf-vm.com/) &middot;
-go &middot; nodejs &middot;
-[pnpm](https://pnpm.io/) &middot;
-java (Temurin JDK & JRE) &middot; maven &middot;
-[python3](https://www.python.org/) &middot;
-[ipython](https://ipython.org/) &middot;
-[pip](https://pip.pypa.io/)
-
-**Browsers** &nbsp; [google-chrome](https://www.google.com/chrome/) `macOS` &middot;
-[ego-lite](https://github.com/citrolabs/ego-lite) `macOS` (browser that shares your logged-in state with AI agents; provides the `ego-browser` automation CLI, official prebuilt DMG, not in nixpkgs)
-
-**Launchers** &nbsp; [albert](https://albertlauncher.github.io/) `macOS`
-
-**Clipboard** &nbsp; [maccy](https://maccy.app/) `macOS` &middot;
-[copyq](https://hluk.github.io/CopyQ/) `Linux`
-
-**Screenshots & recording** &nbsp; [macshot](https://github.com/sw33tLie/macshot) `macOS` &middot;
-[obs-studio](https://obsproject.com/)
-
-**Input** &nbsp; [scroll-reverser](https://pilotmoon.com/scrollreverser/) `macOS`
-
-**Networking** &nbsp; [clash-verge-rev](https://www.clashverge.dev/)
-
-**Utilities** &nbsp; [just](https://just.systems/) &middot;
-[lark-cli](https://www.npmjs.com/package/@larksuite/cli) &middot;
-[cida](https://github.com/Xuanwo/cida) `macOS` (translate and polish text anywhere with an LLM; official notarized release DMG, not in nixpkgs)
+| | 🍎 🐧 Both | 🍎 macOS only | 🐧 Linux only |
+|---|---|---|---|
+| **AI** | [codex](https://github.com/openai/codex) · [claude-code](https://github.com/anthropics/claude-code) · [claude-desktop](https://claude.ai/download) · [pi](https://pi.dev/) · [apm](https://microsoft.github.io/apm/) · [ccstatusline](https://github.com/sirmalloc/ccstatusline) · [paperclip](https://paperclip.ing) · [orca](https://github.com/stablyai/orca) · [agent-access](https://github.com/bitwarden/agent-access) · [bitwarden-cli](https://bitwarden.com/help/cli/) | [ChatGPT](https://learn.chatgpt.com/docs/app) | — |
+| **Terminal** | [kitty](https://sw.kovidgoyal.net/kitty/) · [zellij](https://zellij.dev/) · [zoxide](https://github.com/ajeetdsouza/zoxide) · [yazi](https://github.com/sxyazi/yazi) · [nix-zsh-completions](https://github.com/nix-community/nix-zsh-completions) | — | — |
+| **Editors** | [intellij-idea-ultimate](https://www.jetbrains.com/idea/) · [cursor](https://cursor.com/) | [jetbrains-air](https://air.dev/) · [pulsar](https://pulsar-edit.dev/) | — |
+| **Dev** | [git](https://git-scm.com/) · [git-open](https://github.com/paulirish/git-open) · [gh](https://cli.github.com/) · [glab](https://gitlab.com/gitlab-org/cli) · [docker](https://www.docker.com/) (client) · [docker-compose](https://docs.docker.com/compose/) · [asdf](https://asdf-vm.com/) (go, nodejs, java, maven) · [pnpm](https://pnpm.io/) · [python3](https://www.python.org/) (ipython, pip) · [just](https://just.systems/) · [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | [colima](https://github.com/abiosoft/colima) | — |
+| **Desktop** | [obs-studio](https://obsproject.com/) · [clash-verge-rev](https://www.clashverge.dev/) | [google-chrome](https://www.google.com/chrome/) · [ego-lite](https://github.com/citrolabs/ego-lite) · [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [macshot](https://github.com/sw33tLie/macshot) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) | [copyq](https://hluk.github.io/CopyQ/) |
 
 ## 🔧 Commands
 
@@ -136,18 +77,16 @@ let
 Everything else (`homeConfigurations` attribute names, `home.username`,
 `homeDirectory`, CI `USERNAME`, the bootstrap script's flake target)
 reads from there directly or via `nix eval --raw .#username`. Fork the
-repo and change just that string, then update the git identity in
-`home/home.nix` (`programs.git.settings.user.name` / `.email`) — that's
-the whole rebranding step.
+repo and change just that string — that's the whole rebranding step.
 
 ## 📝 Notes
 
-- **zsh is managed** (`programs.zsh.enable`) so `home.sessionPath` (which puts `~/.asdf/shims` on `PATH`) reaches an interactive shell. Move any hand-written `~/.zshrc` aside before the first switch — home-manager refuses to overwrite it. Since the generated `~/.zshrc` is a store symlink and can't be edited, an untracked `~/.zshrc-local` is sourced last if it exists: put machine-specific or non-public shell config there rather than in this repo.
-- **git config is deliberately unmanaged.** git is installed, but `~/.gitconfig` is hand-maintained. Identity has to switch per checkout (personal vs employer), and git expresses that only through `includeIf`, which takes a *path* — so a second machine-local file is unavoidable. Generating half the chain from the store while the other half stayed hand-written was worse than owning none of it, not least because a store symlink means a rebuild to fix a typo in an email address.
-- **asdf owns Go / Node / Java / Maven**, each pinned to an explicit version in `home/home.nix` (best-effort — network hiccups warn, don't abort). Nothing tracks "latest": a switch with the pinned versions already installed makes no network calls, and moving a version is a one-line bump. asdf-java uses vendor-prefixed versions rather than plain semver. Per-project pinning via `.tool-versions`.
-- **Python is from nixpkgs, not asdf**: asdf compiles CPython from source (needs Xcode CLT on macOS) and picks the experimental free-threaded variant as "latest".
-- **Docker on macOS runs on colima, not Docker Desktop.** Only the `docker` client and `docker-compose` are installed; the daemon lives inside a Linux VM that colima boots through Apple's Virtualization framework, entirely in user space — no privileged helper, no `sudo`, nothing outside the nix store (standalone home-manager cannot install a system LaunchDaemon anyway). A `launchd` agent runs `colima start` at login and colima points `docker`'s default context at the VM's socket, so `docker` just works; check with `colima status`. Compose is installed both ways — as `docker-compose` and, via a `~/.docker/cli-plugins` symlink, as the `docker compose` subcommand (the docker client only looks for plugins there, never in the nix profile). The VM's size is colima's own state, not nix's — change it with `colima stop && colima start --cpu 4 --memory 8`. The first start downloads a VM image, so it is slow once; the agent inherits the Clash proxy env for that. On Linux the daemon is a *system* service and out of scope here (NixOS: `virtualisation.docker.enable`) — the client still works against a remote `DOCKER_HOST`.
-- **Mainland-China mirrors**: `scripts/bootstrap-macos.sh` writes SJTU/TUNA/USTC substituters to `/etc/nix/nix.custom.conf` and restarts the daemon before running the switch. `cache.nixos.org` stays as the fallback. Verify with `nix config show | grep substitut`.
+- **zsh is managed.** Move an existing `~/.zshrc` aside before the first switch; machine-local config goes in an untracked `~/.zshrc-local`.
+- **git config is not.** Per-checkout identity needs `includeIf` paths, so `~/.gitconfig` is hand-written.
+- **Codex and Claude Code settings stay writable.** A switch seeds them if missing and resets only the keys declared under `home/codex/` and in `home/claude/settings.nix`.
+- **asdf pins Go / Node / Java / Maven** to explicit versions in `home/home.nix`. Python comes from nixpkgs instead, since asdf compiles it from source.
+- **Docker on macOS is colima.** A launchd agent starts the VM at login; resize it with `colima stop && colima start --cpu 4 --memory 8`. On Linux the daemon is a system service, out of scope here.
+- **China mirrors.** `scripts/bootstrap-macos.sh` adds SJTU/TUNA/USTC substituters; check with `nix config show | grep substitut`.
 
 ## 📄 License
 
