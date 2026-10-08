@@ -35,13 +35,14 @@ let
   # Extension sources that must not linger on the machine, either because they
   # were superseded or because they were dropped outright: machines provisioned
   # before the switch to @injaneity/pi-computer-use still have the unscoped
-  # package, remote-pi was removed deliberately, and pi-zellij-tab-namer was
-  # superseded by @normful/pi-auto-name (it called modelRegistry.getApiKey,
+  # package, remote-pi and pi-mcp-adapter were removed deliberately, and
+  # pi-zellij-tab-namer was superseded by @normful/pi-auto-name (it called modelRegistry.getApiKey,
   # removed in current Pi, so it silently never renamed anything). `pi remove`
   # drops them from ~/.pi/agent/settings.json.
   piRemovedExtensions = [
     "npm:pi-computer-use"
     "npm:remote-pi"
+    "npm:pi-mcp-adapter"
     "npm:pi-zellij-tab-namer"
   ];
   # Claude Code's managed keys share the proxy settings declared here. Its
