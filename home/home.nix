@@ -88,42 +88,25 @@ in
         pkgs.code-cursor
       ]
       ++ llmAgentsPackages
-      # clash-verge-rev is Linux-only in nixpkgs; on darwin the local
-      # clash-verge-rev-darwin package (pkgs/clash-verge-rev-darwin) repacks
-      # the official prebuilt DMG instead.
-      ++ lib.optionals pkgs.stdenv.isLinux [
-        pkgs.copyq
+      ++ lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [
+        pkgs.chatgpt
         pkgs.clash-verge-rev
-        pkgs.obs-studio
-      ]
-      # pulsar is Linux-only in nixpkgs; pkgs/pulsar-darwin repacks the
-      # official prebuilt zip for macOS.
-      # obs-studio is Linux-only in nixpkgs; pkgs/obs-studio-darwin repacks
-      # the official DMG (its virtual camera extension can't install from a
-      # store path -- see the package for why).
-      # jetbrains.air doesn't exist in nixpkgs at all; pkgs/jetbrains-air-darwin
-      # repacks the official preview DMG.
-      # ego lite isn't in nixpkgs and is macOS-only upstream;
-      # pkgs/ego-lite-darwin repacks the official DMG and puts the bundled
-      # ego-browser CLI on PATH.
-      ++ lib.optionals pkgs.stdenv.isDarwin [
-        pkgs.google-chrome
         pkgs.clash-verge-rev-darwin
+        pkgs.copyq
         pkgs.maccy
         pkgs.macshot
+        pkgs.obs-studio
+        pkgs.obs-studio-darwin
         pkgs.pulsar-darwin
         pkgs.albert-darwin
         pkgs.scroll-reverser
-        pkgs.obs-studio-darwin
         pkgs.jetbrains-air-darwin
         pkgs.ego-lite-darwin
         pkgs.cida-darwin
-        pkgs.colima
       ]
-      # The official ChatGPT desktop app includes Codex and ships for Apple
-      # Silicon. Use unstable for a release after Codex joined the app.
-      ++ lib.optionals (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") [
-        pkgs.chatgpt
+      ++ lib.optionals pkgs.stdenv.isDarwin [
+        pkgs.google-chrome
+        pkgs.colima
       ];
     file = {
       "Applications/Google Chrome.app" = lib.mkIf pkgs.stdenv.isDarwin {
