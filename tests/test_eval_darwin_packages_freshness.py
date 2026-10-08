@@ -15,9 +15,7 @@ REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / ".github/workflows/scripts/eval_darwin_packages_freshness.sh"
 PACKAGES = (
     "clash-verge-rev-darwin",
-    "claude-desktop-darwin",
     "ego-lite-darwin",
-    "orca-darwin",
     "cida-darwin",
 )
 MOCK_HASH = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
@@ -35,7 +33,7 @@ class EvalDarwinPackagesFreshnessTest(unittest.TestCase):
             if package == "cida-darwin":
                 text = re.sub(r'  version = "[^"]+";', '  version = "1.4.0";', text)
                 text = re.sub(r'  build = "[^"]+";', f'  build = "{cida_build}";', text)
-            if package in ("claude-desktop-darwin", "ego-lite-darwin"):
+            if package == "ego-lite-darwin":
                 text = re.sub(r'sha256-[^"\s]+', MOCK_HASH, text)
             target.write_text(text)
 
@@ -50,13 +48,11 @@ class EvalDarwinPackagesFreshnessTest(unittest.TestCase):
         bin_dir = work / "bin"
         bin_dir.mkdir()
         clash_version = re.search(r'  version = "([^"]+)";', (work / "pkgs/clash-verge-rev-darwin/default.nix").read_text()).group(1)
-        orca_version = re.search(r'  version = "([^"]+)";', (work / "pkgs/orca-darwin/default.nix").read_text()).group(1)
         gh = bin_dir / "gh"
         gh.write_text(
             "#!/bin/sh\n"
             'case "$*" in\n'
             f'  *clash-verge-rev/releases/latest*) echo v{clash_version} ;;\n'
-            f'  *stablyai/orca/releases/latest*) echo v{orca_version} ;;\n'
             '  *Xuanwo/cida/releases/latest*) cat "$CIDA_RELEASE_JSON" ;;\n'
             '  *) exit 1 ;;\n'
             'esac\n'
@@ -78,13 +74,13 @@ class EvalDarwinPackagesFreshnessTest(unittest.TestCase):
 
     def test_current_cida_release_needs_no_bump(self) -> None:
         result = self._run(cida_build="200")
-        self.assertEqual(result["packages_current"], 5)
+        self.assertEqual(result["packages_current"], 3)
         self.assertTrue(result["cida"]["current"])
         self.assertNotIn("cida", result["proposed"])
 
     def test_new_build_in_same_version_is_proposed(self) -> None:
         result = self._run(cida_build="199")
-        self.assertEqual(result["packages_current"], 4)
+        self.assertEqual(result["packages_current"], 2)
         self.assertFalse(result["cida"]["current"])
         self.assertEqual(
             result["proposed"]["cida"],
