@@ -3,9 +3,9 @@
     "type": "jetbrains",
     "code": "AIR"
   },
-  "version": "262.579.44",
+  "version": "262.1037.6",
   "url": "https://download.jetbrains.com/air/installers/macos_aarch64/Air-{version}-aarch64.dmg",
   "hash": {
-    "aarch64-darwin": "sha256-dbYfKKYZ4au7mlXs8lBmSpxnDzJfS7KiEtvbbanG4fk="
+    "aarch64-darwin": "sha256-XawUPmvvQBXRTSqLnVPkbgiR5ZRcnVetm9PRCNVyZ5E="
   }
 }
