@@ -110,7 +110,7 @@ in
       ];
     file = {
       "Applications/Google Chrome.app" = lib.mkIf pkgs.stdenv.isDarwin {
-        source = "${pkgs.google-chrome}/Applications/Google Chrome.app";
+        source = config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/${config.targets.darwin.copyApps.directory}/Google Chrome.app";
       };
       ".docker/cli-plugins/docker-compose".source =
         "${pkgs.docker-compose}/libexec/docker/cli-plugins/docker-compose";
@@ -367,6 +367,44 @@ in
       --format json --managed ${./pi/managed.json} \
       --mode 644 "$HOME/.pi/agent/settings.json"
   '';
+  home.activation.copyApps = lib.mkIf config.targets.darwin.copyApps.enable (
+    lib.mkForce (
+      lib.hm.dag.entryAfter [ "installPackages" "linkGeneration" ] ''
+        targetFolder=${lib.escapeShellArg config.targets.darwin.copyApps.directory}
+        markerFolder=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/copied-apps"}
+        sourceFolder=${
+          pkgs.buildEnv {
+            name = "home-manager-applications";
+            paths = config.home.packages;
+            pathsToLink = [ "/Applications" ];
+          }
+        }/Applications
+
+        run mkdir -p "$targetFolder" "$markerFolder"
+
+        for entry in "$sourceFolder"/*; do
+          name=$(basename "$entry")
+          storePath=$(readlink -f "$entry")
+          marker="$markerFolder/$name"
+          if [[ -d "$targetFolder/$name" && -f "$marker" && "$(< "$marker")" == "$storePath" ]]; then
+            continue
+          fi
+          echo "copying $name..." >&2
+          run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
+            --specials --delete --chmod=+w "$storePath/" "$targetFolder/$name"
+          [[ -v DRY_RUN ]] || printf '%s' "$storePath" > "$marker"
+        done
+
+        for existing in "$targetFolder"/*.app "$markerFolder"/*; do
+          name=$(basename "$existing")
+          if [[ -e "$existing" && ! -e "$sourceFolder/$name" ]]; then
+            echo "removing $name..." >&2
+            run rm -rf "$existing"
+          fi
+        done
+      ''
+    )
+  );
   # asdf itself comes from home.packages; this exposes the shims it installs
   # into (~/.asdf/shims) so `go`/`node`/`python`/`java` resolve without
   # extra shell config.
