@@ -168,6 +168,78 @@ class ReleasePinsTest(unittest.TestCase):
 
         self.assertEqual(release_pins.bump_all(self.pkgs, upstreams.http_get_json, upstreams.prefetch), [])
 
+    def _grok_pin(self, version: str = "0.68.1") -> dict[str, object]:
+        return {
+            "source": {
+                "type": "cursor-download",
+                "product": "sand",
+                "platform": {"aarch64-darwin": "darwin-arm64", "x86_64-darwin": "darwin-x64"},
+            },
+            "version": version,
+            "url": "https://downloads.cursor.com/grokbot/stable/{platform}/{version}/Grok_Bot_{version}{suffix}.dmg",
+            "suffix": {"aarch64-darwin": "", "x86_64-darwin": "_x64"},
+            "hash": {"aarch64-darwin": "sha256-old-arm", "x86_64-darwin": "sha256-old-x64"},
+        }
+
+    def _grok_feed(self, version: str) -> dict[str, object]:
+        def url(platform: str, suffix: str) -> str:
+            return f"https://downloads.cursor.com/grokbot/stable/{platform}/{version}/Grok_Bot_{version}{suffix}.dmg"
+
+        return {
+            "https://api2.cursor.sh/updates/api/download/stable/darwin-arm64/sand": {
+                "version": version,
+                "downloadUrl": url("darwin-arm64", ""),
+            },
+            "https://api2.cursor.sh/updates/api/download/stable/darwin-x64/sand": {
+                "version": version,
+                "downloadUrl": url("darwin-x64", "_x64"),
+            },
+        }
+
+    def test_cursor_download_feed_bumps_version_and_both_arch_hashes(self) -> None:
+        self.write_pin("grok-bot-darwin", self._grok_pin())
+        upstreams = FakeUpstreams(self._grok_feed("0.69.0"), {})
+
+        summaries = release_pins.bump_all(self.pkgs, upstreams.http_get_json, upstreams.prefetch)
+
+        pin = self.read_pin("grok-bot-darwin")
+        self.assertEqual(pin["version"], "0.69.0")
+        self.assertEqual(pin["hash"], {"aarch64-darwin": FRESH, "x86_64-darwin": FRESH})
+        self.assertEqual(
+            sorted(upstreams.prefetched),
+            [
+                "https://downloads.cursor.com/grokbot/stable/darwin-arm64/0.69.0/Grok_Bot_0.69.0.dmg",
+                "https://downloads.cursor.com/grokbot/stable/darwin-x64/0.69.0/Grok_Bot_0.69.0_x64.dmg",
+            ],
+        )
+        self.assertEqual(summaries, ["- `grok-bot-darwin`: 0.68.1 -> 0.69.0"])
+
+    def test_cursor_download_feed_at_the_pinned_version_downloads_nothing(self) -> None:
+        path = self.write_pin("grok-bot-darwin", self._grok_pin())
+        before = path.read_text()
+        upstreams = FakeUpstreams(self._grok_feed("0.68.1"), {})
+
+        summaries = release_pins.bump_all(self.pkgs, upstreams.http_get_json, upstreams.prefetch)
+
+        self.assertEqual(summaries, [])
+        self.assertEqual(upstreams.prefetched, [])
+        self.assertEqual(path.read_text(), before)
+
+    def test_cursor_download_feed_rejects_a_url_the_template_cannot_render(self) -> None:
+        path = self.write_pin("grok-bot-darwin", self._grok_pin())
+        before = path.read_text()
+        feed = self._grok_feed("0.69.0")
+        feed["https://api2.cursor.sh/updates/api/download/stable/darwin-arm64/sand"] = {
+            "version": "0.69.0",
+            "downloadUrl": "https://downloads.cursor.com/grokbot/stable/unexpected.dmg",
+        }
+        upstreams = FakeUpstreams(feed, {})
+
+        with self.assertRaises(release_pins.PinError):
+            release_pins.bump_all(self.pkgs, upstreams.http_get_json, upstreams.prefetch)
+        self.assertEqual(path.read_text(), before)
+        self.assertEqual(upstreams.prefetched, [])
+
     def test_jetbrains_source_follows_the_latest_build(self) -> None:
         self.write_pin("air", {
             "source": {"type": "jetbrains", "code": "AIR"},

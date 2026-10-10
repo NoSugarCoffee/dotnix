@@ -1,0 +1,20 @@
+{
+  "source": {
+    "type": "cursor-download",
+    "product": "sand",
+    "platform": {
+      "aarch64-darwin": "darwin-arm64",
+      "x86_64-darwin": "darwin-x64"
+    }
+  },
+  "version": "0.68.1",
+  "url": "https://downloads.cursor.com/grokbot/stable/{platform}/{version}/Grok_Bot_{version}{suffix}.dmg",
+  "suffix": {
+    "aarch64-darwin": "",
+    "x86_64-darwin": "_x64"
+  },
+  "hash": {
+    "aarch64-darwin": "sha256-fFaKxEl4D/nqjaJrZdEIORuROQZS6zgqaL5RxrL2X90=",
+    "x86_64-darwin": "sha256-HK6z+NNDZmsksy9ihOuP0h7RhVB6aDJtQEMn0zN1TKU="
+  }
+}
