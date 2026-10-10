@@ -1,2 +1,2 @@
-`c9e43a4665e97aa670f430a63688340149405b5e790b0ba3686cd3cd1c209e1c`
+`c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a`
 Defines shared and platform-specific Home Manager packages, Codex and merged Claude settings, zsh, session paths/proxy variables, macOS launchd agents, Nix GC, and best-effort asdf activation. Pi activation installs computer-use, browser-native, A2A, Kiro provider, and auto-name extensions, patches auto-name to skip plugin panes, and removes superseded sources only after desired extensions complete. Keeps git identity, ccstatusline settings, and selected Claude keys machine-owned; the managed Pi extension set now uses codemode-related configuration from home/pi/managed.json.
