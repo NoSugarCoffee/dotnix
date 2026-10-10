@@ -90,7 +90,6 @@ in
       ++ llmAgentsPackages
       ++ lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [
         pkgs.chatgpt
-        pkgs.grok-bot-darwin
         pkgs.clash-verge-rev
         pkgs.clash-verge-rev-darwin
         pkgs.copyq

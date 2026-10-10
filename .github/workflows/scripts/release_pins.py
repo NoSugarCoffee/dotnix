@@ -38,17 +38,7 @@ class UnversionedUrlSource:
     pass
 
 
-@dataclass(frozen=True)
-class CursorDownloadSource:
-    """Cursor's stable download feed. `product` is the feed id (Grok Bot is
-    still `sand`, the name it shipped under), and `platform` maps a nix
-    system to the feed's platform slug."""
-
-    product: str
-    platform: dict[str, str]
-
-
-Source = Union[GithubSource, JetbrainsSource, UnversionedUrlSource, CursorDownloadSource]
+Source = Union[GithubSource, JetbrainsSource, UnversionedUrlSource]
 
 
 @dataclass(frozen=True)
@@ -58,7 +48,6 @@ class Pin:
     vars: dict[str, str]
     url: str
     arch: dict[str, str] | None
-    suffix: dict[str, str] | None
     hash: dict[str, str]
 
 
@@ -66,8 +55,6 @@ class Pin:
 class Release:
     version: str
     vars: dict[str, str]
-    # When set, each rendered URL must equal the upstream's own download URL.
-    urls: dict[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -89,42 +76,27 @@ def parse_pin(raw: dict[str, object], where: str) -> Pin:
         source = JetbrainsSource(code=_expect(source_raw, "code", str, where))
     elif kind == "unversioned-url":
         source = UnversionedUrlSource()
-    elif kind == "cursor-download":
-        platform = _string_map(_expect(source_raw, "platform", dict, where), f"{where}: source.platform")
-        if not platform:
-            raise PinError(f"{where}: source.platform must name at least one system")
-        source = CursorDownloadSource(product=_expect(source_raw, "product", str, where), platform=platform)
     else:
         raise PinError(f"{where}: unknown source.type {kind!r}")
     arch = raw.get("arch")
-    suffix = raw.get("suffix")
-    parsed_hash = _string_map(_expect(raw, "hash", dict, where), f"{where}: hash")
-    parsed_suffix = None if suffix is None else _string_map(suffix, f"{where}: suffix")
-    if parsed_suffix is not None and set(parsed_suffix) != set(parsed_hash):
-        raise PinError(f"{where}: suffix systems must match hash systems")
-    if isinstance(source, CursorDownloadSource) and set(source.platform) != set(parsed_hash):
-        raise PinError(f"{where}: source.platform systems must match hash systems")
     return Pin(
         source=source,
         version=_expect(raw, "version", str, where),
         vars=_string_map(raw.get("vars", {}), f"{where}: vars"),
         url=_expect(raw, "url", str, where),
         arch=None if arch is None else _string_map(arch, f"{where}: arch"),
-        suffix=parsed_suffix,
-        hash=parsed_hash,
+        hash=_string_map(_expect(raw, "hash", dict, where), f"{where}: hash"),
     )
 
 
 def dump_pin(pin: Pin) -> str:
-    source: dict[str, object]
+    source: dict[str, str]
     if isinstance(pin.source, GithubSource):
         source = {"type": "github", "repo": pin.source.repo}
         if pin.source.asset is not None:
             source["asset"] = pin.source.asset
     elif isinstance(pin.source, JetbrainsSource):
         source = {"type": "jetbrains", "code": pin.source.code}
-    elif isinstance(pin.source, CursorDownloadSource):
-        source = {"type": "cursor-download", "product": pin.source.product, "platform": pin.source.platform}
     else:
         source = {"type": "unversioned-url"}
     doc: dict[str, object] = {"source": source, "version": pin.version}
@@ -133,8 +105,6 @@ def dump_pin(pin: Pin) -> str:
     doc["url"] = pin.url
     if pin.arch is not None:
         doc["arch"] = pin.arch
-    if pin.suffix is not None:
-        doc["suffix"] = pin.suffix
     doc["hash"] = pin.hash
     return json.dumps(doc, indent=2) + "\n"
 
@@ -143,10 +113,6 @@ def render_url(pin: Pin, system: str) -> str:
     values = {**pin.vars, "version": pin.version}
     if pin.arch is not None:
         values["arch"] = pin.arch[system]
-    if pin.suffix is not None:
-        values["suffix"] = pin.suffix[system]
-    if isinstance(pin.source, CursorDownloadSource):
-        values["platform"] = pin.source.platform[system]
     url = PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), pin.url)
     unresolved = PLACEHOLDER.findall(url)
     if unresolved:
@@ -163,28 +129,6 @@ def latest_release(pin: Pin, http_get_json: HttpGetJson) -> Release:
         if not isinstance(products, list) or not products:
             raise PinError(f"JetBrains returned no product for code {source.code}")
         return Release(version=products[0]["releases"][0]["build"], vars={})
-    if isinstance(source, CursorDownloadSource):
-        version: str | None = None
-        urls: dict[str, str] = {}
-        for system, platform in source.platform.items():
-            feed_url = f"https://api2.cursor.sh/updates/api/download/stable/{platform}/{source.product}"
-            data = http_get_json(feed_url)
-            if not isinstance(data, dict):
-                raise PinError(f"{platform}: unexpected cursor feed payload")
-            feed_version = data.get("version")
-            download = data.get("downloadUrl")
-            if not isinstance(feed_version, str) or not feed_version:
-                raise PinError(f"{platform}: cursor feed missing version")
-            if not isinstance(download, str) or not download:
-                raise PinError(f"{platform}: cursor feed missing downloadUrl")
-            if version is None:
-                version = feed_version
-            elif feed_version != version:
-                raise PinError(f"cursor feed versions diverged: {version} vs {feed_version} for {system}")
-            urls[system] = download
-        if version is None:
-            raise PinError(f"{source.product}: cursor feed returned no platforms")
-        return Release(version=version, vars=pin.vars, urls=urls)
     release = http_get_json(f"https://api.github.com/repos/{source.repo}/releases/latest")
     if not isinstance(release, dict):
         raise PinError(f"{source.repo}: unexpected latest-release payload")
@@ -200,11 +144,6 @@ def latest_release(pin: Pin, http_get_json: HttpGetJson) -> Release:
 
 def bump_pin(name: str, pin: Pin, release: Release, prefetch: Prefetch) -> Bump | None:
     candidate = replace(pin, version=release.version, vars=release.vars)
-    if release.urls is not None:
-        for system, url in release.urls.items():
-            rendered = render_url(candidate, system)
-            if rendered != url:
-                raise PinError(f"{name}: {system} feed URL {url} does not match template {rendered}")
     unversioned = isinstance(pin.source, UnversionedUrlSource)
     if not unversioned and candidate == pin:
         return None
