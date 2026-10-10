@@ -18,7 +18,7 @@
     };
 
     # Source of prebuilt AI-agent packages that nixpkgs doesn't carry or
-    # carries late (apm, ccstatusline, claude-desktop, orca, paperclip).
+    # carries late (apm, ccstatusline, claude-desktop, grok-bot, orca, paperclip).
     # Intentionally *not* following our nixpkgs: its packages are built
     # against its own nixpkgs-unstable pin and cached on cache.numtide.com,
     # which only hits when the revisions match.
@@ -102,14 +102,17 @@
           homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
           # llm-agents.nix only builds for x86_64-linux, aarch64-linux and
           # aarch64-darwin; on x86_64-darwin it has no packages at all.
+          # Skip names the selected system does not ship (e.g. grok-bot is
+          # Linux-only in llm-agents today) instead of vendoring our own.
           llmAgentsPackages = lib.optionals (llm-agents.packages ? ${system}) (
-            lib.attrVals [
+            lib.attrVals (lib.filter (name: llm-agents.packages.${system} ? ${name}) [
               "apm"
               "ccstatusline"
               "claude-desktop"
+              "grok-bot"
               "orca"
               "paperclip"
-            ] llm-agents.packages.${system}
+            ]) llm-agents.packages.${system}
           );
         in
         home-manager.lib.homeManagerConfiguration {
