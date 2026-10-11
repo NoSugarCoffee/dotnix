@@ -1,1 +1,132 @@
-{"Home":{"sourceFiles":[{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"},{"path":"flake.nix","hash":"a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"Architecture":{"sourceFiles":[{"path":"flake.nix","hash":"a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"},{"path":"flake.lock","hash":"ed05d17394285a469a225cbd1a8d7417b15e2c48766bd22977a3aff62d9986d6"},{"path":"home/home.nix","hash":"c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"Getting-Started":{"sourceFiles":[{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"},{"path":"scripts/bootstrap-macos.sh","hash":"a5ce9c419ff04ff876b00632f6374dc669e32f8339443621571752a1c3e11bd8"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"Packages":{"sourceFiles":[{"path":"home/home.nix","hash":"c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"},{"path":"flake.nix","hash":"a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"},{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"Local-Packages":{"sourceFiles":[{"path":"pkgs/jetbrains-air-darwin/default.nix","hash":"2ea5a15285f8bee3caebacf487328ba80cf1e8311052a502e5c08b0be63946a7"},{"path":"pkgs/jetbrains-air-darwin/pin.json","hash":"b367a16d04136edb83bd7e0f4170dcae92ef6d9cb133cc3020a61e97348d9464"},{"path":"flake.nix","hash":"a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"Operations":{"sourceFiles":[{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"},{"path":"justfile","hash":"34d5ece29e0d7ce37e1410d78161768576deef7f4b883724048cf4c628a0bf52"},{"path":"home/home.nix","hash":"c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"For-Agents":{"sourceFiles":[{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"AGENTS.md":{"sourceFiles":[{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"},"llms.txt":{"sourceFiles":[{"path":"README.md","hash":"91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"}],"templateHash":"42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed","generatedAt":"2026-10-10T10:00:00Z"}}
+{
+  "Home": {
+    "sourceFiles": [
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      },
+      {
+        "path": "flake.nix",
+        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "Architecture": {
+    "sourceFiles": [
+      {
+        "path": "flake.nix",
+        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+      },
+      {
+        "path": "flake.lock",
+        "hash": "424d0d0cbccebae460d451e4f5802face2c0008222f391944f5ce68bcab9077e"
+      },
+      {
+        "path": "home/home.nix",
+        "hash": "c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-11T15:01:07Z"
+  },
+  "Getting-Started": {
+    "sourceFiles": [
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      },
+      {
+        "path": "scripts/bootstrap-macos.sh",
+        "hash": "a5ce9c419ff04ff876b00632f6374dc669e32f8339443621571752a1c3e11bd8"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "Packages": {
+    "sourceFiles": [
+      {
+        "path": "home/home.nix",
+        "hash": "c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"
+      },
+      {
+        "path": "flake.nix",
+        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+      },
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "Local-Packages": {
+    "sourceFiles": [
+      {
+        "path": "pkgs/jetbrains-air-darwin/default.nix",
+        "hash": "2ea5a15285f8bee3caebacf487328ba80cf1e8311052a502e5c08b0be63946a7"
+      },
+      {
+        "path": "pkgs/jetbrains-air-darwin/pin.json",
+        "hash": "b367a16d04136edb83bd7e0f4170dcae92ef6d9cb133cc3020a61e97348d9464"
+      },
+      {
+        "path": "flake.nix",
+        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "Operations": {
+    "sourceFiles": [
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      },
+      {
+        "path": "justfile",
+        "hash": "34d5ece29e0d7ce37e1410d78161768576deef7f4b883724048cf4c628a0bf52"
+      },
+      {
+        "path": "home/home.nix",
+        "hash": "c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "For-Agents": {
+    "sourceFiles": [
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "AGENTS.md": {
+    "sourceFiles": [
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  },
+  "llms.txt": {
+    "sourceFiles": [
+      {
+        "path": "README.md",
+        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+      }
+    ],
+    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
+    "generatedAt": "2026-10-10T10:00:00Z"
+  }
+}
