@@ -1,0 +1,136 @@
+apps/claude-code/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-24
+apps/cida/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 7-9
+apps/maccy/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/asdf/default.nix
+  s_8500799b4b4af2::t_7755b7564cfd2b 1-12,37,72,77,84,89,95,110,147-154
+  s_8500799b4b4af2::t_43bb398bdad5cd 13-36,38-71,73-76,78-83,85-88,90-94,96-109,111-146
+apps/gh/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1,3
+apps/clash-verge-rev/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 12-14
+apps/zellij/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-16
+apps/pi/default.nix
+  s_8500799b4b4af2::t_43bb398bdad5cd 38-51,53,55-76,78-95
+  s_8500799b4b4af2::t_7755b7564cfd2b 1-7,9-37,52,54,77,96
+  s_8500799b4b4af2::t_f9b2daeab4b9ea 8
+apps/obs-studio/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 19-21
+apps/bitwarden-cli/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1,3
+apps/ego-lite/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/pulsar/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 14-16
+.github/agentic-wiki/PAGES.md
+  s_8500799b4b4af2::t_b44890ab7ec389 27,31
+apps/just/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/obs-studio/default.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 3-6
+  s_8500799b4b4af2::t_42fb80f697f098 1-2,7
+README.md
+  s_8500799b4b4af2::t_b44890ab7ec389 89-90
+AGENTS.md
+  s_8500799b4b4af2::t_b44890ab7ec389 7
+apps/cida/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/pnpm/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/agent-access/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1,3
+apps/agent-access/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 10-12
+apps/llm-agents/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/codex/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-16
+apps/clash-verge-rev/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4,6-14,18-20
+apps/scroll-reverser/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-17
+apps/git/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-18
+apps/yazi/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-13
+apps/jetbrains-air/default.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 3-5
+  s_8500799b4b4af2::t_42fb80f697f098 1-2,6
+tests/test_release_pins.py
+  s_8500799b4b4af2::t_43bb398bdad5cd 63
+CLAUDE.md
+  s_8500799b4b4af2::t_a653509757f453 7-10,26
+  s_8500799b4b4af2::t_b44890ab7ec389 17
+tests/test_managed_settings.py
+  s_8500799b4b4af2::t_f2a2a26212367d 16
+  s_8500799b4b4af2::t_43bb398bdad5cd 22-23
+apps/zoxide/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-6
+apps/cursor/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-5
+apps/kitty/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-28
+apps/macshot/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/albert/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-17
+apps/pulsar/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+lib/proxy.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/nix/default.nix
+  s_8500799b4b4af2::t_7755b7564cfd2b 14-15
+apps/copyq/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/glab/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-4
+apps/colima/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1,3,6-26
+apps/google-chrome/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-13
+apps/chatgpt/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1,3
+apps/ccstatusline/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-6
+apps/zsh/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-33
+.github/workflows/code-quality.md
+  s_8500799b4b4af2::t_b44890ab7ec389 81,84,87,138,152
+apps/python/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-13
+flake.nix
+  s_8500799b4b4af2::t_f2a2a26212367d 50-57,59,61,72,119
+apps/scroll-reverser/package.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-10
+apps/ego-lite/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 23-25
+apps/jetbrains-air/package.nix
+  s_8500799b4b4af2::t_fd2cab55658b11 14-16
+apps/intellij-idea/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-5
+.github/workflows/scripts/release_pins.py
+  s_8500799b4b4af2::t_f2a2a26212367d 1,204
+home.nix
+  s_8500799b4b4af2::t_a17ed050c25fe7 1-57
+apps/docker/default.nix
+  s_8500799b4b4af2::t_42fb80f697f098 1-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.49-trip",
+  "base_commit_sha": "65b06e22d16c9a1469723f16469c67f8b796978d",
+  "prompts": {},
+  "sessions": {
+    "s_8500799b4b4af2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ab6d9a13-5209-492e-994f-40a50c852dba",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
