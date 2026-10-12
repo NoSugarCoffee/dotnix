@@ -13,14 +13,14 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-_spec = importlib.util.spec_from_file_location("managed_settings", REPO / "home" / "managed_settings.py")
+_spec = importlib.util.spec_from_file_location("managed_settings", REPO / "lib" / "managed_settings.py")
 assert _spec is not None and _spec.loader is not None
 managed_settings = importlib.util.module_from_spec(_spec)
 sys.modules["managed_settings"] = managed_settings
 _spec.loader.exec_module(managed_settings)
 
-CODEX_MANAGED = (REPO / "home" / "codex" / "managed.toml").read_text()
-CODEX_SEED = (REPO / "home" / "codex" / "config.toml").read_text()
+CODEX_MANAGED = (REPO / "apps" / "codex" / "managed.toml").read_text()
+CODEX_SEED = (REPO / "apps" / "codex" / "config.toml").read_text()
 
 
 class ManagedSettingsTest(unittest.TestCase):

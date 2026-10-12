@@ -78,13 +78,13 @@ job is the two checks no linter can express.
 ## 1. README drift
 
 `CLAUDE.md` requires the "Managed packages" section of `README.md` to stay in
-sync with the packages installed by `home/home.nix`. Compare the two and
+sync with the packages installed by the `apps/*/default.nix` modules. Compare the two and
 report:
 
-- packages installed in `home/home.nix` but absent from the README table
+- packages installed in `apps/` but absent from the README table
 - packages listed in the README but no longer installed
 - `macOS` / `Linux` tags that no longer match the platform conditionals in
-  `home/home.nix` (`lib.optionals pkgs.stdenv.isDarwin` and friends)
+  the app module (`lib.optionals pkgs.stdenv.isDarwin` and friends)
 
 Note that some entries are deliberately annotated rather than bare names —
 local packages describe what they do, and some carry a fork note. A wording
@@ -135,7 +135,7 @@ a repository this small, not a reason to lower the bar.
 
 Each issue should:
 
-- Reference files as **repository-relative paths** — `home/home.nix:118`, not
+- Reference files as **repository-relative paths** — `apps/asdf/default.nix:42`, not
   the absolute path of the runner's checkout. Absolute paths render as dead
   links on GitHub.
 - Explain why the finding matters for this repository specifically.
@@ -149,7 +149,7 @@ Each issue should:
 - Anything the build already catches: `ci.yml` runs `nix flake check`, builds
   the activation package on both platforms, and smoke-tests activation and the
   interactive-zsh PATH.
-- Pinned versions and hashes in `pkgs/*/pin.json`. `release-pins-update.yml`
+- Pinned versions and hashes in `apps/*/pin.json`. `release-pins-update.yml`
   bumps them nightly, so a lagging pin is not a finding.
 - Suggestions to add tooling the repository has deliberately rejected — check
   `README.md` "Notes" and the git history before proposing a new dependency.

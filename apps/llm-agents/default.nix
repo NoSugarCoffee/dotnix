@@ -1,0 +1,4 @@
+{ llmAgentsPackages, ... }:
+{
+  home.packages = llmAgentsPackages;
+}
