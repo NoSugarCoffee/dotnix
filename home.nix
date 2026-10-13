@@ -47,7 +47,11 @@
         }
 
         ensureSigningIdentity() {
-          if /usr/bin/security find-certificate -c "$signingIdentity" "$loginKeychain" >/dev/null 2>&1; then
+          # find-certificate only confirms a certificate object exists; an
+          # "identity" (what codesign actually needs) also requires its
+          # matching private key, which find-identity -p codesigning checks.
+          if /usr/bin/security find-identity -p codesigning "$loginKeychain" 2>/dev/null \
+            | grep -Fq "\"$signingIdentity\""; then
             return
           fi
           echo "creating code signing identity \"$signingIdentity\" in the login keychain..." >&2
@@ -73,6 +77,32 @@
           rm -rf "$workDir"
         }
 
+        # wrapProgram (e.g. Albert's wrapQtApp) moves an app's real executable
+        # aside to a hidden ".<name>-wrapped" sibling and writes a wrapper
+        # script that `exec`s that sibling by its *absolute* store path. A
+        # copy of the bundle still re-execs the immutable store original --
+        # carrying the store's own ad-hoc signature, not this copy's -- so the
+        # copy's privacy grants would keep breaking on every rebuild exactly
+        # like the unwrapped case this function exists to fix. Repoint any
+        # such wrapper at this copy and re-sign the real executable it now
+        # points to, before the bundle-level codesign below reseals it.
+        resignWrappedBinaries() {
+          local app="$1" storePath="$2"
+          local wrapper hidden
+          for wrapper in "$app/Contents/MacOS"/*; do
+            [[ -f "$wrapper" && -x "$wrapper" ]] || continue
+            [[ "$(head -c 2 -- "$wrapper" 2>/dev/null)" == '#!' ]] || continue
+            grep -qF -- "$storePath" "$wrapper" 2>/dev/null || continue
+            echo "repointing $(basename "$wrapper") at the copied bundle..." >&2
+            run /usr/bin/sed -i ''' "s|$storePath|$app|g" "$wrapper"
+            hidden="$(dirname "$wrapper")/.$(basename "$wrapper")-wrapped"
+            if [[ -f "$hidden" ]]; then
+              echo "re-signing nested $(basename "$hidden") with \"$signingIdentity\"..." >&2
+              run /usr/bin/codesign --force --sign "$signingIdentity" "$hidden"
+            fi
+          done
+        }
+
         run mkdir -p "$targetFolder" "$markerFolder"
 
         for entry in "$sourceFolder"/*; do
@@ -80,8 +110,14 @@
           storePath=$(readlink -f "$entry")
           marker="$markerFolder/$name"
           storeIsAdhoc=$(isAdhocSigned "$storePath" && echo 1 || echo 0)
+          # Without a keychain, re-signing is deferred (see below) and the
+          # copy stays ad-hoc every activation -- that alone must not force
+          # a full checksum rsync on every run. Only treat "still ad-hoc" as
+          # needing a retry once a keychain actually makes retrying useful;
+          # dry runs keep previewing the retry regardless, as before.
           if [[ -d "$targetFolder/$name" && -f "$marker" && "$(< "$marker")" == "$storePath" ]] \
-            && ! { (( storeIsAdhoc )) && isAdhocSigned "$targetFolder/$name"; }; then
+            && ! { (( storeIsAdhoc )) && isAdhocSigned "$targetFolder/$name" \
+                   && { [[ -v DRY_RUN ]] || hasLoginKeychain; }; }; then
             continue
           fi
           echo "copying $name..." >&2
@@ -90,6 +126,7 @@
           if (( storeIsAdhoc )); then
             if [[ -v DRY_RUN ]] || hasLoginKeychain; then
               [[ -v DRY_RUN ]] || ensureSigningIdentity
+              resignWrappedBinaries "$targetFolder/$name" "$storePath"
               echo "re-signing $name with \"$signingIdentity\"..." >&2
               run /usr/bin/codesign --force --sign "$signingIdentity" "$targetFolder/$name"
             else
