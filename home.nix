@@ -37,6 +37,15 @@
           grep -qx 'Signature=adhoc' <<< "$signatureInfo"
         }
 
+        # CI/headless activation runs against a fresh HOME with no login
+        # keychain, which `security import` cannot create on its own -- it
+        # only fails loudly ("SecKeychainItemImport: The specified keychain
+        # could not be found"). A real macOS login session always has one, so
+        # this only ever bypasses re-signing off of that session.
+        hasLoginKeychain() {
+          [[ -f "$loginKeychain" ]]
+        }
+
         ensureSigningIdentity() {
           if /usr/bin/security find-certificate -c "$signingIdentity" "$loginKeychain" >/dev/null 2>&1; then
             return
@@ -79,9 +88,13 @@
           run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
             --specials --delete --chmod=+w "$storePath/" "$targetFolder/$name"
           if (( storeIsAdhoc )); then
-            [[ -v DRY_RUN ]] || ensureSigningIdentity
-            echo "re-signing $name with \"$signingIdentity\"..." >&2
-            run /usr/bin/codesign --force --sign "$signingIdentity" "$targetFolder/$name"
+            if [[ -v DRY_RUN ]] || hasLoginKeychain; then
+              [[ -v DRY_RUN ]] || ensureSigningIdentity
+              echo "re-signing $name with \"$signingIdentity\"..." >&2
+              run /usr/bin/codesign --force --sign "$signingIdentity" "$targetFolder/$name"
+            else
+              echo "warning: no login keychain at $loginKeychain; leaving $name ad-hoc signed (privacy grants may not survive future rebuilds)" >&2
+            fi
           fi
           [[ -v DRY_RUN ]] || printf '%s' "$storePath" > "$marker"
         done
