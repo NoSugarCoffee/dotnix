@@ -60,7 +60,7 @@ class ReleasePinsTest(unittest.TestCase):
         return json.loads((self.pkgs / name / "pin.json").read_text())
 
     def test_every_real_pin_parses_and_renders_a_url_per_system(self) -> None:
-        pin_files = sorted((REPO / "pkgs").glob("*/pin.json"))
+        pin_files = sorted((REPO / "apps").glob("*/pin.json"))
         self.assertGreaterEqual(len(pin_files), 7)
         for pin_file in pin_files:
             pin = release_pins.parse_pin(json.loads(pin_file.read_text()), str(pin_file))

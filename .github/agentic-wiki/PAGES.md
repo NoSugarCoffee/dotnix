@@ -24,11 +24,11 @@
 
 # Packages
 
-*{Describe the package categories managed by home/home.nix and distinguish cross-platform packages, platform-specific packages, and tools provided through overlays.}
+*{Describe the package categories managed by the apps/ modules and distinguish cross-platform packages, platform-specific packages, and tools provided through overlays.}
 
 ## Local Packages
 
-*{Document every package under pkgs/, its purpose, supported platforms, source/provenance approach, and any important build or runtime caveats. Use a compact table where appropriate.}
+*{Document every local package under apps/*/package.nix, its purpose, supported platforms, source/provenance approach, and any important build or runtime caveats. Use a compact table where appropriate.}
 
 # Operations
 

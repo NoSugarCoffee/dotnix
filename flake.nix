@@ -47,18 +47,18 @@
         "x86_64-darwin"
       ];
       forAllSystems = lib.genAttrs systems;
-      localPackagesOverlay = final: _prev: {
-        clash-verge-rev-darwin = final.callPackage ./pkgs/clash-verge-rev-darwin { };
-        pulsar-darwin = final.callPackage ./pkgs/pulsar-darwin { };
-        obs-studio-darwin = final.callPackage ./pkgs/obs-studio-darwin { };
-        jetbrains-air-darwin = final.callPackage ./pkgs/jetbrains-air-darwin { };
-        ego-lite-darwin = final.callPackage ./pkgs/ego-lite-darwin { };
-        agent-access = final.callPackage ./pkgs/agent-access { };
-        cida-darwin = final.callPackage ./pkgs/cida-darwin { };
+      localPackagesOverlay = final: prev: {
+        clash-verge-rev-darwin = final.callPackage ./apps/clash-verge-rev/package.nix { };
+        pulsar-darwin = final.callPackage ./apps/pulsar/package.nix { };
+        obs-studio-darwin = final.callPackage ./apps/obs-studio/package.nix { };
+        jetbrains-air-darwin = final.callPackage ./apps/jetbrains-air/package.nix { };
+        ego-lite-darwin = final.callPackage ./apps/ego-lite/package.nix { };
+        agent-access = final.callPackage ./apps/agent-access/package.nix { };
+        cida-darwin = final.callPackage ./apps/cida/package.nix { };
         # from unstable: stable's albert (33.x) predates the source layout
-        # pkgs/albert-darwin's patches target (35.x)
+        # apps/albert/package.nix's patches target (35.x)
         albert-darwin =
-          (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./pkgs/albert-darwin
+          (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./apps/albert/package.nix
             { };
         # code-cursor from unstable: the stable branch pins 3.5.17, dozens of
         # releases behind upstream, and Cursor nags to update on every launch.
@@ -69,15 +69,7 @@
           codex
           chatgpt
           ;
-        # nixpkgs' undmg leaves AppleDouble sidecars (._Foo) inside the app
-        # bundle. Those files are not in the Developer ID seal, so Gatekeeper
-        # rejects the bundle with "damaged." Deleting them restores the seal;
-        # no re-signing needed.
-        scroll-reverser = _prev.scroll-reverser.overrideAttrs (o: {
-          postFixup = (o.postFixup or "") + ''
-            find "$out/Applications/Scroll Reverser.app" -name '._*' -delete
-          '';
-        });
+        scroll-reverser = import ./apps/scroll-reverser/package.nix { inherit (prev) scroll-reverser; };
       };
       mkPkgsUnstable =
         system:
@@ -124,7 +116,7 @@
               homeDirectory
               ;
           };
-          modules = [ ./home/home.nix ];
+          modules = [ ./home.nix ];
         };
     in
     {

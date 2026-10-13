@@ -1,4 +1,4 @@
-"""Bump every pkgs/*/pin.json to its upstream's latest release."""
+"""Bump every apps/*/pin.json to its upstream's latest release."""
 
 from __future__ import annotations
 
@@ -201,7 +201,7 @@ def write_step_output(summaries: list[str], output: Path | None) -> None:
 
 
 def main() -> None:
-    summaries = bump_all(Path("pkgs"), http_get_json, nix_prefetch)
+    summaries = bump_all(Path("apps"), http_get_json, nix_prefetch)
     github_output = os.environ.get("GITHUB_OUTPUT")
     write_step_output(summaries, Path(github_output) if github_output else None)
 
