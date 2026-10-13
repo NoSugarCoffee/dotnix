@@ -1,4 +1,10 @@
-{ lib, pkgs, ... }:
+{
+  homeDirectory,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.albert-darwin ];
   # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
@@ -7,7 +13,7 @@
     enable = pkgs.stdenv.isDarwin;
     config = {
       ProgramArguments = [
-        "${pkgs.albert-darwin}/Applications/Albert.app/Contents/MacOS/Albert"
+        "${homeDirectory}/${config.targets.darwin.copyApps.directory}/Albert.app/Contents/MacOS/Albert"
       ];
       RunAtLoad = true;
       KeepAlive = false;
