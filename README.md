@@ -89,6 +89,7 @@ repo and change just that string — that's the whole rebranding step.
 - **Codex and Claude Code settings stay writable.** A switch seeds them if missing and resets only the keys declared in `apps/codex/managed.toml` and `apps/claude-code/settings.nix`.
 - **asdf pins Go / Node / Java / Maven** to explicit versions in `apps/asdf/default.nix`. Python comes from nixpkgs instead, since asdf compiles it from source.
 - **Docker on macOS is colima.** A launchd agent starts the VM at login; resize it with `colima stop && colima start --cpu 4 --memory 8`. On Linux the daemon is a system service, out of scope here.
+- **Ad-hoc-signed macOS apps are re-signed locally.** Nix builds like kitty and Albert carry a signature that changes with every rebuild, which silently invalidates Accessibility / Screen Recording grants. A switch re-signs their copies in `~/Applications/Home Manager Apps` with a self-signed `dotnix local code signing` certificate it creates in the login keychain, so grants survive updates.
 - **China mirrors.** `scripts/bootstrap-macos.sh` adds SJTU/TUNA/USTC substituters; check with `nix config show | grep substitut`.
 
 ## 📄 License
