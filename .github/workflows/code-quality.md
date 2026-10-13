@@ -77,7 +77,7 @@ job is the two checks no linter can express.
 
 ## 1. README drift
 
-`CLAUDE.md` requires the "Managed packages" section of `README.md` to stay in
+`AGENTS.md` requires the "Managed packages" section of `README.md` to stay in
 sync with the packages installed by the `apps/*/default.nix` modules. Compare the two and
 report:
 
