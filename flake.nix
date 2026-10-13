@@ -94,8 +94,8 @@
           homeDirectory = if isDarwin then "/Users/${username}" else "/home/${username}";
           # llm-agents.nix only builds for x86_64-linux, aarch64-linux and
           # aarch64-darwin; on x86_64-darwin it has no packages at all.
-          # Skip names the selected system does not ship (e.g. grok-bot is
-          # Linux-only in llm-agents today) instead of vendoring our own.
+          # Skip names the selected system does not ship instead of vendoring
+          # our own.
           llmAgentsPackages = lib.optionals (llm-agents.packages ? ${system}) (
             lib.attrVals (lib.filter (name: llm-agents.packages.${system} ? ${name}) [
               "apm"
