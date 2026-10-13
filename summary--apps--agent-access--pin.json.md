@@ -1,0 +1,2 @@
+`48afada32570b0a04b4f9fdf698f3571ce41c802607be3119e22f66cbd58ff7e`
+Architecture-specific release pin for the adjacent local package.

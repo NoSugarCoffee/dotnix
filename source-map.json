@@ -3,130 +3,202 @@
     "sourceFiles": [
       {
         "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       },
       {
         "path": "flake.nix",
-        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+        "hash": "f61a2d6419b9bfd1b590eccd0df4fd6b55c6e2505ce673448d6154599c00b44b"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "Architecture": {
     "sourceFiles": [
       {
         "path": "flake.nix",
-        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+        "hash": "f61a2d6419b9bfd1b590eccd0df4fd6b55c6e2505ce673448d6154599c00b44b"
       },
       {
         "path": "flake.lock",
-        "hash": "424d0d0cbccebae460d451e4f5802face2c0008222f391944f5ce68bcab9077e"
+        "hash": "149a5c0e93da71db482073ca2864bf88f23a3e3f88d8ad783308a5fe44815838"
       },
       {
-        "path": "home/home.nix",
-        "hash": "c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"
+        "path": "home.nix",
+        "hash": "f13605a58cb057a04a335816dac62eb6b5ed335514e04d4a883e8e8f976eafed"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-11T15:01:07Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "Getting-Started": {
     "sourceFiles": [
       {
         "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       },
       {
         "path": "scripts/bootstrap-macos.sh",
         "hash": "a5ce9c419ff04ff876b00632f6374dc669e32f8339443621571752a1c3e11bd8"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "Packages": {
     "sourceFiles": [
       {
-        "path": "home/home.nix",
-        "hash": "c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"
+        "path": "README.md",
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       },
       {
         "path": "flake.nix",
-        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+        "hash": "f61a2d6419b9bfd1b590eccd0df4fd6b55c6e2505ce673448d6154599c00b44b"
       },
       {
-        "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "path": "home.nix",
+        "hash": "f13605a58cb057a04a335816dac62eb6b5ed335514e04d4a883e8e8f976eafed"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "Local-Packages": {
     "sourceFiles": [
       {
-        "path": "pkgs/jetbrains-air-darwin/default.nix",
-        "hash": "2ea5a15285f8bee3caebacf487328ba80cf1e8311052a502e5c08b0be63946a7"
+        "path": "apps/agent-access/package.nix\td0bb24de13122d891c3bcc28213ab9a1d1a90549e7d289fa304152507d1811dd",
+        "hash": null
       },
       {
-        "path": "pkgs/jetbrains-air-darwin/pin.json",
-        "hash": "b367a16d04136edb83bd7e0f4170dcae92ef6d9cb133cc3020a61e97348d9464"
+        "path": "apps/agent-access/pin.json\t48afada32570b0a04b4f9fdf698f3571ce41c802607be3119e22f66cbd58ff7e",
+        "hash": null
       },
       {
-        "path": "flake.nix",
-        "hash": "a130df57c65f9ecc27be4c7a93c8db74be1c53b34522dabc33012f803eda9152"
+        "path": "apps/albert/package.nix\t49c72e2b10bc4ace781069f0b55883f4e94d41a3787ff31c4ea0d544c6bfcb15",
+        "hash": null
+      },
+      {
+        "path": "apps/cida/package.nix\te74748f49d57ddb2dad6107105357b6e485aa0b11bc759a6fe2f81ba19568419",
+        "hash": null
+      },
+      {
+        "path": "apps/cida/pin.json\tc1ad6bc189686a81afa927e5cfa8477a08642955ae15ba7dcc51a81167fa43aa",
+        "hash": null
+      },
+      {
+        "path": "apps/clash-verge-rev/package.nix\tca3ca1ea8982831528fa4e4ddd7a25da6bd8ff9a538906e22a2c8b4e2a61ab93",
+        "hash": null
+      },
+      {
+        "path": "apps/clash-verge-rev/pin.json\t643f26ad5dfb5f05a37ba4f7042c74225970995dd52f192dfac60f4772215ccb",
+        "hash": null
+      },
+      {
+        "path": "apps/ego-lite/package.nix\t03cd7e04a2a02d4595c7e7bb1b2818af98f30ea63c1b9418c07fdc054824f2ca",
+        "hash": null
+      },
+      {
+        "path": "apps/ego-lite/pin.json\tacc290e895f2048c7fd30192271ebd379a8c8e72fb1e6cf7d69247c244c38ca4",
+        "hash": null
+      },
+      {
+        "path": "apps/jetbrains-air/package.nix\te39a2d409081b6fd93e631febaf8663e97554d5ddca2177732ffb91b40cc64ce",
+        "hash": null
+      },
+      {
+        "path": "apps/jetbrains-air/pin.json\tb367a16d04136edb83bd7e0f4170dcae92ef6d9cb133cc3020a61e97348d9464",
+        "hash": null
+      },
+      {
+        "path": "apps/obs-studio/package.nix\te78cab29ec5e3a677597385f8b47048fa28e040fc88ca76cfc8c0f180b86125c",
+        "hash": null
+      },
+      {
+        "path": "apps/obs-studio/pin.json\t1738fc368a660598fe45cae56496161e846b67ac4e3b445aefcb4a073cacaeeb",
+        "hash": null
+      },
+      {
+        "path": "apps/pulsar/package.nix\t0990a429faef1fff97502ecb6de5a9edcb2ce2fc69bf8c773c67601929bef437",
+        "hash": null
+      },
+      {
+        "path": "apps/pulsar/pin.json\t68be7dec00aaa3b25d1e6a18683c9edc1484fac30b3de62a8b3f145f470bf9e3",
+        "hash": null
+      },
+      {
+        "path": "apps/scroll-reverser/package.nix\t2614d1d10cb0672b6d3bc0d48103697a03b8200cc04d9536cf501e5b725b5c61",
+        "hash": null
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "Operations": {
     "sourceFiles": [
       {
         "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       },
       {
         "path": "justfile",
         "hash": "34d5ece29e0d7ce37e1410d78161768576deef7f4b883724048cf4c628a0bf52"
       },
       {
-        "path": "home/home.nix",
-        "hash": "c654f459e5fee962adf47af4912996276e2fc4d2b44a0000caab2fce70e81d3a"
+        "path": "home.nix",
+        "hash": "f13605a58cb057a04a335816dac62eb6b5ed335514e04d4a883e8e8f976eafed"
+      },
+      {
+        "path": "apps/asdf/default.nix",
+        "hash": "555a20d6184abf0033c66ae00690c4cc19aff539898bb985ac76606525ac1514"
+      },
+      {
+        "path": "apps/claude-code/settings.nix",
+        "hash": "a428e9c3777dd0f15cb49d747ad4f39aa2d48ebf8393c06020f9b2867689af33"
+      },
+      {
+        "path": "apps/codex/managed.toml",
+        "hash": "6b984a2d136f609a1c732daedc20ec2bf71d81599579a43a370aa03897725c85"
+      },
+      {
+        "path": "apps/pi/managed.json",
+        "hash": "c19dead7bb6c59b6494684f3f5ff631e29a1253da3d7001c9f6a463e4ed8d16f"
+      },
+      {
+        "path": "apps/git/default.nix",
+        "hash": "fbec08832920e0696ae721c3bc8ee137c44b605755e7ff0b857af117f9ae5c35"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "For-Agents": {
     "sourceFiles": [
       {
         "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "AGENTS.md": {
     "sourceFiles": [
       {
         "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   },
   "llms.txt": {
     "sourceFiles": [
       {
         "path": "README.md",
-        "hash": "91bb24886da32d5aebb7d3ba49d0ad95b0b02991519464a2b922f29ff77731f5"
+        "hash": "a4b7e2d3f924dc59694a84250edb8d1137267c9b9ed40923fd5f43d679051f31"
       }
     ],
-    "templateHash": "42e9687ac6d0b9aeebc03ea113262c58e6bfd1bbd15d747847f19d88117e9eed",
-    "generatedAt": "2026-10-10T10:00:00Z"
+    "templateHash": "4b029c4be173a3980a7a6638975de606d9a21e86f6bf110b0c5e5403d746d8dd",
+    "generatedAt": "2026-10-13T16:13:38Z"
   }
 }

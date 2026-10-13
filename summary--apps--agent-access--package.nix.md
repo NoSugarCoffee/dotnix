@@ -1,0 +1,2 @@
+`d0bb24de13122d891c3bcc28213ab9a1d1a90549e7d289fa304152507d1811dd`
+Builds official Bitwarden Agent Access prebuilt archives for Linux and Darwin architectures.
