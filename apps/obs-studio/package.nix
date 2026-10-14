@@ -4,11 +4,9 @@
 # is copied verbatim. Version and hashes live in pin.json,
 # bumped by release_pins.py.
 #
-# Caveat: the bundled virtual camera (com.obsproject.obs-studio.mac-camera-
-# extension) will not install. macOS only accepts a system extension from an
-# app inside /Applications, and home-manager links apps into
-# ~/Applications/Home Manager Apps. Everything else -- capture, encoding,
-# recording, streaming, obs-websocket -- works from the store path.
+# The bundled virtual camera (com.obsproject.obs-studio.mac-camera-extension)
+# is a system extension, which macOS only accepts from an app inside
+# /Applications; copyApps in home.nix puts the bundle there for that reason.
 {
   lib,
   stdenvNoCC,

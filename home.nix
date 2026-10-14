@@ -20,6 +20,8 @@
       lib.hm.dag.entryAfter [ "installPackages" "linkGeneration" ] ''
         targetFolder=${lib.escapeShellArg config.targets.darwin.copyApps.directory}
         markerFolder=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/copied-apps"}
+        systemFolder=/Applications
+        systemMarkerFolder=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/copied-system-apps"}
         sourceFolder=${
           pkgs.buildEnv {
             name = "home-manager-applications";
@@ -35,6 +37,17 @@
           local signatureInfo
           signatureInfo=$(/usr/bin/codesign -dv "$1" 2>&1) || return 1
           grep -qx 'Signature=adhoc' <<< "$signatureInfo"
+        }
+
+        # macOS only activates a system extension (network, camera, driver,
+        # ...) from an app inside /Applications. From anywhere else it is
+        # refused -- OBS's virtual camera silently never installs, and
+        # Tailscale's standalone app aborts at launch while trying to show
+        # its "move to Applications" alert. Such bundles are copied to
+        # /Applications instead of $targetFolder, keyed on the bundle itself
+        # so a new app that ships one needs no per-app opt-in.
+        hasSystemExtension() {
+          [[ -d "$1/Contents/Library/SystemExtensions" ]]
         }
 
         # CI/headless activation runs against a fresh HOME with no login
@@ -103,32 +116,55 @@
           done
         }
 
-        run mkdir -p "$targetFolder" "$markerFolder"
+        run mkdir -p "$targetFolder" "$markerFolder" "$systemMarkerFolder"
 
         for entry in "$sourceFolder"/*; do
           name=$(basename "$entry")
           storePath=$(readlink -f "$entry")
-          marker="$markerFolder/$name"
+          appFolder=$targetFolder
+          appMarkerFolder=$markerFolder
+          staleFolder=$systemFolder
+          staleMarkerFolder=$systemMarkerFolder
+          if hasSystemExtension "$storePath"; then
+            # /Applications is root:admin 0775, so an admin account writes it
+            # without sudo; anyone else keeps the old behaviour plus a hint.
+            if [[ -w "$systemFolder" ]]; then
+              appFolder=$systemFolder
+              appMarkerFolder=$systemMarkerFolder
+              staleFolder=$targetFolder
+              staleMarkerFolder=$markerFolder
+            else
+              echo "warning: $name ships a system extension, which macOS only loads from $systemFolder; that is not writable by $USER, so $name stays in $targetFolder" >&2
+            fi
+          fi
+          # An app that moved between the two folders leaves a copy behind.
+          # Only a marker proves dotnix put it there, so an /Applications
+          # app installed by hand is never touched.
+          if [[ -f "$staleMarkerFolder/$name" ]]; then
+            echo "removing $name from $staleFolder..." >&2
+            run rm -rf "$staleFolder/$name" "$staleMarkerFolder/$name"
+          fi
+          marker="$appMarkerFolder/$name"
           storeIsAdhoc=$(isAdhocSigned "$storePath" && echo 1 || echo 0)
           # Without a keychain, re-signing is deferred (see below) and the
           # copy stays ad-hoc every activation -- that alone must not force
           # a full checksum rsync on every run. Only treat "still ad-hoc" as
           # needing a retry once a keychain actually makes retrying useful;
           # dry runs keep previewing the retry regardless, as before.
-          if [[ -d "$targetFolder/$name" && -f "$marker" && "$(< "$marker")" == "$storePath" ]] \
-            && ! { (( storeIsAdhoc )) && isAdhocSigned "$targetFolder/$name" \
+          if [[ -d "$appFolder/$name" && -f "$marker" && "$(< "$marker")" == "$storePath" ]] \
+            && ! { (( storeIsAdhoc )) && isAdhocSigned "$appFolder/$name" \
                    && { [[ -v DRY_RUN ]] || hasLoginKeychain; }; }; then
             continue
           fi
-          echo "copying $name..." >&2
+          echo "copying $name to $appFolder..." >&2
           run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
-            --specials --delete --chmod=+w "$storePath/" "$targetFolder/$name"
+            --specials --delete --chmod=+w "$storePath/" "$appFolder/$name"
           if (( storeIsAdhoc )); then
             if [[ -v DRY_RUN ]] || hasLoginKeychain; then
               [[ -v DRY_RUN ]] || ensureSigningIdentity
-              resignWrappedBinaries "$targetFolder/$name" "$storePath"
+              resignWrappedBinaries "$appFolder/$name" "$storePath"
               echo "re-signing $name with \"$signingIdentity\"..." >&2
-              run /usr/bin/codesign --force --sign "$signingIdentity" "$targetFolder/$name"
+              run /usr/bin/codesign --force --sign "$signingIdentity" "$appFolder/$name"
             else
               echo "warning: no login keychain at $loginKeychain; leaving $name ad-hoc signed (privacy grants may not survive future rebuilds)" >&2
             fi
@@ -141,6 +177,16 @@
           if [[ -e "$existing" && ! -e "$sourceFolder/$name" ]]; then
             echo "removing $name..." >&2
             run rm -rf "$existing"
+          fi
+        done
+
+        # /Applications is shared with everything else on the Mac, so only
+        # apps this activation recorded copying there are ever removed.
+        for existing in "$systemMarkerFolder"/*; do
+          name=$(basename "$existing")
+          if [[ -e "$existing" && ! -e "$sourceFolder/$name" ]]; then
+            echo "removing $name from $systemFolder..." >&2
+            run rm -rf "$systemFolder/$name" "$existing"
           fi
         done
       ''
