@@ -34,10 +34,13 @@
       ...
     }:
     let
-      # Single source of truth for the user this config is applied to.
-      # Fork this repo: change just this string. Everything else (attribute
-      # names, home.username, homeDirectory, CI env, bootstrap script) reads
-      # from here directly or via `nix eval --raw .#username`.
+      # Single source of truth for the account this config is applied to.
+      # Fork this repo: change just this string.
+      #
+      # This is the default for checkouts, CI and `just`. A new machine never
+      # has to change it: `scripts/bootstrap-macos.sh` rewrites this very line
+      # to the machine's $USER in a throwaway copy of the source. Keep it on
+      # ONE line -- that rewrite is line-level.
       username = "liangliangdai";
 
       inherit (nixpkgs) lib;

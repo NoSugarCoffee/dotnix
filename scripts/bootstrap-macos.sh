@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # One-shot bootstrap for a brand-new Mac: installs Nix if needed, then applies
 # this flake's Home Manager configuration for the current architecture.
-# No local clone or `git` CLI required — the flake is fetched straight from
-# GitHub by Nix's own tarball fetcher.
+#
+# No local clone, no `git` CLI, and nothing to edit: the source is downloaded
+# as a tarball with curl and the current account is injected into that
+# throwaway copy, so $USER alone decides which homeConfiguration is applied.
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
 set -euo pipefail
 
-flake_repo="github:NoSugarCoffee/dotnix"
+# This repo as GitHub `owner/name`, and the branch to fetch. A fork changes
+# these two lines (and the Usage URL above); nothing else here is repo-specific.
+repo="NoSugarCoffee/dotnix"
+branch="main"
 
 # `nix-command`/`flakes` are still gated behind experimental features, and
 # whether they are enabled depends on config this script may not be able to
@@ -38,13 +43,38 @@ if ! command -v nix >/dev/null 2>&1; then
 Nix has been installed. Open a new terminal (so PATH picks up nix), then
 re-run this to apply the Home Manager configuration:
 
-  curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/${repo}/${branch}/scripts/bootstrap-macos.sh | bash
 EOF
   exit 0
 fi
 
-flake_username=$(nix eval --raw "${flake_repo}#username")
-flake_target="${flake_username}-${system}"
+# Which account this machine manages is decided by $USER alone, so a fresh
+# machine never has to edit anything: download the source as a tarball and
+# rewrite the single `username` line in the private copy. A directory with no
+# `.git` in it is a perfectly good flake source, which is how the clone and the
+# git CLI are both avoided; the copy is deleted on exit, so nothing on disk
+# goes stale.
+workdir="$(mktemp -d)"
+srcdir="${workdir}/dotnix"
+trap 'rm -rf "${workdir}"' EXIT
+mkdir -p "${srcdir}"
+echo "==> Downloading ${repo}@${branch}..."
+curl -fsSL "https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz" |
+  tar -xz -C "${srcdir}" --strip-components=1
+
+# Deliberately not `sed -i`: its flags differ between BSD and GNU, and this
+# form is identical on both. The rewrite is line-level, so flake.nix keeps
+# `username` on one line, and a renamed or reformatted line fails loudly below
+# rather than silently deploying the repo's default account instead of the
+# local one.
+sed -e "s|^ *username = .*;|      username = \"${USER}\";|" \
+  "${srcdir}/flake.nix" > "${srcdir}/flake.nix.new"
+mv "${srcdir}/flake.nix.new" "${srcdir}/flake.nix"
+if ! grep -qF "username = \"${USER}\";" "${srcdir}/flake.nix"; then
+  echo "error: could not set the account to '${USER}' in the downloaded flake.nix" >&2
+  exit 1
+fi
+flake_target="${USER}-${system}"
 
 # Mirrors of cache.nixos.org that are much faster to reach from mainland
 # China (1:1 mirrors, same signing key, so no extra-trusted-public-keys
@@ -84,7 +114,8 @@ if [[ "$restart_daemon" == 1 ]]; then
   sudo pkill -x nix-daemon 2>/dev/null || true
 fi
 
-echo "==> Applying Home Manager configuration for ${flake_target} from ${flake_repo}..."
-nix run "${flake_repo}#home-manager" -- switch --flake "${flake_repo}#${flake_target}"
+echo "==> Applying Home Manager configuration for ${flake_target} (account ${USER})..."
+nix run "${srcdir}#home-manager" -- switch --flake "${srcdir}#${flake_target}"
 
-echo "==> Done. Re-run this script (or 'nix run ${flake_repo}#home-manager -- switch --flake ${flake_repo}#${flake_target}') to pick up future updates."
+echo "==> Done. Re-run this to pick up future updates:"
+echo "    curl -fsSL https://raw.githubusercontent.com/${repo}/${branch}/scripts/bootstrap-macos.sh | bash"

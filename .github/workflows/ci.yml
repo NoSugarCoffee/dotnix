@@ -71,6 +71,25 @@ jobs:
               exit $status
             '
 
+      # The one-liner applies this config to whatever $USER says by rewriting
+      # the single `username` line in a throwaway copy of the source, with no
+      # `.git` present -- like the real tarball download. That rewrite is
+      # load-bearing for the bootstrap, so prove the line still matches and
+      # that the rewritten copy evaluates for an account the repo never named.
+      # `git archive` reproduces the no-.git download without a network fetch.
+      - name: bootstrap's $USER injection still works
+        run: |
+          set -euo pipefail
+          src="$(mktemp -d)/dotnix"
+          mkdir -p "$src"
+          git archive HEAD | tar -x -C "$src"
+          sed -e 's|^ *username = .*;|      username = "ci-user";|' "$src/flake.nix" > "$src/flake.nix.new"
+          mv "$src/flake.nix.new" "$src/flake.nix"
+          grep -qF 'username = "ci-user";' "$src/flake.nix"
+          test "$(nix eval --raw "$src#username")" = 'ci-user'
+          nix eval --raw "$src#homeConfigurations.\"ci-user-x86_64-linux\".activationPackage.drvPath" > /dev/null
+          echo "injected account evaluates cleanly"
+
   build-linux:
     runs-on: ubuntu-latest
     steps:
