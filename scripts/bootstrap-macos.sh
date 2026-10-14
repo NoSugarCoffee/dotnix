@@ -10,6 +10,12 @@ set -euo pipefail
 
 flake_repo="github:NoSugarCoffee/dotnix"
 
+# `nix-command`/`flakes` are still gated behind experimental features, and
+# whether they are enabled depends on config this script may not be able to
+# read (e.g. a nix that isn't the Determinate install). Ask for them explicitly
+# so the script works regardless of the ambient nix.conf.
+export NIX_CONFIG="extra-experimental-features = nix-command flakes${NIX_CONFIG:+$'\n'${NIX_CONFIG}}"
+
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "error: this script is for macOS only" >&2
   exit 1
@@ -24,9 +30,6 @@ case "$(uname -m)" in
     ;;
 esac
 
-flake_username=$(nix eval --raw "${flake_repo}#username")
-flake_target="${flake_username}-${system}"
-
 if ! command -v nix >/dev/null 2>&1; then
   echo "==> Nix not found, installing via the Determinate Systems installer..."
   curl -fsSL https://install.determinate.systems/nix | sh -s -- install --no-confirm
@@ -39,6 +42,9 @@ re-run this to apply the Home Manager configuration:
 EOF
   exit 0
 fi
+
+flake_username=$(nix eval --raw "${flake_repo}#username")
+flake_target="${flake_username}-${system}"
 
 # Mirrors of cache.nixos.org that are much faster to reach from mainland
 # China (1:1 mirrors, same signing key, so no extra-trusted-public-keys
