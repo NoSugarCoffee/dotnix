@@ -25,13 +25,19 @@ jobs:
       - id: update
         uses: DeterminateSystems/update-flake-lock@v29
         with:
-          token: ${{ secrets.UPDATE_PAT }}
+          # A PAT/App token is required for the PR to trigger CI (the default
+          # GITHUB_TOKEN can't fire other workflows); falls back to
+          # GITHUB_TOKEN if the secret isn't set, though CI then won't run.
+          token: ${{ secrets.FLAKE_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
           branch: chore/flake-update
           pr-title: "chore(flake): update inputs"
           pr-labels: automation
       - if: steps.update.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ secrets.UPDATE_PAT }}
+          GH_TOKEN: ${{ secrets.FLAKE_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
+          # Enables auto-merge rather than merging directly, so the merge
+          # waits for main's required status checks (lint, build-linux,
+          # build-macos) to pass first.
           gh pr merge ${{ steps.update.outputs.pull-request-number }} \
             --auto --squash --delete-branch
