@@ -51,6 +51,18 @@ EOF
   exit 0
 fi
 
+daemon_label="systems.determinate.nix-daemon"
+if [[ ! -e "/Library/LaunchDaemons/${daemon_label}.plist" ]]; then
+  cat >&2 <<EOF
+error: found nix at $(command -v nix), but not a Determinate Nix install
+       (/Library/LaunchDaemons/${daemon_label}.plist is missing).
+       This script configures the daemon through /etc/nix/nix.custom.conf, which
+       only Determinate Nix reads. Uninstall the existing Nix (see
+       https://nix.dev/manual/nix/latest/installation/uninstall), then re-run this.
+EOF
+  exit 1
+fi
+
 # Which account this machine manages is decided by $USER (and its real home
 # directory, which is not always /Users/$USER -- a directory-service account
 # can have a different one) alone, so a fresh machine never has to edit
@@ -107,7 +119,16 @@ else
 fi
 
 if [[ "$restart_daemon" == 1 ]]; then
-  sudo pkill -x nix-daemon 2>/dev/null || true
+  sudo launchctl kickstart -k "system/${daemon_label}"
+fi
+
+if ! nix store info --store daemon >/dev/null 2>&1; then
+  cat >&2 <<EOF
+error: the Nix daemon is not reachable. Restart it and re-run this:
+       sudo launchctl kickstart -k system/${daemon_label}
+       Its log is /var/log/determinate-nix-daemon.log.
+EOF
+  exit 1
 fi
 
 echo "==> Applying Home Manager configuration for ${flake_target} (account ${USER})..."
