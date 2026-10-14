@@ -17,6 +17,16 @@ automatically, so adding an app is adding a directory; local derivations still n
 entry in `flake.nix`. Shared bits live in `lib/` (proxy values, `release-pin.nix`,
 `managed_settings.py`).
 
+## macOS app placement
+
+`home.activation.copyApps` in `home.nix` copies every `home.packages` app bundle into
+`~/Applications/Home Manager Apps`, except bundles containing `Contents/Library/SystemExtensions`
+(VPN, virtual camera, driver), which go to `/Applications`. macOS only activates a system
+extension from there; elsewhere it fails, and Tailscale's standalone app even aborts at launch.
+Routing is keyed on the bundle, so a new app with a system extension needs no opt-in. Don't add
+per-app symlinks or activation steps to work around placement. `/Applications` copies are tracked
+in `~/.local/state/home-manager/copied-system-apps`, and only those are ever removed.
+
 ## AI agent packages
 
 Prefer prebuilt packages from the `llm-agents` flake input (`github:numtide/llm-agents.nix`)
