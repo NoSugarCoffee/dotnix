@@ -29,14 +29,19 @@ curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/b
 
 If Nix wasn't installed yet, open a new terminal and re-run. Re-run any time to update.
 
-**Already have Nix, no home-manager yet** — bootstrap the first switch:
+**Already have Nix, no home-manager yet** — bootstrap the first switch. This targets the
+account configured in `flake.nix` (`liangliangdai` until you fork and rename it), which only
+matches `$USER` after `scripts/bootstrap-macos.sh` has run on this checkout:
 
 ```sh
 # Linux
-nix run .#home-manager -- switch --flake ".#${USER}-x86_64-linux"
+nix run .#home-manager -- switch --flake ".#$(nix eval --raw .#username)-x86_64-linux"
 
-# macOS
-nix run .#home-manager -- switch --flake ".#${USER}-aarch64-darwin"
+# macOS (Apple Silicon)
+nix run .#home-manager -- switch --flake ".#$(nix eval --raw .#username)-aarch64-darwin"
+
+# macOS (Intel)
+nix run .#home-manager -- switch --flake ".#$(nix eval --raw .#username)-x86_64-darwin"
 ```
 
 **Day to day** — once `just` is on PATH:
@@ -101,8 +106,9 @@ Everything else (`homeConfigurations` attribute names, `home.username`,
 Fork the repo and change just that string — that's the whole rebranding step.
 
 A new machine doesn't even need that edit: `scripts/bootstrap-macos.sh` rewrites the
-line to the machine's `$USER` in a throwaway copy of the source. Keep it on **one** line —
-that rewrite is line-level and fails loudly if it doesn't match.
+`username`/`homeDirectory` lines to the machine's `$USER`/`$HOME` in a throwaway copy of the
+source (via `scripts/inject-account.sh`). Keep each on **one** line — the rewrite is
+line-level and fails loudly if either doesn't match.
 
 ## 📝 Notes
 
