@@ -1,0 +1,19 @@
+scripts/bootstrap-macos.sh
+  s_64f8011b163b5d::t_819f87651da1fb 13-18,46-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.49-trip",
+  "base_commit_sha": "39f4a79dfbd8eca52e1c42048c37117ff1fc775e",
+  "prompts": {},
+  "sessions": {
+    "s_64f8011b163b5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a13a5f-adfa-7671-a8ad-a54814880bed",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
