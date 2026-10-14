@@ -1,0 +1,19 @@
+README.md
+  s_64f8011b163b5d::t_8f457ec6e2afe4 22-24,30,92-93,100-102,108-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.49-trip",
+  "base_commit_sha": "ed83444836d48e2dd5fc952663ca92603d7bc5ce",
+  "prompts": {},
+  "sessions": {
+    "s_64f8011b163b5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a13a5f-adfa-7671-a8ad-a54814880bed",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
