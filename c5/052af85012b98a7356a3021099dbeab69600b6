@@ -1,0 +1,23 @@
+scripts/bootstrap-macos.sh
+  s_99014fb75a9a09::t_9e8003e82aa231 5-7,13-16,46,51-77,117-118,120-121
+flake.nix
+  s_99014fb75a9a09::t_9e8003e82aa231 37-43
+.github/workflows/ci.yml
+  s_99014fb75a9a09::t_9e8003e82aa231 74-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.49-trip",
+  "base_commit_sha": "c5052af85012b98a7356a3021099dbeab69600b6",
+  "prompts": {},
+  "sessions": {
+    "s_99014fb75a9a09": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a89-d22b-7ce3-8fe3-4960175b5d78",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
