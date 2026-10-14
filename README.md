@@ -72,13 +72,17 @@ just switch
 
 `update-flake-lock` ([.github/workflows/flake-update.yml](.github/workflows/flake-update.yml))
 opens a daily PR bumping flake inputs and enables auto-merge (squash) on it, so it only lands
-once CI goes green — it never merges directly.
+once CI goes green — it never merges directly. Three repository settings are required for that
+to actually work end to end:
 
-- **`UPDATE_PAT` secret.** A fine-grained PAT or GitHub App token with `contents: write`
-  and `pull-requests: write` on this repo. The workflow falls back to the default
-  `GITHUB_TOKEN` if the secret is unset, but PRs opened with `GITHUB_TOKEN` don't trigger other
-  workflows (a GitHub Actions restriction), so CI — and therefore auto-merge — never runs on
-  them. Set `UPDATE_PAT` for the automation to actually work end to end.
+- **`UPDATE_PAT` secret.** Must be a fine-grained PAT (or other long-lived token) with
+  `contents: write` and `pull-requests: write` on this repo — **not** a GitHub App installation
+  token, which expires after an hour and would silently break the next scheduled run once it
+  does. The workflow falls back to the default `GITHUB_TOKEN` if the secret is unset, but
+  `GITHUB_TOKEN`-authored `pull_request` runs are held for manual approval rather than running
+  automatically, so set `UPDATE_PAT` for the PR to get CI (and therefore auto-merge) on its own.
+- **`Allow auto-merge`** must be enabled in the repository's General settings. Without it,
+  `gh pr merge --auto` fails outright instead of queuing the PR for merge once checks pass.
 - **Branch protection on `main`** must require the `lint`, `build-linux`, and `build-macos`
   status checks (the `ci.yml` jobs) before merging. Auto-merge only completes the squash once
   those checks report success.
