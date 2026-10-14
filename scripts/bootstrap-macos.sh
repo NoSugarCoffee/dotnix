@@ -17,9 +17,12 @@ branch="main"
 
 # `nix-command`/`flakes` are still gated behind experimental features, and
 # whether they are enabled depends on config this script may not be able to
-# read (e.g. a nix that isn't the Determinate install). Ask for them explicitly
-# so the script works regardless of the ambient nix.conf.
-export NIX_CONFIG="extra-experimental-features = nix-command flakes${NIX_CONFIG:+$'\n'${NIX_CONFIG}}"
+# read (e.g. a nix that isn't the Determinate install). Ask for them
+# explicitly via `extra-experimental-features`, appended *after* any existing
+# NIX_CONFIG: Nix config lines apply top to bottom, and a caller's own plain
+# (non-"extra-") `experimental-features = nix-command` would otherwise come
+# after ours and overwrite the whole setting, dropping flakes again.
+export NIX_CONFIG="${NIX_CONFIG:+${NIX_CONFIG}$'\n'}extra-experimental-features = nix-command flakes"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "error: this script is for macOS only" >&2
@@ -48,12 +51,13 @@ EOF
   exit 0
 fi
 
-# Which account this machine manages is decided by $USER alone, so a fresh
-# machine never has to edit anything: download the source as a tarball and
-# rewrite the single `username` line in the private copy. A directory with no
-# `.git` in it is a perfectly good flake source, which is how the clone and the
-# git CLI are both avoided; the copy is deleted on exit, so nothing on disk
-# goes stale.
+# Which account this machine manages is decided by $USER (and its real home
+# directory, which is not always /Users/$USER -- a directory-service account
+# can have a different one) alone, so a fresh machine never has to edit
+# anything: download the source as a tarball and rewrite the `username`/
+# `homeDirectory` lines in the private copy. A directory with no `.git` in it
+# is a perfectly good flake source, which is how the clone and the git CLI are
+# both avoided; the copy is deleted on exit, so nothing on disk goes stale.
 workdir="$(mktemp -d)"
 srcdir="${workdir}/dotnix"
 trap 'rm -rf "${workdir}"' EXIT
@@ -62,18 +66,10 @@ echo "==> Downloading ${repo}@${branch}..."
 curl -fsSL "https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz" |
   tar -xz -C "${srcdir}" --strip-components=1
 
-# Deliberately not `sed -i`: its flags differ between BSD and GNU, and this
-# form is identical on both. The rewrite is line-level, so flake.nix keeps
-# `username` on one line, and a renamed or reformatted line fails loudly below
-# rather than silently deploying the repo's default account instead of the
-# local one.
-sed -e "s|^ *username = .*;|      username = \"${USER}\";|" \
-  "${srcdir}/flake.nix" > "${srcdir}/flake.nix.new"
-mv "${srcdir}/flake.nix.new" "${srcdir}/flake.nix"
-if ! grep -qF "username = \"${USER}\";" "${srcdir}/flake.nix"; then
-  echo "error: could not set the account to '${USER}' in the downloaded flake.nix" >&2
-  exit 1
-fi
+# The downloaded copy already carries scripts/inject-account.sh, so this runs
+# the very same rewrite CI exercises rather than a copy of it that could
+# silently diverge.
+bash "${srcdir}/scripts/inject-account.sh" "${srcdir}" "${USER}" "${HOME}"
 flake_target="${USER}-${system}"
 
 # Mirrors of cache.nixos.org that are much faster to reach from mainland

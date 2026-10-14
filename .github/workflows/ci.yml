@@ -65,27 +65,29 @@ jobs:
               run deadnix    deadnix --fail .
               run nixfmt     nixfmt --check $(git ls-files "*.nix")
               run ruff       ruff check $(git ls-files "*.py")
-              run shellcheck shellcheck scripts/bootstrap-macos.sh \
-                $(git ls-files ".github/workflows/scripts/*.sh")
+              run shellcheck shellcheck \
+                $(git ls-files "scripts/*.sh" ".github/workflows/scripts/*.sh")
 
               exit $status
             '
 
-      # The one-liner applies this config to whatever $USER says by rewriting
-      # the single `username` line in a throwaway copy of the source, with no
-      # `.git` present -- like the real tarball download. That rewrite is
-      # load-bearing for the bootstrap, so prove the line still matches and
-      # that the rewritten copy evaluates for an account the repo never named.
-      # `git archive` reproduces the no-.git download without a network fetch.
-      - name: bootstrap's $USER injection still works
+      # The one-liner applies this config to whatever $USER/$HOME say by
+      # running scripts/inject-account.sh against a throwaway copy of the
+      # source with no `.git` present -- like the real tarball download. That
+      # rewrite is load-bearing for the bootstrap, so run the actual script
+      # (not a reimplementation of its sed logic, which could silently
+      # diverge from it) and prove the rewritten copy evaluates for an
+      # account/home the repo never named. `git archive` reproduces the
+      # no-.git download without a network fetch.
+      - name: bootstrap's $USER/$HOME injection still works
         run: |
           set -euo pipefail
           src="$(mktemp -d)/dotnix"
           mkdir -p "$src"
           git archive HEAD | tar -x -C "$src"
-          sed -e 's|^ *username = .*;|      username = "ci-user";|' "$src/flake.nix" > "$src/flake.nix.new"
-          mv "$src/flake.nix.new" "$src/flake.nix"
+          bash "$src/scripts/inject-account.sh" "$src" "ci-user" "/Users/ci-user"
           grep -qF 'username = "ci-user";' "$src/flake.nix"
+          grep -qF 'homeDirectory = "/Users/ci-user";' "$src/flake.nix"
           test "$(nix eval --raw "$src#username")" = 'ci-user'
           nix eval --raw "$src#homeConfigurations.\"ci-user-x86_64-linux\".activationPackage.drvPath" > /dev/null
           echo "injected account evaluates cleanly"
