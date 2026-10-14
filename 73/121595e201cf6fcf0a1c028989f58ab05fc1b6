@@ -1,0 +1,26 @@
+flake.nix
+  s_64f8011b163b5d::t_7bd7bbc60c3752 37-50,100,146-149,151-155,174
+  s_64f8011b163b5d::t_1495d98f9fccec 156-173
+.github/workflows/ci.yml
+  s_64f8011b163b5d::t_1a42256e437147 93-94,96-104
+README.md
+  s_64f8011b163b5d::t_71de58303eede1 36,39,92,96,101-121
+scripts/bootstrap-macos.sh
+  s_64f8011b163b5d::t_c0ff268a7a6980 46-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.49-trip",
+  "base_commit_sha": "73121595e201cf6fcf0a1c028989f58ab05fc1b6",
+  "prompts": {},
+  "sessions": {
+    "s_64f8011b163b5d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a13a5f-adfa-7671-a8ad-a54814880bed",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
