@@ -17,6 +17,13 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Warn if UPDATE_PAT is unset
+        env:
+          UPDATE_PAT: ${{ secrets.UPDATE_PAT }}
+        run: |
+          if [ -z "$UPDATE_PAT" ]; then
+            echo "::warning::UPDATE_PAT secret is not set; falling back to GITHUB_TOKEN, so the flake-lock update PR won't trigger CI and auto-merge won't complete."
+          fi
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v30
         with:
