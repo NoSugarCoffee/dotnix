@@ -7,17 +7,17 @@ CONFIG := USER + "-" + SYSTEM
 default:
     @just --list
 
-# Apply the Home Manager configuration for the current platform.
+# Apply the Home Manager configuration for the current platform, as $USER.
 switch:
-    nix run .#home-manager -- switch --flake .#{{CONFIG}}
+    flake=$(scripts/local-flake.sh) && nix run "$flake#home-manager" -- switch --flake "$flake#{{CONFIG}}"
 
 # Show all Home Manager generations.
 generations:
     nix run .#home-manager -- generations
 
-# Build the Home Manager activation package without switching.
+# Build the Home Manager activation package without switching, as $USER.
 build:
-    nix build .#homeConfigurations.{{CONFIG}}.activationPackage
+    flake=$(scripts/local-flake.sh) && nix build "$flake#homeConfigurations.{{CONFIG}}.activationPackage"
 
 # Show flake outputs.
 show:
