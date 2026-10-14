@@ -19,24 +19,24 @@ command applies a fully reproducible setup on any supported machine.
 
 ## 🚀 Quick start
 
-**New machine, no Nix installed** — one-liner that installs Nix (via the
-[Determinate installer](https://install.determinate.systems/)) if missing and applies this flake.
-No local clone or `git` needed:
+**New machine, no Nix installed** — one line: no clone, no `git`, nothing to edit. It
+installs Nix (via the [Determinate installer](https://install.determinate.systems/)) if
+missing, then applies this flake with the account set to your `$USER`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
 ```
 
-If Nix wasn't installed yet, open a new terminal after the installer finishes and re-run.
+If Nix wasn't installed yet, open a new terminal and re-run. Re-run any time to update.
 
 **Already have Nix, no home-manager yet** — bootstrap the first switch:
 
 ```sh
 # Linux
-nix run .#home-manager -- switch --flake .#liangliangdai
+nix run .#home-manager -- switch --flake ".#${USER}-x86_64-linux"
 
 # macOS
-nix run .#home-manager -- switch --flake .#liangliangdai-aarch64-darwin
+nix run .#home-manager -- switch --flake ".#${USER}-aarch64-darwin"
 ```
 
 **Day to day** — once `just` is on PATH:
@@ -97,9 +97,12 @@ let
 ```
 
 Everything else (`homeConfigurations` attribute names, `home.username`,
-`homeDirectory`, CI `USERNAME`, the bootstrap script's flake target)
-reads from there directly or via `nix eval --raw .#username`. Fork the
-repo and change just that string — that's the whole rebranding step.
+`homeDirectory`, CI) reads from there directly or via `nix eval --raw .#username`.
+Fork the repo and change just that string — that's the whole rebranding step.
+
+A new machine doesn't even need that edit: `scripts/bootstrap-macos.sh` rewrites the
+line to the machine's `$USER` in a throwaway copy of the source. Keep it on **one** line —
+that rewrite is line-level and fails loudly if it doesn't match.
 
 ## 📝 Notes
 
