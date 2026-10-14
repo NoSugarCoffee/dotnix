@@ -56,7 +56,7 @@ just switch
 | **Browsers** | — | [google-chrome](https://www.google.com/chrome/) · [ego-lite](https://github.com/citrolabs/ego-lite) | — |
 | **Screen** | [obs-studio](https://obsproject.com/) | [macshot](https://github.com/sw33tLie/macshot) | — |
 | **Network** | [clash-verge-rev](https://www.clashverge.dev/) | — | — |
-| **Utilities** | — | [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) | [copyq](https://hluk.github.io/CopyQ/) |
+| **Utilities** | — | [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) · [bitwarden-desktop](https://bitwarden.com/download/) | [copyq](https://hluk.github.io/CopyQ/) |
 
 ## 🔧 Commands
 
@@ -89,7 +89,7 @@ repo and change just that string — that's the whole rebranding step.
 - **Codex and Claude Code settings stay writable.** A switch seeds them if missing and resets only the keys declared in `apps/codex/managed.toml` and `apps/claude-code/settings.nix`.
 - **asdf pins Go / Node / Java / Maven** to explicit versions in `apps/asdf/default.nix`. Python comes from nixpkgs instead, since asdf compiles it from source.
 - **Docker on macOS is colima.** A launchd agent starts the VM at login; resize it with `colima stop && colima start --cpu 4 --memory 8`. On Linux the daemon is a system service, out of scope here.
-- **Ad-hoc-signed macOS apps are re-signed locally.** Nix builds like kitty and Albert carry a signature that changes with every rebuild, which silently invalidates Accessibility / Screen Recording grants. A switch re-signs their copies in `~/Applications/Home Manager Apps` with a self-signed `dotnix local code signing` certificate it creates in the login keychain, so grants survive updates. The first switch that migrates an app to this identity still changes its code identity once -- macOS treats that as a new app, so expect to re-grant Accessibility / Screen Recording for kitty and Albert one more time right after that switch; it then sticks across every rebuild after. Without a login keychain at `~/Library/Keychains/login.keychain-db` (headless activation, CI) it warns and leaves the copy ad-hoc signed instead of failing.
+- **Ad-hoc-signed macOS apps are re-signed locally.** Nix builds like kitty, Albert and Bitwarden carry a signature that changes with every rebuild, which silently invalidates Accessibility / Screen Recording grants (and, for Bitwarden, the Keychain item backing Touch ID unlock). A switch re-signs their copies in `~/Applications/Home Manager Apps` with a self-signed `dotnix local code signing` certificate it creates in the login keychain, so grants survive updates. The first switch that migrates an app to this identity still changes its code identity once -- macOS treats that as a new app, so expect to re-grant Accessibility / Screen Recording for kitty and Albert (and to re-enroll Touch ID in Bitwarden) one more time right after that switch; it then sticks across every rebuild after. Without a login keychain at `~/Library/Keychains/login.keychain-db` (headless activation, CI) it warns and leaves the copy ad-hoc signed instead of failing.
 - **China mirrors.** `scripts/bootstrap-macos.sh` adds SJTU/TUNA/USTC substituters; check with `nix config show | grep substitut`.
 
 ## 📄 License
