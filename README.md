@@ -74,11 +74,11 @@ just switch
 opens a daily PR bumping flake inputs and enables auto-merge (squash) on it, so it only lands
 once CI goes green — it never merges directly.
 
-- **`FLAKE_UPDATE_TOKEN` secret.** A fine-grained PAT or GitHub App token with `contents: write`
+- **`UPDATE_PAT` secret.** A fine-grained PAT or GitHub App token with `contents: write`
   and `pull-requests: write` on this repo. The workflow falls back to the default
   `GITHUB_TOKEN` if the secret is unset, but PRs opened with `GITHUB_TOKEN` don't trigger other
   workflows (a GitHub Actions restriction), so CI — and therefore auto-merge — never runs on
-  them. Set `FLAKE_UPDATE_TOKEN` for the automation to actually work end to end.
+  them. Set `UPDATE_PAT` for the automation to actually work end to end.
 - **Branch protection on `main`** must require the `lint`, `build-linux`, and `build-macos`
   status checks (the `ci.yml` jobs) before merging. Auto-merge only completes the squash once
   those checks report success.
