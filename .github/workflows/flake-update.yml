@@ -17,6 +17,13 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Warn if UPDATE_PAT is unset
+        env:
+          UPDATE_PAT: ${{ secrets.UPDATE_PAT }}
+        run: |
+          if [ -z "$UPDATE_PAT" ]; then
+            echo "::warning::UPDATE_PAT secret is not set; falling back to GITHUB_TOKEN, so the flake-lock update PR's CI runs will need manual approval and auto-merge won't complete on its own."
+          fi
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v30
         with:
@@ -25,13 +32,19 @@ jobs:
       - id: update
         uses: DeterminateSystems/update-flake-lock@v29
         with:
-          token: ${{ secrets.UPDATE_PAT }}
+          # A PAT/App token is required for the PR to trigger CI automatically;
+          # GITHUB_TOKEN-created pull_request runs require manual approval, so the
+          # workflow falls back to GITHUB_TOKEN if the secret isn't set.
+          token: ${{ secrets.UPDATE_PAT || secrets.GITHUB_TOKEN }}
           branch: chore/flake-update
           pr-title: "chore(flake): update inputs"
           pr-labels: automation
       - if: steps.update.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ secrets.UPDATE_PAT }}
+          GH_TOKEN: ${{ secrets.UPDATE_PAT || secrets.GITHUB_TOKEN }}
         run: |
+          # Enables auto-merge rather than merging directly, so the merge
+          # waits for main's required status checks (lint, build-linux,
+          # build-macos) to pass first.
           gh pr merge ${{ steps.update.outputs.pull-request-number }} \
             --auto --squash --delete-branch
