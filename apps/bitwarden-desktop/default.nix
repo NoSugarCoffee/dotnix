@@ -8,12 +8,14 @@
   # Albert -- no custom package.nix or Homebrew cask needed, and it is left
   # to copyApps' existing re-sign-on-copy logic the same way.
   #
-  # Scoped to darwin: upstream meta.platforms also lists the Linux systems
-  # this flake builds for, but the GUI app isn't wanted there, only on this
-  # macOS setup. availableOn still gates x86_64-darwin, which upstream
-  # doesn't list (no aarch64-only native dependency has an x86_64-darwin
-  # build), so this follows platform support instead of hardcoding a system.
-  home.packages = lib.optionals pkgs.stdenv.isDarwin (
+  # Scoped to exactly aarch64-darwin, not pkgs.stdenv.isDarwin: nixpkgs
+  # (nixos-26.05, this flake's pin) lists bitwarden-desktop's meta.platforms
+  # for both darwin architectures (and both Linux ones this flake also
+  # builds for), so neither isDarwin nor availableOn alone narrows it down
+  # to this macOS setup's one actual target. The exact-system check is what
+  # keeps it off x86_64-darwin and Linux; availableOn stays as a guard in
+  # case upstream ever drops aarch64-darwin support instead.
+  home.packages = lib.optionals (pkgs.stdenv.hostPlatform.system == "aarch64-darwin") (
     lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.bitwarden-desktop ]
   );
 }
