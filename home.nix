@@ -50,6 +50,31 @@
           [[ -d "$1/Contents/Library/SystemExtensions" ]]
         }
 
+        # Ownership of an /Applications copy is bound to the bundle, not the
+        # sidecar index. A file inside the bundle would break a notarized
+        # seal, so macOS stores a `home-manager.copied` xattr on the .app
+        # directory; elsewhere a hidden file stands in for tests.
+        copySentinelAttr=home-manager.copied
+        copySentinelFile=.home-manager-copied
+
+        hasCopySentinel() {
+          local app="$1"
+          if [[ "$(uname -s)" == Darwin ]]; then
+            /usr/bin/xattr -p "$copySentinelAttr" "$app" >/dev/null 2>&1
+          else
+            [[ -f "$app/$copySentinelFile" ]]
+          fi
+        }
+
+        writeCopySentinel() {
+          local app="$1" value="$2"
+          if [[ "$(uname -s)" == Darwin ]]; then
+            /usr/bin/xattr -w "$copySentinelAttr" "$value" "$app"
+          else
+            printf '%s' "$value" > "$app/$copySentinelFile"
+          fi
+        }
+
         # CI/headless activation runs against a fresh HOME with no login
         # keychain, which `security import` cannot create on its own -- it
         # only fails loudly ("SecKeychainItemImport: The specified keychain
@@ -126,16 +151,21 @@
           staleFolder=$systemFolder
           staleMarkerFolder=$systemMarkerFolder
           # /Applications is shared: never rsync over a bundle we did not
-          # put there. A missing marker means a hand-installed app (or a
-          # leftover we do not own) -- warn and keep the store copy in
-          # $targetFolder as a fallback.
+          # put there. Ownership is the bundle sentinel, not the sidecar --
+          # a leftover sidecar after a hand-replace must not authorize
+          # --delete. A dest we already stamped stays ours so an interrupted
+          # copy (rsync then crash before the sidecar) can finish.
           removeStale=1
           if hasSystemExtension "$storePath"; then
             # /Applications is root:admin 0775, so an admin account writes it
             # without sudo; anyone else keeps the old behaviour plus a hint.
             if [[ -w "$systemFolder" ]]; then
-              if [[ -e "$systemFolder/$name" && ! -f "$systemMarkerFolder/$name" ]]; then
+              if [[ -e "$systemFolder/$name" ]] && ! hasCopySentinel "$systemFolder/$name"; then
                 echo "warning: $name already exists in $systemFolder and was not placed by home-manager; leaving it in place and keeping a copy in $targetFolder" >&2
+                if [[ -f "$systemMarkerFolder/$name" ]]; then
+                  echo "warning: dropping stale home-manager marker for $name (bundle is not owned)" >&2
+                  [[ -v DRY_RUN ]] || rm -f "$systemMarkerFolder/$name"
+                fi
               else
                 appFolder=$systemFolder
                 appMarkerFolder=$systemMarkerFolder
@@ -154,6 +184,7 @@
           # needing a retry once a keychain actually makes retrying useful;
           # dry runs keep previewing the retry regardless, as before.
           if [[ -d "$appFolder/$name" && -f "$marker" && "$(< "$marker")" == "$storePath" ]] \
+            && { [[ "$appFolder" != "$systemFolder" ]] || hasCopySentinel "$appFolder/$name"; } \
             && ! { (( storeIsAdhoc )) && isAdhocSigned "$appFolder/$name" \
                    && { [[ -v DRY_RUN ]] || hasLoginKeychain; }; }; then
             :
@@ -161,25 +192,33 @@
             echo "copying $name to $appFolder..." >&2
             rsync_ok=1
             if [[ "$appFolder" == "$systemFolder" && ! -v DRY_RUN ]]; then
-              # A root-owned /Applications bundle (or similar) must not
-              # abort the whole activation; fall back to $targetFolder.
-              ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
-                --specials --delete --chmod=+w "$storePath/" "$appFolder/$name" || rsync_ok=0
+              # Stamp the dest before rsync so a crash mid-copy is still
+              # ours on the next activation. A root-owned bundle (or similar)
+              # must not abort the whole activation; fall back to $targetFolder.
+              if mkdir -p "$appFolder/$name" && writeCopySentinel "$appFolder/$name" "$storePath"; then
+                ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
+                  --specials --delete --chmod=+w --exclude='/.home-manager-copied' \
+                  "$storePath/" "$appFolder/$name" || rsync_ok=0
+              else
+                rsync_ok=0
+              fi
             else
               run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
-                --specials --delete --chmod=+w "$storePath/" "$appFolder/$name"
+                --specials --delete --chmod=+w --exclude='/.home-manager-copied' \
+                "$storePath/" "$appFolder/$name"
             fi
             if (( ! rsync_ok )); then
               echo "warning: failed to copy $name to $systemFolder; falling back to $targetFolder" >&2
               appFolder=$targetFolder
               appMarkerFolder=$markerFolder
               marker="$appMarkerFolder/$name"
-              # Leave the unwritable /Applications bundle (and any marker)
-              # alone; we did not successfully replace it.
+              # Leave the /Applications dest (and its sentinel) alone so a
+              # later activation can retry; do not treat it as stale.
               removeStale=0
               echo "copying $name to $appFolder..." >&2
               run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
-                --specials --delete --chmod=+w "$storePath/" "$appFolder/$name"
+                --specials --delete --chmod=+w --exclude='/.home-manager-copied' \
+                "$storePath/" "$appFolder/$name"
             fi
             if (( storeIsAdhoc )); then
               if [[ -v DRY_RUN ]] || hasLoginKeychain; then
@@ -215,8 +254,11 @@
         for existing in "$systemMarkerFolder"/*; do
           name=$(basename "$existing")
           if [[ -e "$existing" && ! -e "$sourceFolder/$name" ]]; then
-            echo "removing $name from $systemFolder..." >&2
-            run rm -rf "$systemFolder/$name" "$existing"
+            if hasCopySentinel "$systemFolder/$name"; then
+              echo "removing $name from $systemFolder..." >&2
+              run rm -rf "$systemFolder/$name"
+            fi
+            run rm -f "$existing"
           fi
         done
       ''

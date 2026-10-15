@@ -174,6 +174,7 @@ jobs:
           test -n "$codex_bin"
           test -n "$chrome_app"
           test -n "$sys_app"
+          /usr/bin/xattr -p home-manager.copied "$sys_app"
 
       # The activation log proving a tool installed says nothing about a real
       # terminal finding it: sessionPath only reaches PATH if the managed
