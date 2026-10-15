@@ -125,24 +125,26 @@
           appMarkerFolder=$markerFolder
           staleFolder=$systemFolder
           staleMarkerFolder=$systemMarkerFolder
+          # /Applications is shared: never rsync over a bundle we did not
+          # put there. A missing marker means a hand-installed app (or a
+          # leftover we do not own) -- warn and keep the store copy in
+          # $targetFolder as a fallback.
+          removeStale=1
           if hasSystemExtension "$storePath"; then
             # /Applications is root:admin 0775, so an admin account writes it
             # without sudo; anyone else keeps the old behaviour plus a hint.
             if [[ -w "$systemFolder" ]]; then
-              appFolder=$systemFolder
-              appMarkerFolder=$systemMarkerFolder
-              staleFolder=$targetFolder
-              staleMarkerFolder=$markerFolder
+              if [[ -e "$systemFolder/$name" && ! -f "$systemMarkerFolder/$name" ]]; then
+                echo "warning: $name already exists in $systemFolder and was not placed by home-manager; leaving it in place and keeping a copy in $targetFolder" >&2
+              else
+                appFolder=$systemFolder
+                appMarkerFolder=$systemMarkerFolder
+                staleFolder=$targetFolder
+                staleMarkerFolder=$markerFolder
+              fi
             else
               echo "warning: $name ships a system extension, which macOS only loads from $systemFolder; that is not writable by $USER, so $name stays in $targetFolder" >&2
             fi
-          fi
-          # An app that moved between the two folders leaves a copy behind.
-          # Only a marker proves dotnix put it there, so an /Applications
-          # app installed by hand is never touched.
-          if [[ -f "$staleMarkerFolder/$name" ]]; then
-            echo "removing $name from $staleFolder..." >&2
-            run rm -rf "$staleFolder/$name" "$staleMarkerFolder/$name"
           fi
           marker="$appMarkerFolder/$name"
           storeIsAdhoc=$(isAdhocSigned "$storePath" && echo 1 || echo 0)
@@ -154,22 +156,50 @@
           if [[ -d "$appFolder/$name" && -f "$marker" && "$(< "$marker")" == "$storePath" ]] \
             && ! { (( storeIsAdhoc )) && isAdhocSigned "$appFolder/$name" \
                    && { [[ -v DRY_RUN ]] || hasLoginKeychain; }; }; then
-            continue
-          fi
-          echo "copying $name to $appFolder..." >&2
-          run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
-            --specials --delete --chmod=+w "$storePath/" "$appFolder/$name"
-          if (( storeIsAdhoc )); then
-            if [[ -v DRY_RUN ]] || hasLoginKeychain; then
-              [[ -v DRY_RUN ]] || ensureSigningIdentity
-              resignWrappedBinaries "$appFolder/$name" "$storePath"
-              echo "re-signing $name with \"$signingIdentity\"..." >&2
-              run /usr/bin/codesign --force --sign "$signingIdentity" "$appFolder/$name"
+            :
+          else
+            echo "copying $name to $appFolder..." >&2
+            rsync_ok=1
+            if [[ "$appFolder" == "$systemFolder" && ! -v DRY_RUN ]]; then
+              # A root-owned /Applications bundle (or similar) must not
+              # abort the whole activation; fall back to $targetFolder.
+              ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
+                --specials --delete --chmod=+w "$storePath/" "$appFolder/$name" || rsync_ok=0
             else
-              echo "warning: no login keychain at $loginKeychain; leaving $name ad-hoc signed (privacy grants may not survive future rebuilds)" >&2
+              run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
+                --specials --delete --chmod=+w "$storePath/" "$appFolder/$name"
             fi
+            if (( ! rsync_ok )); then
+              echo "warning: failed to copy $name to $systemFolder; falling back to $targetFolder" >&2
+              appFolder=$targetFolder
+              appMarkerFolder=$markerFolder
+              marker="$appMarkerFolder/$name"
+              # Leave the unwritable /Applications bundle (and any marker)
+              # alone; we did not successfully replace it.
+              removeStale=0
+              echo "copying $name to $appFolder..." >&2
+              run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
+                --specials --delete --chmod=+w "$storePath/" "$appFolder/$name"
+            fi
+            if (( storeIsAdhoc )); then
+              if [[ -v DRY_RUN ]] || hasLoginKeychain; then
+                [[ -v DRY_RUN ]] || ensureSigningIdentity
+                resignWrappedBinaries "$appFolder/$name" "$storePath"
+                echo "re-signing $name with \"$signingIdentity\"..." >&2
+                run /usr/bin/codesign --force --sign "$signingIdentity" "$appFolder/$name"
+              else
+                echo "warning: no login keychain at $loginKeychain; leaving $name ad-hoc signed (privacy grants may not survive future rebuilds)" >&2
+              fi
+            fi
+            [[ -v DRY_RUN ]] || printf '%s' "$storePath" > "$marker"
           fi
-          [[ -v DRY_RUN ]] || printf '%s' "$storePath" > "$marker"
+          # Drop the other folder's copy only after this folder's copy and
+          # marker are in place, so a failed rsync cannot leave the app
+          # missing from both locations.
+          if (( removeStale )) && [[ -f "$staleMarkerFolder/$name" ]]; then
+            echo "removing $name from $staleFolder..." >&2
+            run rm -rf "$staleFolder/$name" "$staleMarkerFolder/$name"
+          fi
         done
 
         for existing in "$targetFolder"/*.app "$markerFolder"/*; do
