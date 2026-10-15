@@ -195,6 +195,10 @@
                     staleMarkerFolder=$markerFolder
                   else
                     echo "warning: failed to stamp $name; leaving it in place and keeping a copy in $targetFolder" >&2
+                    # Do not let the default staleFolder=/Applications plus
+                    # the leftover sidecar rm -rf the bundle we failed to claim.
+                    removeStale=0
+                    [[ -v DRY_RUN ]] || rm -f "$systemMarkerFolder/$name"
                   fi
                 else
                   echo "warning: $name already exists in $systemFolder and was not placed by home-manager; leaving it in place and keeping a copy in $targetFolder" >&2
@@ -236,7 +240,8 @@
                 if ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
                   --specials --delete --chmod=+w --exclude='/.home-manager-copied' \
                   "$storePath/" "$appFolder/$name"; then
-                  # rsync -X/-A can strip the dest directory xattr; restamp.
+                  # Restamp defensively after the copy; we do not pass -X/-A,
+                  # but a dest-directory xattr can still be dropped.
                   writeCopySentinel "$appFolder/$name" "$storePath" || rsync_ok=0
                 else
                   rsync_ok=0

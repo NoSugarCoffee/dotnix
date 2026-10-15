@@ -182,6 +182,25 @@ class CopyAppsTest(unittest.TestCase):
         self.assertFalse((dest / ".home-manager-copied").exists())
         self.assertEqual((self.hm / "ExtApp.app" / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
 
+    def test_adopt_stamp_failure_keeps_bundle_drops_sidecar(self) -> None:
+        self.make_app(self.source / "ExtApp.app", bundle_id="io.tailscale.ipn.macsys")
+        dest = self.make_app(
+            self.apps / "ExtApp.app",
+            bundle_id="io.tailscale.ipn.macsys",
+            payload="MAIN-SIDE-CAR\n",
+        )
+        (self.sys_markers / "ExtApp.app").write_text("/nix/store/old-main-copy")
+        dest.chmod(0o555)
+        self.addCleanup(dest.chmod, 0o755)
+        result = self.run_copyapps()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("failed to stamp", result.stderr)
+        self.assertTrue(dest.is_dir(), "stamp failure must not rm -rf the /Applications bundle")
+        self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "MAIN-SIDE-CAR\n")
+        self.assertFalse((self.sys_markers / "ExtApp.app").exists())
+        self.assertFalse((dest / ".home-manager-copied").exists())
+        self.assertEqual((self.hm / "ExtApp.app" / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
+
     def test_sidecar_only_same_bundle_id_is_adopted(self) -> None:
         self.make_app(self.source / "ExtApp.app", bundle_id="io.tailscale.ipn.macsys")
         dest = self.make_app(
