@@ -24,8 +24,17 @@ entry in `flake.nix`. Shared bits live in `lib/` (proxy values, `release-pin.nix
 (VPN, virtual camera, driver), which go to `/Applications`. macOS only activates a system
 extension from there; elsewhere it fails, and Tailscale's standalone app even aborts at launch.
 Routing is keyed on the bundle, so a new app with a system extension needs no opt-in. Don't add
-per-app symlinks or activation steps to work around placement. `/Applications` copies are tracked
-in `~/.local/state/home-manager/copied-system-apps`, and only those are ever removed.
+per-app symlinks or activation steps to work around placement. Ownership of an `/Applications`
+copy is an xattr (`home-manager.copied`) on the `.app` directory, written before rsync and
+again after as a defensive restamp (the copy does not pass `-X`/`-A`).
+`~/.local/state/home-manager/copied-system-apps` is only an index for cleanup; a sweep of
+`/Applications` also removes sentinel-owned bundles whose sidecar was lost. A bundle without
+that xattr is left alone, except a one-time adopt of a sidecar-only copy from before this
+sentinel whose `CFBundleIdentifier` matches the store app (so Tailscale/OBS installed from
+`main` keep updating). A hand-replace with a different id drops the stale sidecar. Same-id
+hand-replace is indistinguishable from that adopt and is overwritten. The store copy stays in
+`~/Applications/Home Manager Apps` when we skip. Replacing a running app that already has an
+active system extension may need a reboot or relaunch before macOS loads the new bundle.
 
 ## AI agent packages
 
