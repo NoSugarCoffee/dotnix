@@ -5,10 +5,12 @@ let
   sdkRoot = "${homeDirectory}/${sdkLink}";
 in
 {
-  home.packages = [ android.androidsdk ];
-  home.file.${sdkLink}.source = "${android.androidsdk}/libexec/android-sdk";
-  home.sessionVariables = {
-    ANDROID_HOME = sdkRoot;
-    ANDROID_SDK_ROOT = sdkRoot;
+  home = {
+    packages = [ android.androidsdk ];
+    file.${sdkLink}.source = "${android.androidsdk}/libexec/android-sdk";
+    sessionVariables = {
+      ANDROID_HOME = sdkRoot;
+      ANDROID_SDK_ROOT = sdkRoot;
+    };
   };
 }
