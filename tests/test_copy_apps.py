@@ -1,7 +1,8 @@
 """Sandbox the generated copyApps block against fake bundles.
 
 CI runs this via `python3 -m unittest discover`. Requires `rsync` on PATH
-(present on ubuntu-latest and in the lint nix shell).
+(present on ubuntu-latest and in the lint nix shell). Sentinel fixtures
+match home.nix: xattr `home-manager.copied` on Darwin, a hidden file elsewhere.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import re
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -18,6 +20,12 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 HOME_NIX = REPO / "home.nix"
+
+# Same split as home.nix: Darwin uses an xattr on the .app directory (a file
+# inside the bundle would break a notarized seal); elsewhere a hidden file.
+IS_DARWIN = sys.platform == "darwin"
+SENTINEL_ATTR = "home-manager.copied"
+SENTINEL_FILE = ".home-manager-copied"
 
 
 def nix_unescape(s: str) -> str:
@@ -151,7 +159,32 @@ class CopyAppsTest(unittest.TestCase):
         return dest
 
     def stamp(self, app: Path, value: str = "store") -> None:
-        (app / ".home-manager-copied").write_text(value)
+        if IS_DARWIN:
+            subprocess.run(
+                ["/usr/bin/xattr", "-w", SENTINEL_ATTR, value, str(app)],
+                check=True,
+            )
+        else:
+            (app / SENTINEL_FILE).write_text(value)
+
+    def has_sentinel(self, app: Path) -> bool:
+        if IS_DARWIN:
+            result = subprocess.run(
+                ["/usr/bin/xattr", "-p", SENTINEL_ATTR, str(app)],
+                capture_output=True,
+                check=False,
+            )
+            return result.returncode == 0
+        return (app / SENTINEL_FILE).exists()
+
+    def strip_sentinel_snippet(self) -> str:
+        """Bash that drops the dest sentinel after a successful rsync."""
+        if IS_DARWIN:
+            return (
+                'dest="${@: -1}"\n'
+                f'/usr/bin/xattr -d {SENTINEL_ATTR} "$dest" >/dev/null 2>&1 || true\n'
+            )
+        return 'dest="${@: -1}"\nrm -f "$dest/' + SENTINEL_FILE + '"\n'
 
     def run_copyapps(self, script: Path | None = None) -> subprocess.CompletedProcess[str]:
         if script is None:
@@ -179,7 +212,7 @@ class CopyAppsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "HAND-INSTALLED\n")
         self.assertFalse((self.sys_markers / "ExtApp.app").exists())
-        self.assertFalse((dest / ".home-manager-copied").exists())
+        self.assertFalse(self.has_sentinel(dest))
         self.assertEqual((self.hm / "ExtApp.app" / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
 
     def test_adopt_stamp_failure_keeps_bundle_drops_sidecar(self) -> None:
@@ -190,15 +223,26 @@ class CopyAppsTest(unittest.TestCase):
             payload="MAIN-SIDE-CAR\n",
         )
         (self.sys_markers / "ExtApp.app").write_text("/nix/store/old-main-copy")
-        dest.chmod(0o555)
-        self.addCleanup(dest.chmod, 0o755)
-        result = self.run_copyapps()
+        # Force writeCopySentinel to fail on every platform: chmod 555 blocks
+        # creating the Linux sentinel file, but Darwin xattr -w can still
+        # succeed on an owner-r-x directory.
+        text = self.block.replace("${lib.getExe pkgs.rsync}", self.rsync)
+        text = re.sub(
+            r"writeCopySentinel\(\) \{.*?\n\}",
+            "writeCopySentinel() { return 1; }",
+            text,
+            count=1,
+            flags=re.S,
+        )
+        script = self.box / "fail-stamp.sh"
+        script.write_text(text)
+        result = self.run_copyapps(script)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("failed to stamp", result.stderr)
         self.assertTrue(dest.is_dir(), "stamp failure must not rm -rf the /Applications bundle")
         self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "MAIN-SIDE-CAR\n")
         self.assertFalse((self.sys_markers / "ExtApp.app").exists())
-        self.assertFalse((dest / ".home-manager-copied").exists())
+        self.assertFalse(self.has_sentinel(dest))
         self.assertEqual((self.hm / "ExtApp.app" / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
 
     def test_sidecar_only_same_bundle_id_is_adopted(self) -> None:
@@ -213,7 +257,7 @@ class CopyAppsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("adopting sidecar-only", result.stderr)
         self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
-        self.assertTrue((dest / ".home-manager-copied").exists())
+        self.assertTrue(self.has_sentinel(dest))
         self.assertTrue((self.sys_markers / "ExtApp.app").exists())
 
     def test_hand_replace_different_bundle_id_keeps_bundle_drops_sidecar(self) -> None:
@@ -228,7 +272,7 @@ class CopyAppsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "HAND-REPLACED\n")
         self.assertFalse((self.sys_markers / "ExtApp.app").exists())
-        self.assertFalse((dest / ".home-manager-copied").exists())
+        self.assertFalse(self.has_sentinel(dest))
         self.assertEqual((self.hm / "ExtApp.app" / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
 
     def test_interrupted_copy_with_sentinel_no_sidecar_is_recovered(self) -> None:
@@ -239,7 +283,7 @@ class CopyAppsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
         self.assertTrue((self.sys_markers / "ExtApp.app").exists())
-        self.assertTrue((dest / ".home-manager-copied").exists())
+        self.assertTrue(self.has_sentinel(dest))
 
     def test_rsync_failure_falls_back_without_aborting(self) -> None:
         self.make_app(self.source / "ExtApp.app")
@@ -269,8 +313,7 @@ class CopyAppsTest(unittest.TestCase):
             "#!/usr/bin/env bash\n"
             f'"{self.rsync}" "$@"\n'
             "status=$?\n"
-            'dest="${@: -1}"\n'
-            'rm -f "$dest/.home-manager-copied"\n'
+            f"{self.strip_sentinel_snippet()}"
             "exit $status\n"
         )
         wrapper.chmod(wrapper.stat().st_mode | stat.S_IXUSR)
@@ -278,7 +321,7 @@ class CopyAppsTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         dest = self.apps / "ExtApp.app"
         self.assertEqual((dest / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
-        self.assertTrue((dest / ".home-manager-copied").exists())
+        self.assertTrue(self.has_sentinel(dest))
         self.assertTrue((self.sys_markers / "ExtApp.app").exists())
 
     def test_cleanup_removes_sentinel_without_sidecar_when_package_gone(self) -> None:
