@@ -75,6 +75,31 @@
           fi
         }
 
+        # Sidecar-only copies from before the bundle sentinel need a one-time
+        # adopt. CFBundleIdentifier matching recovers main's Tailscale/OBS
+        # installs; a different id is a hand-replace. Same-id hand-replace
+        # (website Tailscale over ours) is indistinguishable and gets adopted.
+        bundleIdentifier() {
+          local app="$1"
+          local plist="$app/Contents/Info.plist"
+          [[ -f "$plist" ]] || return 1
+          if [[ "$(uname -s)" == Darwin ]]; then
+            /usr/bin/defaults read "$app/Contents/Info" CFBundleIdentifier 2>/dev/null
+          else
+            local id
+            id=$(sed -n '/<key>CFBundleIdentifier<\/key>/{n;s/.*<string>\([^<]*\)<\/string>.*/\1/p;}' "$plist")
+            [[ -n "$id" ]] || return 1
+            printf '%s\n' "$id"
+          fi
+        }
+
+        sameBundleId() {
+          local left right
+          left=$(bundleIdentifier "$1") || return 1
+          right=$(bundleIdentifier "$2") || return 1
+          [[ -n "$left" && "$left" == "$right" ]]
+        }
+
         # CI/headless activation runs against a fresh HOME with no login
         # keychain, which `security import` cannot create on its own -- it
         # only fails loudly ("SecKeychainItemImport: The specified keychain
@@ -161,10 +186,22 @@
             # without sudo; anyone else keeps the old behaviour plus a hint.
             if [[ -w "$systemFolder" ]]; then
               if [[ -e "$systemFolder/$name" ]] && ! hasCopySentinel "$systemFolder/$name"; then
-                echo "warning: $name already exists in $systemFolder and was not placed by home-manager; leaving it in place and keeping a copy in $targetFolder" >&2
-                if [[ -f "$systemMarkerFolder/$name" ]]; then
-                  echo "warning: dropping stale home-manager marker for $name (bundle is not owned)" >&2
-                  [[ -v DRY_RUN ]] || rm -f "$systemMarkerFolder/$name"
+                if [[ -f "$systemMarkerFolder/$name" ]] && sameBundleId "$systemFolder/$name" "$storePath"; then
+                  echo "adopting sidecar-only $name in $systemFolder (CFBundleIdentifier matches the store app)..." >&2
+                  if [[ -v DRY_RUN ]] || writeCopySentinel "$systemFolder/$name" "$storePath"; then
+                    appFolder=$systemFolder
+                    appMarkerFolder=$systemMarkerFolder
+                    staleFolder=$targetFolder
+                    staleMarkerFolder=$markerFolder
+                  else
+                    echo "warning: failed to stamp $name; leaving it in place and keeping a copy in $targetFolder" >&2
+                  fi
+                else
+                  echo "warning: $name already exists in $systemFolder and was not placed by home-manager; leaving it in place and keeping a copy in $targetFolder" >&2
+                  if [[ -f "$systemMarkerFolder/$name" ]]; then
+                    echo "warning: dropping stale home-manager marker for $name (bundle is not owned)" >&2
+                    [[ -v DRY_RUN ]] || rm -f "$systemMarkerFolder/$name"
+                  fi
                 fi
               else
                 appFolder=$systemFolder
@@ -196,9 +233,14 @@
               # ours on the next activation. A root-owned bundle (or similar)
               # must not abort the whole activation; fall back to $targetFolder.
               if mkdir -p "$appFolder/$name" && writeCopySentinel "$appFolder/$name" "$storePath"; then
-                ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
+                if ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
                   --specials --delete --chmod=+w --exclude='/.home-manager-copied' \
-                  "$storePath/" "$appFolder/$name" || rsync_ok=0
+                  "$storePath/" "$appFolder/$name"; then
+                  # rsync -X/-A can strip the dest directory xattr; restamp.
+                  writeCopySentinel "$appFolder/$name" "$storePath" || rsync_ok=0
+                else
+                  rsync_ok=0
+                fi
               else
                 rsync_ok=0
               fi
@@ -219,6 +261,12 @@
               run ${lib.getExe pkgs.rsync} --recursive --checksum --perms --links --copy-unsafe-links \
                 --specials --delete --chmod=+w --exclude='/.home-manager-copied' \
                 "$storePath/" "$appFolder/$name"
+            fi
+            # Record the sidecar as soon as the dest is copied so a later
+            # resign abort cannot leave a sentinel-only orphan. Cleanup also
+            # scans $systemFolder for sentinels in case the sidecar is lost.
+            if [[ "$appFolder" == "$systemFolder" && ! -v DRY_RUN ]]; then
+              printf '%s' "$storePath" > "$systemMarkerFolder/$name"
             fi
             if (( storeIsAdhoc )); then
               if [[ -v DRY_RUN ]] || hasLoginKeychain; then
@@ -259,6 +307,18 @@
               run rm -rf "$systemFolder/$name"
             fi
             run rm -f "$existing"
+          fi
+        done
+
+        # A crash can leave an owned bundle with no sidecar. The sidecar
+        # loop above would miss it; sweep /Applications for our sentinel.
+        for app in "$systemFolder"/*.app; do
+          [[ -e "$app" ]] || continue
+          name=$(basename "$app")
+          if hasCopySentinel "$app" && [[ ! -e "$sourceFolder/$name" ]]; then
+            echo "removing $name from $systemFolder..." >&2
+            run rm -rf "$app"
+            run rm -f "$systemMarkerFolder/$name"
           fi
         done
       ''

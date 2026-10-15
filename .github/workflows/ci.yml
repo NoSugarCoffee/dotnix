@@ -42,7 +42,9 @@ jobs:
       # added since the first one (session restore, release pins) silently
       # never ran here.
       - name: Test
-        run: python3 -m unittest discover -s tests -t tests -v
+        run: |
+          nix shell --inputs-from . nixpkgs#rsync --command \
+            python3 -m unittest discover -s tests -t tests -v
       - name: Lint
         run: |
           nix shell --inputs-from . \
