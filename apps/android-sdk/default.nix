@@ -5,7 +5,15 @@
   ...
 }:
 let
-  android = (pkgs.androidenv.override { licenseAccepted = true; }).composeAndroidPackages { };
+  android = (pkgs.androidenv.override { licenseAccepted = true; }).composeAndroidPackages {
+    includeEmulator = true;
+    includeSystemImages = true;
+    # Play Store image so apps can be installed from Google Play, not only by APK.
+    systemImageTypes = [ "google_apis_playstore" ];
+    # An emulator only runs its host's ABI at usable speed, and every extra ABI
+    # is another multi-GB image in the store.
+    abiVersions = [ (if pkgs.stdenv.hostPlatform.isAarch64 then "arm64-v8a" else "x86_64") ];
+  };
   sdkLink = if pkgs.stdenv.isDarwin then "Library/Android/sdk" else "Android/Sdk";
   sdkRoot = "${homeDirectory}/${sdkLink}";
   sdkStorePath = "${android.androidsdk}/libexec/android-sdk";
