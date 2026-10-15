@@ -29,13 +29,20 @@ in
   home.activation.androidSdkLink = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     target=${lib.escapeShellArg sdkRoot}
     storePath=${lib.escapeShellArg sdkStorePath}
-    if [[ ( -e "$target" || -L "$target" ) && "$(readlink "$target" 2>/dev/null)" != "$storePath" ]]; then
+    # A symlink already pointing somewhere in /nix/store is a link we (or a
+    # prior nixpkgs bump) made; just repoint it, even if the store path
+    # changed. Anything else real file, real directory, or a symlink
+    # pointing outside the store (Android Studio's own unmanaged SDK) gets
+    # moved aside instead of clobbered.
+    if [[ -L "$target" && "$(readlink "$target" 2>/dev/null)" == /nix/store/* ]]; then
+      :
+    elif [[ -e "$target" || -L "$target" ]]; then
       backup="$target.pre-dotnix-$(date +%Y%m%d%H%M%S)"
       echo "moving existing $target to $backup before linking the managed Android SDK..." >&2
-      $DRY_RUN_CMD mkdir -p "$(dirname "$target")"
-      $DRY_RUN_CMD mv "$target" "$backup"
+      run mkdir -p "$(dirname "$target")"
+      run mv "$target" "$backup"
     fi
-    $DRY_RUN_CMD mkdir -p "$(dirname "$target")"
-    $DRY_RUN_CMD ln -sfn "$storePath" "$target"
+    run mkdir -p "$(dirname "$target")"
+    run ln -sfn "$storePath" "$target"
   '';
 }
