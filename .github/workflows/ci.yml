@@ -103,6 +103,11 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
+            # llm-agents' packages (orca, paperclip, ...) are built and cached
+            # only on cache.numtide.com. Without it CI refetches their vendor
+            # release assets, which upstream sometimes deletes (orca v1.4.226).
+            extra-substituters = https://cache.numtide.com
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
       # Substituter backed by this repo's GitHub Actions cache. It uploads only
       # paths cache.nixos.org does not already have -- here that is albert,
       # qcoro and the vendor DMG fetches, i.e. everything `nix build` would
@@ -124,6 +129,11 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            # llm-agents' packages (orca, paperclip, ...) are built and cached
+            # only on cache.numtide.com. Without it CI refetches their vendor
+            # release assets, which upstream sometimes deletes (orca v1.4.226).
+            extra-substituters = https://cache.numtide.com
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
       # albert is ~5.5 min of the macOS build and is in no public cache, so
       # this job is where the cache earns its keep.
       - uses: DeterminateSystems/magic-nix-cache-action@v14
