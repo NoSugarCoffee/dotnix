@@ -30,7 +30,8 @@ curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/b
 If Nix wasn't installed yet, open a new terminal and re-run. If no proxy is listening on the
 port in `lib/proxy.nix`, it installs and opens only Clash Verge, then stops: import a
 subscription and re-run; uncached downloads in the full switch use the proxy. Skip that gate
-(no proxy, a TUN / system VPN, or a different port) with `DOTNIX_DIRECT=1`:
+(no proxy or a TUN / system VPN) with `DOTNIX_DIRECT=1`; a different proxy port requires
+updating `lib/proxy.nix` first:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | DOTNIX_DIRECT=1 bash

@@ -11,6 +11,31 @@
 #   curl -fsSL ... | DOTNIX_DIRECT=1 bash   # no proxy; clears an existing one
 set -euo pipefail
 
+# Prefer the copy next to this script so a local checkout of a PR is used
+# even though the flake tarball still tracks `branch`.
+# curl | bash leaves BASH_SOURCE unbound (set -u) or empty; never fall
+# back to cwd, or a nix-daemon-proxy.sh there would get sourced.
+# $1 = srcdir (downloaded tarball). $2 = this script's BASH_SOURCE (may be empty).
+dotnix_resolve_proxy_script() {
+  local srcdir="$1"
+  local src="${2:-}"
+  local here=""
+  if [[ -n "$src" ]]; then
+    here="$(cd "$(dirname "$src")" && pwd)"
+  fi
+  if [[ -n "$here" && -f "${here}/nix-daemon-proxy.sh" ]]; then
+    printf '%s\n' "${here}/nix-daemon-proxy.sh"
+  else
+    printf '%s\n' "${srcdir}/scripts/nix-daemon-proxy.sh"
+  fi
+}
+
+# Sourced by tests: helpers only. curl | bash has empty BASH_SOURCE, so do
+# not treat a missing BASH_SOURCE as "sourced" or the one-liner would no-op.
+if [[ -n "${BASH_SOURCE[0]:-}" && "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  return 0
+fi
+
 # This repo as GitHub `owner/name`, and the branch to fetch. A fork changes
 # these two lines (and the Usage URL above); nothing else here is repo-specific.
 repo="NoSugarCoffee/dotnix"
@@ -120,20 +145,7 @@ else
 fi
 
 # Helpers live in nix-daemon-proxy.sh (sourced: no sudo / no network).
-# Prefer the copy next to this script so a local checkout of a PR is used
-# even though the flake tarball below still tracks `branch`.
-# curl | bash leaves BASH_SOURCE unbound (set -u) or empty; never fall
-# back to cwd, or a nix-daemon-proxy.sh there would get sourced.
-here=""
-_src="${BASH_SOURCE[0]:-}"
-if [[ -n "$_src" ]]; then
-  here="$(cd "$(dirname "$_src")" && pwd)"
-fi
-if [[ -n "$here" && -f "${here}/nix-daemon-proxy.sh" ]]; then
-  proxy_script="${here}/nix-daemon-proxy.sh"
-else
-  proxy_script="${srcdir}/scripts/nix-daemon-proxy.sh"
-fi
+proxy_script=$(dotnix_resolve_proxy_script "$srcdir" "${BASH_SOURCE[0]:-}")
 # Path is a variable (sibling checkout vs downloaded tarball).
 # shellcheck disable=SC1090,SC1091
 . "$proxy_script"

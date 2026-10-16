@@ -15,7 +15,7 @@
 # instead of trying a direct connection. Keep Clash Verge running.
 # DOTNIX_DIRECT=1 skips the write, and if a proxy-routing impure-env line
 # is already there, removes it and restarts the daemon so uncached fetches
-# go direct (no proxy, a TUN / different port, or Clash is down).
+# go direct (no proxy, a TUN / system VPN, or Clash is down).
 #
 # Usage:
 #   nix-daemon-proxy.sh [<repo root>]          enable it (idempotent)
@@ -47,7 +47,7 @@ dotnix_conf_has_proxy_impure_env() {
   fi
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="${line%%#*}"
-    if [[ "$line" =~ ^(extra-)?impure-env[[:space:]]*=.*https_proxy= ]]; then
+    if [[ "$line" =~ ^[[:space:]]*(extra-)?impure-env[[:space:]]*=.*https_proxy= ]]; then
       return 0
     fi
   done <"$conf"
@@ -89,7 +89,7 @@ dotnix_apply_proxy_impure_env() {
   while IFS= read -r line || [[ -n "$line" ]]; do
     orig="$line"
     line="${line%%#*}"
-    if [[ "$line" =~ ^(extra-)?impure-env[[:space:]]*= ]]; then
+    if [[ "$line" =~ ^[[:space:]]*(extra-)?impure-env[[:space:]]*= ]]; then
       rest="${line#*=}"
       rest="${rest#"${rest%%[![:space:]]*}"}"
       toks=()
@@ -154,16 +154,32 @@ dotnix_sudo_replace_file() {
   trap - RETURN
 }
 
+# Top-level "$dir"/*.app only. Darwin find accepts -maxdepth but not GNU
+# -quit; a glob works on bash 3.2 without either.
 dotnix_find_app_bundle() {
   local dir="$1"
+  local app
   [[ -d "$dir" ]] || return 0
-  find "$dir" -maxdepth 1 -name "*.app" -print -quit
+  for app in "$dir"/*.app; do
+    [[ -d "$app" ]] || continue
+    printf '%s\n' "$app"
+    return 0
+  done
 }
 
 dotnix_find_clash_app() {
   local dir="$1"
+  local app base lower
   [[ -d "$dir" ]] || return 0
-  find "$dir" -maxdepth 1 -iname '*clash*.app' -print -quit
+  for app in "$dir"/*.app; do
+    [[ -d "$app" ]] || continue
+    base="${app##*/}"
+    lower=$(printf '%s' "$base" | tr '[:upper:]' '[:lower:]')
+    if [[ "$lower" == *clash*.app ]]; then
+      printf '%s\n' "$app"
+      return 0
+    fi
+  done
 }
 
 dotnix_wait_for_nix_daemon() {

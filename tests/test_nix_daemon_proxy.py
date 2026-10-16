@@ -12,6 +12,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "scripts" / "nix-daemon-proxy.sh"
+BOOTSTRAP = REPO / "scripts" / "bootstrap-macos.sh"
 
 
 def run_lib(body: str, *, env: dict[str, str] | None = None, timeout: float = 10) -> subprocess.CompletedProcess[str]:
@@ -123,6 +124,20 @@ class ImpureEnvDetectionTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "yes")
             conf.write_text("extra-impure-env = https_proxy=http://127.0.0.1:7890\n")
+            result = run_lib(
+                f'if dotnix_conf_has_proxy_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "yes")
+
+            conf.write_text("  impure-env = https_proxy=http://127.0.0.1:7890\n")
+            result = run_lib(
+                f'if dotnix_conf_has_proxy_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "yes")
+
+            conf.write_text("\textra-impure-env = https_proxy=http://127.0.0.1:7890\n")
             result = run_lib(
                 f'if dotnix_conf_has_proxy_impure_env "{conf}"; then echo yes; else echo no; fi'
             )
@@ -275,6 +290,26 @@ class ApplyProxyImpureEnvTest(unittest.TestCase):
         self.assertNotIn("#", result.stdout)
         self.assertNotIn("*", result.stdout)
 
+    def test_indented_proxy_line_is_rewritten(self) -> None:
+        result = run_lib(
+            textwrap.dedent(
+                """\
+                dotnix_apply_proxy_impure_env clear <<'EOF'
+                extra-trusted-users = alice
+                  impure-env = FOO=bar http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890
+                extra-experimental-features = configurable-impure-env
+                EOF
+                """
+            )
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout,
+            "extra-trusted-users = alice\n"
+            "extra-experimental-features = configurable-impure-env\n"
+            "impure-env = FOO=bar\n",
+        )
+
     def test_empty_impure_env_line_is_not_unbound(self) -> None:
         result = run_lib(
             textwrap.dedent(
@@ -322,6 +357,39 @@ class FindAppBundleTest(unittest.TestCase):
             self.assertTrue(lines[0].endswith("Clash Verge.app"))
             self.assertTrue(lines[1].endswith("Clash Verge.app"))
 
+    def test_clash_match_is_case_insensitive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            hm_apps = Path(tmp) / "hm"
+            hm_apps.mkdir()
+            (hm_apps / "Kitty.app").mkdir()
+            (hm_apps / "CLASH Verge.app").mkdir()
+            result = run_lib(f'printf "%s" "$(dotnix_find_clash_app "{hm_apps}")"')
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(result.stdout.endswith("CLASH Verge.app"))
+
+    def test_lookup_does_not_call_find(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            store_apps = tmp_path / "store"
+            store_apps.mkdir()
+            (store_apps / "Clash Verge.app").mkdir()
+            fake_bin = tmp_path / "bin"
+            fake_bin.mkdir()
+            find = fake_bin / "find"
+            find.write_text(
+                "#!/bin/sh\necho 'find: -quit: unknown primary or operator' >&2\nexit 1\n"
+            )
+            find.chmod(find.stat().st_mode | stat.S_IXUSR)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+            result = run_lib(
+                f'printf "%s" "$(dotnix_find_app_bundle "{store_apps}")"',
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(result.stdout.endswith("Clash Verge.app"))
+            self.assertNotIn("unknown primary", result.stderr)
+
     def test_missing_dir_is_empty(self) -> None:
         result = run_lib('printf "[%s]" "$(dotnix_find_clash_app /no/such/apps)"')
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -355,6 +423,18 @@ class BootstrapProxyPlanTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip().splitlines(), ["clear", "noop", "noop"])
+
+    def test_indented_proxy_line_is_clear_not_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            conf.write_text("  impure-env = https_proxy=http://127.0.0.1:7890\n")
+            result = run_lib(f'dotnix_direct_action "{conf}"')
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "clear")
+            self.assertEqual(
+                self._plan(conf=str(conf), hm=tmp, proxy_up="0"),
+                "tell-user",
+            )
 
     def test_direct_opt_out_wins(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -437,7 +517,27 @@ class BootstrapProxyPlanTest(unittest.TestCase):
             )
 
 
+def run_bootstrap_lib(body: str, *, cwd: str | None = None, timeout: float = 10) -> subprocess.CompletedProcess[str]:
+    """Source bootstrap-macos.sh (helpers only) and run *body*."""
+    script = f'source "{BOOTSTRAP}"\n{body}\n'
+    return subprocess.run(
+        ["bash", "-c", script],
+        check=False,
+        text=True,
+        capture_output=True,
+        timeout=timeout,
+        cwd=cwd,
+    )
+
+
 class SiblingProxyScriptTest(unittest.TestCase):
+    def test_sourcing_bootstrap_does_not_run_main(self) -> None:
+        result = run_bootstrap_lib(
+            'type dotnix_resolve_proxy_script >/dev/null && echo sourced'
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "sourced")
+
     def test_empty_bash_source_does_not_use_cwd(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             cwd = Path(tmp) / "cwd"
@@ -446,33 +546,28 @@ class SiblingProxyScriptTest(unittest.TestCase):
             (srcdir / "scripts").mkdir(parents=True)
             (cwd / "nix-daemon-proxy.sh").write_text("DECOY\n")
             (srcdir / "scripts" / "nix-daemon-proxy.sh").write_text("REAL\n")
-            script = textwrap.dedent(
-                f"""\
-                set -euo pipefail
-                cd "{cwd}"
-                here=""
-                _src="${{BASH_SOURCE[0]:-}}"
-                _src=""
-                if [[ -n "$_src" ]]; then
-                  here="$(cd "$(dirname "$_src")" && pwd)"
-                fi
-                srcdir="{srcdir}"
-                if [[ -n "$here" && -f "${{here}}/nix-daemon-proxy.sh" ]]; then
-                  printf '%s\\n' "${{here}}/nix-daemon-proxy.sh"
-                else
-                  printf '%s\\n' "${{srcdir}}/scripts/nix-daemon-proxy.sh"
-                fi
-                """
-            )
-            result = subprocess.run(
-                ["bash", "-c", script],
-                check=False,
-                text=True,
-                capture_output=True,
-                timeout=10,
+            result = run_bootstrap_lib(
+                f'dotnix_resolve_proxy_script "{srcdir}" ""',
+                cwd=str(cwd),
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), str(srcdir / "scripts" / "nix-daemon-proxy.sh"))
+
+    def test_sibling_script_wins_over_tarball(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            srcdir = Path(tmp) / "tarball"
+            checkout = Path(tmp) / "checkout" / "scripts"
+            (srcdir / "scripts").mkdir(parents=True)
+            checkout.mkdir(parents=True)
+            (srcdir / "scripts" / "nix-daemon-proxy.sh").write_text("TARBALL\n")
+            (checkout / "nix-daemon-proxy.sh").write_text("SIBLING\n")
+            caller = checkout / "bootstrap-macos.sh"
+            caller.write_text("# caller path only\n")
+            result = run_bootstrap_lib(
+                f'dotnix_resolve_proxy_script "{srcdir}" "{caller}"'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), str(checkout / "nix-daemon-proxy.sh"))
 
 
 class EnablePathTest(unittest.TestCase):
