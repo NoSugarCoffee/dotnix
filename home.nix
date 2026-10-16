@@ -336,13 +336,17 @@
   # the previous generation's command. Where --wait is rejected, stop and
   # remove each agent setupLaunchAgents would touch first, so it finds no
   # installed plist and only bootstraps (or reports it already removed).
-  # Probing rather than checking the OS version makes this a no-op once
-  # launchctl accepts --wait (macOS 26). Temporary: upstream fixed it in
-  # nix-community/home-manager#9587 on master only; delete this block once
-  # the home-manager input carries that fix.
+  # After writeBoundary (so checkLinkTargets abort cannot leave agents
+  # unloaded) and before setupLaunchAgents. Probing rather than checking the
+  # OS version makes this a no-op once launchctl accepts --wait (macOS 26).
+  # Temporary: upstream fixed it in nix-community/home-manager#9587 on master
+  # only; delete this block once the home-manager input carries that fix.
   home.activation.launchAgentsWithoutWait = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (
-    lib.hm.dag.entryBefore [ "setupLaunchAgents" ] ''
+    lib.hm.dag.entryBetween [ "setupLaunchAgents" ] [ "writeBoundary" ] ''
       (
+        # Match upstream setupLaunchAgents: the activation script has set -e,
+        # and a failing readlink/rm in this subshell must not abort the switch.
+        set +e
         probe=$(/bin/launchctl bootout --wait "gui/$UID/org.nix-community.home.no-such-agent" 2>&1 || true)
         [[ $probe == *"Unrecognized target specifier"* ]] || exit 0
 
@@ -365,6 +369,10 @@
               /bin/launchctl print "gui/$UID/$agentName" >/dev/null 2>&1 || break
               sleep 0.1
             done
+            if /bin/launchctl print "gui/$UID/$agentName" >/dev/null 2>&1; then
+              warnEcho "launchAgentsWithoutWait: '$agentName' still loaded after 5s; leaving $dstDir/$1 in place"
+              return
+            fi
           fi
           run rm -f "$dstDir/$1"
         }
@@ -389,6 +397,7 @@
             stopAndRemove "$agentFile"
           fi
         done
+        exit 0
       )
     ''
   );
