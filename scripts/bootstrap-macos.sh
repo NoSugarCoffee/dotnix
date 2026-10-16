@@ -131,8 +131,35 @@ EOF
   exit 1
 fi
 
+bootstrap_url="https://raw.githubusercontent.com/${repo}/${branch}/scripts/bootstrap-macos.sh"
+
+# Clash Verge first, the rest only through it. Many uncached downloads (GitHub
+# release assets, the Android SDK, Claude Code) time out from mainland China
+# unless the daemon goes through the proxy -- but the proxy is itself one of
+# those packages. So without a proxy listening, install just Clash Verge (the
+# one download that must go direct, retryable on its own), open it, and stop;
+# the re-run finds the proxy up, points the daemon at it, and switches.
+if ! bash "${srcdir}/scripts/nix-daemon-proxy.sh" --check "${srcdir}"; then
+  echo "==> No proxy listening yet; installing Clash Verge on its own first..."
+  clash=$(nix build --no-link --print-out-paths \
+    "${srcdir}#homeConfigurations.${flake_target}.pkgs.clash-verge-rev-darwin")
+  open "${clash}/Applications/Clash Verge.app"
+  cat <<EOF
+
+Clash Verge is open (run from the Nix store for now). Import a subscription,
+select a node, and check the mixed port matches lib/proxy.nix, then re-run:
+
+  curl -fsSL ${bootstrap_url} | bash
+
+After that switch, quit this copy and use the one in
+~/Applications/Home Manager Apps instead.
+EOF
+  exit 0
+fi
+bash "${srcdir}/scripts/nix-daemon-proxy.sh" "${srcdir}"
+
 echo "==> Applying Home Manager configuration for ${flake_target} (account ${USER})..."
 nix run "${srcdir}#home-manager" -- switch --flake "${srcdir}#${flake_target}"
 
 echo "==> Done. Re-run this to pick up future updates:"
-echo "    curl -fsSL https://raw.githubusercontent.com/${repo}/${branch}/scripts/bootstrap-macos.sh | bash"
+echo "    curl -fsSL ${bootstrap_url} | bash"

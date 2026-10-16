@@ -26,3 +26,7 @@ show:
 # Update flake inputs.
 update:
     nix flake update
+
+# Route the Nix daemon's uncached downloads through the proxy in lib/proxy.nix (macOS, sudo).
+nix-proxy:
+    scripts/nix-daemon-proxy.sh
