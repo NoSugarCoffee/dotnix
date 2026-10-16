@@ -68,7 +68,6 @@
         inherit (mkPkgsUnstable final.stdenv.hostPlatform.system)
           macshot
           code-cursor
-          claude-code
           codex
           chatgpt
           ;
@@ -103,6 +102,7 @@
             lib.attrVals (lib.filter (name: llm-agents.packages.${system} ? ${name}) [
               "apm"
               "ccstatusline"
+              "claude-code"
               "claude-desktop"
               "grok-bot"
               "orca"
