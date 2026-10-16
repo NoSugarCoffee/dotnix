@@ -530,6 +530,113 @@ def run_bootstrap_lib(body: str, *, cwd: str | None = None, timeout: float = 10)
     )
 
 
+_SHELL_PROXY_VARS = (
+    "http_proxy",
+    "https_proxy",
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "all_proxy",
+    "ALL_PROXY",
+)
+_DIRECT_UNSET = (
+    "env -u http_proxy -u https_proxy -u HTTP_PROXY "
+    "-u HTTPS_PROXY -u all_proxy -u ALL_PROXY"
+)
+
+
+class DirectClearsShellProxyTest(unittest.TestCase):
+    """DOTNIX_DIRECT=1 must drop the Home Manager session proxy before any fetch."""
+
+    def test_direct_unsets_shell_proxy_vars(self) -> None:
+        assignments = "\n".join(
+            f"export {name}=http://127.0.0.1:7890" for name in _SHELL_PROXY_VARS
+        )
+        prints = "\n".join(
+            f'printf "%s=%s\\n" "{name}" "${{{name}-UNSET}}"'
+            for name in _SHELL_PROXY_VARS
+        )
+        result = run_bootstrap_lib(
+            f"""
+            {assignments}
+            DOTNIX_DIRECT=1
+            dotnix_direct_clear_shell_proxy
+            {prints}
+            """
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout.strip().splitlines(),
+            [f"{name}=UNSET" for name in _SHELL_PROXY_VARS],
+        )
+
+    def test_without_direct_keeps_shell_proxy_vars(self) -> None:
+        assignments = "\n".join(
+            f"export {name}=http://127.0.0.1:7890" for name in _SHELL_PROXY_VARS
+        )
+        prints = "\n".join(
+            f'printf "%s=%s\\n" "{name}" "${{{name}-UNSET}}"'
+            for name in _SHELL_PROXY_VARS
+        )
+        result = run_bootstrap_lib(
+            f"""
+            unset DOTNIX_DIRECT
+            {assignments}
+            dotnix_direct_clear_shell_proxy
+            {prints}
+            """
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout.strip().splitlines(),
+            [f"{name}=http://127.0.0.1:7890" for name in _SHELL_PROXY_VARS],
+        )
+
+    def test_readme_direct_oneliner_unsets_proxy_for_curl_and_bash(self) -> None:
+        text = (REPO / "README.md").read_text()
+        self.assertIn(_DIRECT_UNSET, text)
+        self.assertRegex(
+            text,
+            r"env -u http_proxy[\s\S]*?\bcurl\b[\s\S]*?\|"
+            r"[\s\S]*?env -u http_proxy[\s\S]*?DOTNIX_DIRECT=1 bash",
+        )
+        self.assertNotRegex(
+            text,
+            r"(?m)^curl -fsSL \S+bootstrap-macos\.sh \| DOTNIX_DIRECT=1 bash$",
+        )
+
+    def test_bootstrap_clears_shell_proxy_before_any_curl(self) -> None:
+        lines = BOOTSTRAP.read_text().splitlines()
+        in_main = False
+        helper_line = None
+        curl_line = None
+        for i, line in enumerate(lines, 1):
+            stripped = line.lstrip()
+            if stripped.startswith("#"):
+                continue
+            if not in_main:
+                if stripped == "return 0":
+                    in_main = True
+                continue
+            if helper_line is None and "dotnix_direct_clear_shell_proxy" in stripped:
+                helper_line = i
+            if curl_line is None and "curl" in stripped:
+                curl_line = i
+                break
+        self.assertIsNotNone(
+            helper_line, "main path must call dotnix_direct_clear_shell_proxy"
+        )
+        self.assertIsNotNone(curl_line, "expected a curl after the sourced-return")
+        self.assertLess(helper_line, curl_line)
+
+    def test_bootstrap_direct_recovery_oneliner_unsets_proxy(self) -> None:
+        text = BOOTSTRAP.read_text()
+        self.assertIn(_DIRECT_UNSET, text)
+        self.assertNotRegex(
+            text,
+            r"(?m)^(?:#\s*)?curl -fsSL \S+ \| DOTNIX_DIRECT=1 bash",
+        )
+
+
 class SiblingProxyScriptTest(unittest.TestCase):
     def test_sourcing_bootstrap_does_not_run_main(self) -> None:
         result = run_bootstrap_lib(

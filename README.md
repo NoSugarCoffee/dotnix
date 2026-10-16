@@ -31,10 +31,14 @@ If Nix wasn't installed yet, open a new terminal and re-run. If no proxy is list
 port in `lib/proxy.nix`, it installs and opens only Clash Verge, then stops: import a
 subscription and re-run; uncached downloads in the full switch use the proxy. Skip that gate
 (no proxy or a TUN / system VPN) with `DOTNIX_DIRECT=1`; a different proxy port requires
-updating `lib/proxy.nix` first:
+updating `lib/proxy.nix` first. Clash-managed shells already export `http(s)_proxy` toward
+`127.0.0.1:7890`, so drop those for both `curl` and the piped `bash` or the fetch still
+hits the dead proxy:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | DOTNIX_DIRECT=1 bash
+env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+  curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh \
+  | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
 ```
 
 Re-run any time to update. On a machine that already wrote `impure-env` and whose proxy is

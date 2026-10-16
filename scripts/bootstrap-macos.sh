@@ -8,8 +8,19 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
-#   curl -fsSL ... | DOTNIX_DIRECT=1 bash   # no proxy; clears an existing one
+#   env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+#     curl -fsSL ... | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
+#     -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
 set -euo pipefail
+
+# Home Manager session vars (apps/clash-verge-rev) point curl at 127.0.0.1:7890.
+# DOTNIX_DIRECT=1 is the Clash-down recovery path, so drop those before any fetch.
+# Keep this list in sync with the README one-liner.
+dotnix_direct_clear_shell_proxy() {
+  if [[ "${DOTNIX_DIRECT:-}" == 1 ]]; then
+    unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
+  fi
+}
 
 # Prefer the copy next to this script so a local checkout of a PR is used
 # even though the flake tarball still tracks `branch`.
@@ -35,6 +46,8 @@ dotnix_resolve_proxy_script() {
 if [[ -n "${BASH_SOURCE[0]:-}" && "${BASH_SOURCE[0]}" != "${0}" ]]; then
   return 0
 fi
+
+dotnix_direct_clear_shell_proxy
 
 # This repo as GitHub `owner/name`, and the branch to fetch. A fork changes
 # these two lines (and the Usage URL above); nothing else here is repo-specific.
@@ -196,7 +209,9 @@ Start a node, then re-run:
 
 If you don't need a proxy, re-run with DOTNIX_DIRECT=1 instead:
 
-  curl -fsSL ${bootstrap_url} | DOTNIX_DIRECT=1 bash
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+    curl -fsSL ${bootstrap_url} \
+    | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
 EOF
   exit 1
 elif [[ "$plan" == tell-user ]]; then
@@ -210,7 +225,9 @@ error: the daemon already routes uncached downloads through the proxy, but
 
        If you don't need a proxy, re-run with DOTNIX_DIRECT=1:
 
-  curl -fsSL ${bootstrap_url} | DOTNIX_DIRECT=1 bash
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+    curl -fsSL ${bootstrap_url} \
+    | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
 EOF
   exit 1
 elif [[ "$plan" == install-clash ]]; then
