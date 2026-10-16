@@ -8,7 +8,46 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
+#   env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+#     curl -fsSL ... | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
+#     -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
 set -euo pipefail
+
+# Home Manager session vars (apps/clash-verge-rev) point curl at 127.0.0.1:7890.
+# DOTNIX_DIRECT=1 is the Clash-down recovery path, so drop those before any fetch.
+# Keep this list in sync with the README one-liner.
+dotnix_direct_clear_shell_proxy() {
+  if [[ "${DOTNIX_DIRECT:-}" == 1 ]]; then
+    unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
+  fi
+}
+
+# Prefer the copy next to this script so a local checkout of a PR is used
+# even though the flake tarball still tracks `branch`.
+# curl | bash leaves BASH_SOURCE unbound (set -u) or empty; never fall
+# back to cwd, or a nix-daemon-proxy.sh there would get sourced.
+# $1 = srcdir (downloaded tarball). $2 = this script's BASH_SOURCE (may be empty).
+dotnix_resolve_proxy_script() {
+  local srcdir="$1"
+  local src="${2:-}"
+  local here=""
+  if [[ -n "$src" ]]; then
+    here="$(cd "$(dirname "$src")" && pwd)"
+  fi
+  if [[ -n "$here" && -f "${here}/nix-daemon-proxy.sh" ]]; then
+    printf '%s\n' "${here}/nix-daemon-proxy.sh"
+  else
+    printf '%s\n' "${srcdir}/scripts/nix-daemon-proxy.sh"
+  fi
+}
+
+# Sourced by tests: helpers only. curl | bash has empty BASH_SOURCE, so do
+# not treat a missing BASH_SOURCE as "sourced" or the one-liner would no-op.
+if [[ -n "${BASH_SOURCE[0]:-}" && "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  return 0
+fi
+
+dotnix_direct_clear_shell_proxy
 
 # This repo as GitHub `owner/name`, and the branch to fetch. A fork changes
 # these two lines (and the Usage URL above); nothing else here is repo-specific.
@@ -118,16 +157,102 @@ else
   echo "==> ${USER} already a trusted user."
 fi
 
+# Helpers live in nix-daemon-proxy.sh (sourced: no sudo / no network).
+proxy_script=$(dotnix_resolve_proxy_script "$srcdir" "${BASH_SOURCE[0]:-}")
+# Path is a variable (sibling checkout vs downloaded tarball).
+# shellcheck disable=SC1090,SC1091
+. "$proxy_script"
+
 if [[ "$restart_daemon" == 1 ]]; then
   sudo launchctl kickstart -k "system/${daemon_label}"
 fi
 
-if ! nix store info --store daemon >/dev/null 2>&1; then
-  cat >&2 <<EOF
-error: the Nix daemon is not reachable. Restart it and re-run this:
-       sudo launchctl kickstart -k system/${daemon_label}
-       Its log is /var/log/determinate-nix-daemon.log.
+if ! dotnix_wait_for_nix_daemon; then
+  dotnix_print_daemon_unreachable
+  exit 1
+fi
+
+bootstrap_url="https://raw.githubusercontent.com/${repo}/${branch}/scripts/bootstrap-macos.sh"
+
+# Clash Verge first, the rest only through it. Many uncached downloads (GitHub
+# release assets, the Android SDK, Claude Code) time out from mainland China
+# unless the daemon goes through the proxy -- but the proxy is itself one of
+# those packages. So without a proxy listening, install just Clash Verge (the
+# one download that must go direct, retryable on its own), open it, and stop;
+# the re-run finds the proxy up, points the daemon at it, and switches.
+#
+# DOTNIX_DIRECT=1 skips that gate and the impure-env write. If a proxy-routing
+# line is already in nix.custom.conf, the proxy script removes it and restarts
+# the daemon so uncached fetches actually go direct. A machine that already
+# has that line (and no DOTNIX_DIRECT) must not try to fetch Clash.
+proxy_up=0
+if ! dotnix_direct && bash "${proxy_script}" --check "${srcdir}"; then
+  proxy_up=1
+fi
+hm_apps="${HOME}/Applications/Home Manager Apps"
+plan=$(dotnix_bootstrap_proxy_plan "$custom_conf" "$hm_apps" "$proxy_up")
+
+if [[ "$plan" == direct ]]; then
+  bash "${proxy_script}" "${srcdir}"
+elif [[ "$plan" == enable ]]; then
+  bash "${proxy_script}" "${srcdir}"
+elif [[ "$plan" == start-existing ]]; then
+  clash_app=$(dotnix_find_clash_app "$hm_apps")
+  open "$clash_app"
+  cat <<EOF
+
+The daemon already routes uncached downloads through the proxy, but nothing
+is listening. Opened the Clash Verge in ~/Applications/Home Manager Apps.
+Start a node, then re-run:
+
+  curl -fsSL ${bootstrap_url} | bash
+
+If you don't need a proxy, re-run with DOTNIX_DIRECT=1 instead:
+
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+    curl -fsSL ${bootstrap_url} \
+    | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
 EOF
+  exit 1
+elif [[ "$plan" == tell-user ]]; then
+  cat >&2 <<EOF
+error: the daemon already routes uncached downloads through the proxy, but
+       nothing is listening. Start the Clash Verge you already have
+       (subscription imported, a node selected, mixed port matching
+       lib/proxy.nix), then re-run:
+
+  curl -fsSL ${bootstrap_url} | bash
+
+       If you don't need a proxy, re-run with DOTNIX_DIRECT=1:
+
+  env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY \
+    curl -fsSL ${bootstrap_url} \
+    | env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY -u all_proxy -u ALL_PROXY DOTNIX_DIRECT=1 bash
+EOF
+  exit 1
+elif [[ "$plan" == install-clash ]]; then
+  echo "==> No proxy listening yet; installing Clash Verge on its own first..."
+  clash=$(nix build --no-link --print-out-paths \
+    "${srcdir}#homeConfigurations.${flake_target}.pkgs.clash-verge-rev-darwin")
+  clash_app=$(dotnix_find_app_bundle "${clash}/Applications")
+  if [[ -z "$clash_app" ]]; then
+    echo "error: nix build produced no .app under ${clash}/Applications" >&2
+    exit 1
+  fi
+  open "$clash_app"
+  cat <<EOF
+
+Clash Verge is open (run from the Nix store for now). Import a subscription,
+select a node, and check the mixed port matches lib/proxy.nix, then re-run:
+
+  curl -fsSL ${bootstrap_url} | bash
+
+After that switch, quit this copy and use the one in
+~/Applications/Home Manager Apps instead.
+EOF
+  exit 0
+else
+  echo "error: unknown proxy plan '${plan}'" >&2
   exit 1
 fi
 
@@ -135,4 +260,4 @@ echo "==> Applying Home Manager configuration for ${flake_target} (account ${USE
 nix run "${srcdir}#home-manager" -- switch --flake "${srcdir}#${flake_target}"
 
 echo "==> Done. Re-run this to pick up future updates:"
-echo "    curl -fsSL https://raw.githubusercontent.com/${repo}/${branch}/scripts/bootstrap-macos.sh | bash"
+echo "    curl -fsSL ${bootstrap_url} | bash"
