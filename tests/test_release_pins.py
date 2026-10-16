@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
+import os
 import shutil
 import sys
 import tempfile
 import unittest
+import urllib.error
+from dataclasses import replace
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location(
@@ -205,6 +210,187 @@ class ReleasePinsTest(unittest.TestCase):
         output = self.pkgs / "github_output"
         release_pins.write_step_output(["- `a`: 1 -> 2"], output)
         self.assertEqual(output.read_text(), "changed=true\nsummary<<SUMMARY_EOF\n- `a`: 1 -> 2\nSUMMARY_EOF\n")
+
+    def test_one_pin_error_does_not_stop_other_pins(self) -> None:
+        self.write_pin("ok", {
+            "source": {"type": "github", "repo": "o/ok"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        broken = self.write_pin("broken", {
+            "source": {"type": "github", "repo": "o/broken", "asset": "^Broken-{version}[.]dmg$"},
+            "version": "1.0.0",
+            "url": "https://x/Broken-{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        before = broken.read_text()
+        self.write_pin("later", {
+            "source": {"type": "github", "repo": "o/later"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        upstreams = FakeUpstreams(
+            {
+                **github_latest("o/ok", "v2.0.0", []),
+                **github_latest("o/broken", "v2.0.0", ["Broken_2.0.0_amd64.AppImage"]),
+                **github_latest("o/later", "v3.0.0", []),
+            },
+            {},
+        )
+
+        with self.assertRaises(release_pins.PinError) as ctx:
+            release_pins.bump_all(self.pkgs, upstreams.http_get_json, upstreams.prefetch)
+
+        self.assertIn("`broken`", str(ctx.exception))
+        self.assertNotIn("`ok`", str(ctx.exception))
+        self.assertNotIn("`later`", str(ctx.exception))
+        self.assertEqual(self.read_pin("ok")["version"], "2.0.0")
+        self.assertEqual(self.read_pin("later")["version"], "3.0.0")
+        self.assertEqual(broken.read_text(), before)
+
+    def test_run_exits_nonzero_after_writing_successful_pins(self) -> None:
+        self.write_pin("ok", {
+            "source": {"type": "github", "repo": "o/ok"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        self.write_pin("broken", {
+            "source": {"type": "github", "repo": "o/broken", "asset": "^Broken-{version}[.]dmg$"},
+            "version": "1.0.0",
+            "url": "https://x/Broken-{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        upstreams = FakeUpstreams(
+            {
+                **github_latest("o/ok", "v2.0.0", []),
+                **github_latest("o/broken", "v2.0.0", []),
+            },
+            {},
+        )
+        output = self.pkgs / "github_output"
+
+        stderr = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}),
+            mock.patch.object(sys, "stderr", stderr),
+        ):
+            code = release_pins.run(self.pkgs, upstreams.http_get_json, upstreams.prefetch)
+
+        self.assertEqual(code, 1)
+        self.assertEqual(self.read_pin("ok")["version"], "2.0.0")
+        self.assertIn("changed=true", output.read_text())
+        self.assertIn("- `ok`: 1.0.0 -> 2.0.0", output.read_text())
+        self.assertIn("failed to bump 1 pin(s)", stderr.getvalue())
+        self.assertIn("`broken`", stderr.getvalue())
+
+    def test_non_pin_error_does_not_stop_other_pins_or_outputs(self) -> None:
+        self.write_pin("ok", {
+            "source": {"type": "github", "repo": "o/ok"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        broken = self.write_pin("broken", {
+            "source": {"type": "github", "repo": "o/broken"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        before = broken.read_text()
+        self.write_pin("later", {
+            "source": {"type": "github", "repo": "o/later"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        responses = {
+            **github_latest("o/ok", "v2.0.0", []),
+            **github_latest("o/later", "v3.0.0", []),
+        }
+
+        def http_get_json(url: str) -> object:
+            if "o/broken" in url:
+                raise urllib.error.URLError("network down")
+            return responses[url]
+
+        output = self.pkgs / "github_output"
+        stderr = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}),
+            mock.patch.object(sys, "stderr", stderr),
+        ):
+            code = release_pins.run(self.pkgs, http_get_json, FakeUpstreams({}, {}).prefetch)
+
+        self.assertEqual(code, 1)
+        self.assertEqual(self.read_pin("ok")["version"], "2.0.0")
+        self.assertEqual(self.read_pin("later")["version"], "3.0.0")
+        self.assertEqual(broken.read_text(), before)
+        self.assertIn("changed=true", output.read_text())
+        self.assertIn("- `ok`: 1.0.0 -> 2.0.0", output.read_text())
+        self.assertIn("- `later`: 1.0.0 -> 3.0.0", output.read_text())
+        self.assertIn("`broken`", stderr.getvalue())
+        self.assertIn("network down", stderr.getvalue())
+
+    def test_digup_asset_pattern_matches_hyphen_and_tauri_underscore_dmgs(self) -> None:
+        pin = release_pins.parse_pin(json.loads((REPO / "apps" / "digup" / "pin.json").read_text()), "digup")
+
+        hyphen = release_pins.latest_release(
+            pin,
+            FakeUpstreams(github_latest("ARahim3/DigUp", "v0.6.1", ["DigUp-0.6.1.dmg"]), {}).http_get_json,
+        )
+        self.assertEqual(hyphen.version, "0.6.1")
+        self.assertEqual(hyphen.vars.get("file"), "DigUp-0.6.1.dmg")
+        self.assertEqual(
+            release_pins.render_url(replace(pin, version=hyphen.version, vars=hyphen.vars), "aarch64-darwin"),
+            "https://github.com/ARahim3/DigUp/releases/download/v0.6.1/DigUp-0.6.1.dmg",
+        )
+
+        tauri = release_pins.latest_release(
+            pin,
+            FakeUpstreams(
+                github_latest(
+                    "ARahim3/DigUp",
+                    "v0.7.0",
+                    [
+                        "DigUp_0.7.0_amd64.AppImage",
+                        "DigUp_0.7.0_amd64.deb",
+                        "DigUp_0.7.0_x64-setup.exe",
+                        "DigUp_0.7.0_x64.dmg",
+                        "DigUp_0.7.0_aarch64.dmg",
+                    ],
+                ),
+                {},
+            ).http_get_json,
+        )
+        self.assertEqual(tauri.version, "0.7.0")
+        self.assertEqual(tauri.vars.get("file"), "DigUp_0.7.0_aarch64.dmg")
+        self.assertEqual(
+            release_pins.render_url(replace(pin, version=tauri.version, vars=tauri.vars), "aarch64-darwin"),
+            "https://github.com/ARahim3/DigUp/releases/download/v0.7.0/DigUp_0.7.0_aarch64.dmg",
+        )
+
+    def test_digup_asset_pattern_rejects_non_dmg_assets(self) -> None:
+        pin = release_pins.parse_pin(json.loads((REPO / "apps" / "digup" / "pin.json").read_text()), "digup")
+        upstreams = FakeUpstreams(
+            github_latest(
+                "ARahim3/DigUp",
+                "v0.7.0-beta.1",
+                [
+                    "DigUp_0.7.0-beta.1_amd64.AppImage",
+                    "DigUp_0.7.0-beta.1_amd64.deb",
+                    "DigUp_0.7.0-beta.1_x64-setup.exe",
+                ],
+            ),
+            {},
+        )
+
+        with self.assertRaises(release_pins.PinError) as ctx:
+            release_pins.latest_release(pin, upstreams.http_get_json)
+        self.assertIn("expected one asset matching", str(ctx.exception))
+        self.assertIn("found 0", str(ctx.exception))
 
 
 if __name__ == "__main__":
