@@ -1,0 +1,12 @@
+{
+  "source": {
+    "type": "github",
+    "repo": "ARahim3/DigUp",
+    "asset": "^DigUp-{version}[.]dmg$"
+  },
+  "version": "0.6.1",
+  "url": "https://github.com/ARahim3/DigUp/releases/download/v{version}/DigUp-{version}.dmg",
+  "hash": {
+    "aarch64-darwin": "sha256-R+u9QE0xz1ffY7YuYKFFImVBcoVeJFyaLBIbYTIj+KI="
+  }
+}

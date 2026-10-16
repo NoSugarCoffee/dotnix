@@ -58,6 +58,7 @@
         ego-lite-darwin = final.callPackage ./apps/ego-lite/package.nix { };
         agent-access = final.callPackage ./apps/agent-access/package.nix { };
         cida-darwin = final.callPackage ./apps/cida/package.nix { };
+        digup-darwin = final.callPackage ./apps/digup/package.nix { };
         # from unstable: stable's albert (33.x) predates the source layout
         # apps/albert/package.nix's patches target (35.x)
         albert-darwin =
