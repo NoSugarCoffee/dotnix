@@ -19,7 +19,9 @@ PLACEHOLDER = re.compile(r"\{(\w+)\}")
 
 
 class PinError(Exception):
-    pass
+    def __init__(self, message: str, summaries: list[str] | None = None) -> None:
+        super().__init__(message)
+        self.summaries = list(summaries or [])
 
 
 @dataclass(frozen=True)
@@ -162,13 +164,25 @@ def bump_pin(name: str, pin: Pin, release: Release, prefetch: Prefetch) -> Bump 
 
 def bump_all(pkgs_dir: Path, http_get_json: HttpGetJson, prefetch: Prefetch) -> list[str]:
     summaries: list[str] = []
+    errors: list[str] = []
     for pin_file in sorted(pkgs_dir.glob("*/pin.json")):
         name = pin_file.parent.name
-        pin = parse_pin(json.loads(pin_file.read_text()), str(pin_file))
-        bump = bump_pin(name, pin, latest_release(pin, http_get_json), prefetch)
-        if bump is not None:
-            pin_file.write_text(dump_pin(bump.pin))
-            summaries.append(bump.summary)
+        try:
+            pin = parse_pin(json.loads(pin_file.read_text()), str(pin_file))
+            bump = bump_pin(name, pin, latest_release(pin, http_get_json), prefetch)
+            if bump is not None:
+                pin_file.write_text(dump_pin(bump.pin))
+                summaries.append(bump.summary)
+        except PinError as exc:
+            errors.append(f"`{name}`: {exc}")
+    if errors:
+        raise PinError(
+            "failed to bump {n} pin(s):\n{details}".format(
+                n=len(errors),
+                details="\n".join(f"- {error}" for error in errors),
+            ),
+            summaries,
+        )
     return summaries
 
 
@@ -200,10 +214,22 @@ def write_step_output(summaries: list[str], output: Path | None) -> None:
             handle.write(text)
 
 
-def main() -> None:
-    summaries = bump_all(Path("apps"), http_get_json, nix_prefetch)
+def run(pkgs_dir: Path, http_get_json: HttpGetJson, prefetch: Prefetch) -> int:
+    summaries: list[str] = []
+    exit_code = 0
+    try:
+        summaries = bump_all(pkgs_dir, http_get_json, prefetch)
+    except PinError as exc:
+        summaries = exc.summaries
+        print(f"error: {exc}", file=sys.stderr)
+        exit_code = 1
     github_output = os.environ.get("GITHUB_OUTPUT")
     write_step_output(summaries, Path(github_output) if github_output else None)
+    return exit_code
+
+
+def main() -> None:
+    raise SystemExit(run(Path("apps"), http_get_json, nix_prefetch))
 
 
 def _label(pin: Pin) -> str:

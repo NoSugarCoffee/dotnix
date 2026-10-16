@@ -23,6 +23,7 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
       - id: bump
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/workflows/scripts/release_pins.py
@@ -45,3 +46,7 @@ jobs:
         run: |
           gh pr merge ${{ steps.pr.outputs.pull-request-number }} \
             --auto --squash --delete-branch
+      # bump continues on error so successful pins still open a PR; fail the job
+      # afterwards so a broken pin is visible instead of silently stalling others.
+      - if: steps.bump.outcome == 'failure'
+        run: exit 1
