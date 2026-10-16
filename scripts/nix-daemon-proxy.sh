@@ -35,9 +35,22 @@ dotnix_direct() {
 
 # Proxy-routing only (https_proxy=). A user's `impure-env = FOO=bar` is not
 # "configured". Matches extra-impure-env too (StringMap extra- appends).
+# Missing file: 1. Unreadable file: 2 and a message (do not hide with grep -s).
 dotnix_conf_has_proxy_impure_env() {
   local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
-  [[ -e "$conf" ]] && grep -qsE '^(extra-)?impure-env[[:space:]]*=.*https_proxy=' "$conf"
+  local line
+  [[ -e "$conf" ]] || return 1
+  if [[ ! -r "$conf" ]]; then
+    echo "error: cannot read ${conf}; it must be world-readable (0644)" >&2
+    return 2
+  fi
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    if [[ "$line" =~ ^(extra-)?impure-env[[:space:]]*=.*https_proxy= ]]; then
+      return 0
+    fi
+  done <"$conf"
+  return 1
 }
 
 dotnix_conf_has_impure_env() {
@@ -47,11 +60,17 @@ dotnix_conf_has_impure_env() {
 # noop: nothing to strip. clear: a proxy-routing impure-env line is present.
 dotnix_direct_action() {
   local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
-  if dotnix_conf_has_proxy_impure_env "$conf"; then
+  local st=0
+  dotnix_conf_has_proxy_impure_env "$conf" || st=$?
+  if [[ "$st" -eq 0 ]]; then
     printf '%s\n' clear
-  else
-    printf '%s\n' noop
+    return 0
   fi
+  if [[ "$st" -eq 1 ]]; then
+    printf '%s\n' noop
+    return 0
+  fi
+  return "$st"
 }
 
 # stdin -> stdout. A later plain `impure-env =` replaces the whole
@@ -65,12 +84,17 @@ dotnix_apply_proxy_impure_env() {
   local proxy_url="${2:-}"
   local no_proxy="${3:-}"
   local kept=()
-  local line rest tok key
+  local line orig rest tok key toks
   while IFS= read -r line || [[ -n "$line" ]]; do
+    orig="$line"
+    line="${line%%#*}"
     if [[ "$line" =~ ^(extra-)?impure-env[[:space:]]*= ]]; then
       rest="${line#*=}"
       rest="${rest#"${rest%%[![:space:]]*}"}"
-      for tok in $rest; do
+      set -f
+      read -ra toks <<<"$rest"
+      set +f
+      for tok in "${toks[@]}"; do
         key="${tok%%=*}"
         case "$key" in
           http_proxy | https_proxy | no_proxy) ;;
@@ -78,7 +102,7 @@ dotnix_apply_proxy_impure_env() {
         esac
       done
     else
-      printf '%s\n' "$line"
+      printf '%s\n' "$orig"
     fi
   done
   local merged=()
@@ -94,23 +118,27 @@ dotnix_apply_proxy_impure_env() {
 }
 
 # stdin -> $1, via a sibling temp so an interrupt cannot truncate dest.
+# 0644: nix.custom.conf is world-readable (Determinate and this script read it).
 dotnix_replace_file() {
   local dest="$1"
   local dir tmp
   dir=$(dirname -- "$dest")
   tmp=$(mktemp "${dir}/.dotnix.XXXXXX")
   cat >"$tmp"
+  chmod 0644 "$tmp"
   mv -f "$tmp" "$dest"
 }
 
 # Same, as root, staging next to dest (mv is atomic on one filesystem).
+# mktemp is 0600; install must reset mode/owner or the dest becomes root-only
+# and every later non-sudo read fails.
 dotnix_sudo_replace_file() {
   local dest="$1"
   local tmp stage
   tmp=$(mktemp)
   cat >"$tmp"
   stage="${dest}.dotnix-new"
-  sudo cp "$tmp" "$stage"
+  sudo install -m 0644 -o root -g wheel "$tmp" "$stage"
   sudo mv -f "$stage" "$dest"
   rm -f "$tmp"
 }
@@ -163,7 +191,9 @@ dotnix_bootstrap_proxy_plan() {
     printf '%s\n' enable
     return 0
   fi
-  if dotnix_conf_has_proxy_impure_env "$conf"; then
+  local st=0
+  dotnix_conf_has_proxy_impure_env "$conf" || st=$?
+  if [[ "$st" -eq 0 ]]; then
     if [[ -n "$(dotnix_find_clash_app "$hm_apps")" ]]; then
       printf '%s\n' start-existing
     else
@@ -171,6 +201,7 @@ dotnix_bootstrap_proxy_plan() {
     fi
     return 0
   fi
+  [[ "$st" -eq 1 ]] || return "$st"
   printf '%s\n' install-clash
 }
 

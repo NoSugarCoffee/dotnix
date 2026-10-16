@@ -138,6 +138,40 @@ class ImpureEnvDetectionTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "no")
+            conf.write_text("impure-env = FOO=bar # https_proxy=http://127.0.0.1:7890\n")
+            result = run_lib(
+                f'if dotnix_conf_has_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "no")
+
+    def test_unreadable_file_fails_loudly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            conf.write_text("impure-env = https_proxy=http://127.0.0.1:7890\n")
+            conf.chmod(0)
+            try:
+                if os.access(conf, os.R_OK):
+                    self.skipTest("process can read mode 000 files (likely root)")
+                result = run_lib(
+                    f'dotnix_conf_has_proxy_impure_env "{conf}"; echo st=$?'
+                )
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertIn("cannot read", result.stderr)
+                self.assertNotIn("st=", result.stdout)
+                action = run_lib(f'dotnix_direct_action "{conf}"')
+                self.assertEqual(action.returncode, 2, action.stdout)
+                self.assertNotIn("noop", action.stdout)
+                self.assertNotIn("clear", action.stdout)
+                plan = run_lib(
+                    f'dotnix_bootstrap_proxy_plan "{conf}" "{tmp}" 0'
+                )
+                self.assertEqual(plan.returncode, 2, plan.stdout)
+                self.assertNotIn("install-clash", plan.stdout)
+                self.assertNotIn("start-existing", plan.stdout)
+            finally:
+                if conf.exists():
+                    conf.chmod(0o644)
 
 
 class ApplyProxyImpureEnvTest(unittest.TestCase):
@@ -201,6 +235,7 @@ class ApplyProxyImpureEnvTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "nix.custom.conf"
             dest.write_text("old\n")
+            dest.chmod(0o600)
             result = run_lib(
                 f'printf "%s\\n" "extra-substituters = https://example.invalid" '
                 f'"impure-env = FOO=bar" | dotnix_replace_file "{dest}"'
@@ -211,6 +246,34 @@ class ApplyProxyImpureEnvTest(unittest.TestCase):
                 "extra-substituters = https://example.invalid\n"
                 "impure-env = FOO=bar\n",
             )
+            self.assertEqual(dest.stat().st_mode & 0o777, 0o644)
+
+    def test_sudo_replace_resets_mode_to_0644(self) -> None:
+        # sudo install is the production path; this checkout cannot run it.
+        text = SCRIPT.read_text()
+        self.assertIn('sudo install -m 0644 -o root -g wheel', text)
+        self.assertIn('sudo mv -f "$stage" "$dest"', text)
+
+    def test_inline_comment_is_not_a_token(self) -> None:
+        result = run_lib(
+            textwrap.dedent(
+                """\
+                dotnix_apply_proxy_impure_env set http://127.0.0.1:7890 127.0.0.1 <<'EOF'
+                impure-env = FOO=bar # https_proxy=http://evil.example *
+                EOF
+                """
+            )
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout,
+            "impure-env = FOO=bar "
+            "http_proxy=http://127.0.0.1:7890 "
+            "https_proxy=http://127.0.0.1:7890 "
+            "no_proxy=127.0.0.1\n",
+        )
+        self.assertNotIn("#", result.stdout)
+        self.assertNotIn("*", result.stdout)
 
 
 class FindAppBundleTest(unittest.TestCase):
