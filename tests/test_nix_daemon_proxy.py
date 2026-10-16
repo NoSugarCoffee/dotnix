@@ -100,6 +100,22 @@ class ImpureEnvDetectionTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "yes")
 
+    def test_proxy_line_vs_custom_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            conf.write_text("impure-env = FOO=bar\n")
+            result = run_lib(
+                f'if dotnix_conf_has_proxy_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "no")
+            conf.write_text("impure-env = https_proxy=http://127.0.0.1:7890\n")
+            result = run_lib(
+                f'if dotnix_conf_has_proxy_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "yes")
+
     def test_commented_line_does_not_count(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             conf = Path(tmp) / "nix.custom.conf"
@@ -186,6 +202,21 @@ class BootstrapProxyPlanTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout.strip()
 
+    def test_direct_action_clear_vs_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proxy = Path(tmp) / "proxy.conf"
+            custom = Path(tmp) / "custom.conf"
+            missing = Path(tmp) / "missing.conf"
+            proxy.write_text("impure-env = https_proxy=http://127.0.0.1:7890\n")
+            custom.write_text("impure-env = FOO=bar\n")
+            result = run_lib(
+                f'printf "%s\\n" "$(dotnix_direct_action "{proxy}")" '
+                f'"$(dotnix_direct_action "{custom}")" '
+                f'"$(dotnix_direct_action "{missing}")"'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip().splitlines(), ["clear", "noop", "noop"])
+
     def test_direct_opt_out_wins(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             conf = Path(tmp) / "nix.custom.conf"
@@ -218,6 +249,15 @@ class BootstrapProxyPlanTest(unittest.TestCase):
             conf.write_text("impure-env = https_proxy=http://127.0.0.1:7890\n")
             self.assertEqual(self._plan(conf=str(conf), hm=str(hm), proxy_up="0"), "tell-user")
 
+    def test_custom_impure_env_is_not_a_configured_proxy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            hm = Path(tmp) / "apps"
+            hm.mkdir()
+            (hm / "Clash Verge.app").mkdir()
+            conf.write_text("impure-env = FOO=bar\n")
+            self.assertEqual(self._plan(conf=str(conf), hm=str(hm), proxy_up="0"), "install-clash")
+
     def test_fresh_machine_installs_clash(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             conf = Path(tmp) / "nix.custom.conf"
@@ -236,21 +276,55 @@ class BootstrapProxyPlanTest(unittest.TestCase):
 
 
 class EnablePathTest(unittest.TestCase):
-    def test_direct_opt_out_is_a_noop(self) -> None:
-        env = os.environ.copy()
-        env["PATH"] = "/usr/bin:/bin"
-        env["DOTNIX_DIRECT"] = "1"
-        result = subprocess.run(
-            ["bash", str(SCRIPT)],
-            check=False,
-            text=True,
-            capture_output=True,
-            timeout=10,
-            env=env,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("DOTNIX_DIRECT=1", result.stdout)
-        self.assertNotIn("listening", result.stderr)
+    def test_direct_opt_out_is_noop_without_proxy_line(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            conf.write_text("extra-substituters = https://example.invalid\n")
+            env = os.environ.copy()
+            env["PATH"] = "/usr/bin:/bin"
+            env["DOTNIX_DIRECT"] = "1"
+            env["DOTNIX_NIX_CUSTOM_CONF"] = str(conf)
+            result = subprocess.run(
+                ["bash", str(SCRIPT)],
+                check=False,
+                text=True,
+                capture_output=True,
+                timeout=10,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("no proxy impure-env", result.stdout)
+            self.assertEqual(
+                conf.read_text(),
+                "extra-substituters = https://example.invalid\n",
+            )
+            self.assertNotIn("listening", result.stderr)
+
+    def test_direct_opt_out_tries_to_clear_existing_line(self) -> None:
+        if os.path.exists("/Library/LaunchDaemons/systems.determinate.nix-daemon.plist"):
+            self.skipTest("Determinate Nix is installed here; cannot assert the Darwin gate")
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            conf.write_text(
+                "impure-env = http_proxy=http://127.0.0.1:7890 "
+                "https_proxy=http://127.0.0.1:7890 no_proxy=127.0.0.1\n"
+            )
+            env = os.environ.copy()
+            env["PATH"] = "/usr/bin:/bin"
+            env["DOTNIX_DIRECT"] = "1"
+            env["DOTNIX_NIX_CUSTOM_CONF"] = str(conf)
+            result = subprocess.run(
+                ["bash", str(SCRIPT)],
+                check=False,
+                text=True,
+                capture_output=True,
+                timeout=10,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("not a Determinate Nix install", result.stderr)
+            self.assertIn("https_proxy=http://127.0.0.1:7890", conf.read_text())
+            self.assertNotIn("no proxy impure-env", result.stdout)
 
     def test_linux_enable_fails_before_nc(self) -> None:
         if os.path.exists("/Library/LaunchDaemons/systems.determinate.nix-daemon.plist"):

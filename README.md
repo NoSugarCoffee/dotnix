@@ -38,7 +38,8 @@ curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/b
 
 Re-run any time to update. On a machine that already wrote `impure-env` and whose proxy is
 down, bootstrap tells you to start the Clash Verge you already have instead of trying a
-download that cannot succeed.
+download that cannot succeed — or re-run with `DOTNIX_DIRECT=1` to drop the daemon proxy
+line and switch with uncached fetches going direct.
 
 **Already have Nix, no home-manager yet** — bootstrap the first switch. This targets the
 account configured in `flake.nix` (`liangliangdai` until you fork and rename it), which only
@@ -131,7 +132,7 @@ line-level and fails loudly if either doesn't match.
 - **Tailscale on macOS** is the standalone app. Open it after switching, then approve its VPN configuration and system extension when prompted. On Linux, the package provides `tailscale` and `tailscaled`; the host must run the daemon as a system service before `tailscale up` can connect.
 - **Ad-hoc-signed macOS apps are re-signed locally.** Nix builds like kitty and Albert carry a signature that changes with every rebuild, which silently invalidates Accessibility / Screen Recording grants. A switch re-signs their copies in `~/Applications/Home Manager Apps` with a self-signed `dotnix local code signing` certificate it creates in the login keychain, so grants survive updates. The first switch that migrates an app to this identity still changes its code identity once -- macOS treats that as a new app, so expect to re-grant Accessibility / Screen Recording for kitty and Albert one more time right after that switch; it then sticks across every rebuild after. Without a login keychain at `~/Library/Keychains/login.keychain-db` (headless activation, CI) it warns and leaves the copy ad-hoc signed instead of failing.
 - **China mirrors.** `scripts/bootstrap-macos.sh` adds SJTU/TUNA/USTC substituters; check with `nix config show | grep substitut`.
-- **On macOS, the Nix daemon downloads through Clash.** Anything no cache has (unfree packages like the Android SDK, GitHub release assets) is fetched by the daemon, which ignores the shell's proxy. Bootstrap sets `impure-env` in `/etc/nix/nix.custom.conf` to the proxy in `lib/proxy.nix`; on a machine set up before that, run `just nix-proxy` once. Those downloads then fail while Clash Verge is down. `DOTNIX_DIRECT=1` skips the write (bootstrap and `just nix-proxy`) and leaves downloads direct.
+- **On macOS, the Nix daemon downloads through Clash.** Anything no cache has (unfree packages like the Android SDK, GitHub release assets) is fetched by the daemon, which ignores the shell's proxy. Bootstrap sets `impure-env` in `/etc/nix/nix.custom.conf` to the proxy in `lib/proxy.nix`; on a machine set up before that, run `just nix-proxy` once. Those downloads then fail while Clash Verge is down. `DOTNIX_DIRECT=1` (bootstrap and `just nix-proxy`) skips the write and, if a proxy-routing `impure-env` line is already there, removes it and restarts the daemon so uncached downloads go direct.
 
 ## 📄 License
 

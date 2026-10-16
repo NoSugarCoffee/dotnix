@@ -8,7 +8,7 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
-#   curl -fsSL ... | DOTNIX_DIRECT=1 bash   # no proxy (or a TUN / other port)
+#   curl -fsSL ... | DOTNIX_DIRECT=1 bash   # no proxy; clears an existing one
 set -euo pipefail
 
 # This repo as GitHub `owner/name`, and the branch to fetch. A fork changes
@@ -150,9 +150,10 @@ bootstrap_url="https://raw.githubusercontent.com/${repo}/${branch}/scripts/boots
 # one download that must go direct, retryable on its own), open it, and stop;
 # the re-run finds the proxy up, points the daemon at it, and switches.
 #
-# DOTNIX_DIRECT=1 skips that gate and the impure-env write (no proxy, a TUN /
-# system VPN, or a different port). A machine that already has impure-env
-# must not try to fetch Clash: that download would go through the dead proxy.
+# DOTNIX_DIRECT=1 skips that gate and the impure-env write. If a proxy-routing
+# line is already in nix.custom.conf, the proxy script removes it and restarts
+# the daemon so uncached fetches actually go direct. A machine that already
+# has that line (and no DOTNIX_DIRECT) must not try to fetch Clash.
 proxy_up=0
 if ! dotnix_direct && bash "${proxy_script}" --check "${srcdir}"; then
   proxy_up=1
@@ -161,7 +162,7 @@ hm_apps="${HOME}/Applications/Home Manager Apps"
 plan=$(dotnix_bootstrap_proxy_plan "$custom_conf" "$hm_apps" "$proxy_up")
 
 if [[ "$plan" == direct ]]; then
-  echo "==> DOTNIX_DIRECT=1: skipping the daemon proxy; downloads stay direct."
+  bash "${proxy_script}" "${srcdir}"
 elif [[ "$plan" == enable ]]; then
   bash "${proxy_script}" "${srcdir}"
 elif [[ "$plan" == start-existing ]]; then

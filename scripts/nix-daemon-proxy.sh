@@ -12,20 +12,22 @@
 # live in the system-level /etc/nix/nix.custom.conf, hence sudo.
 #
 # Trade-off: once set, those fetches fail fast while the proxy is down
-# instead of trying a direct connection. Keep Clash Verge running. Skip the
-# write entirely with DOTNIX_DIRECT=1 (no proxy, or a TUN / different port).
+# instead of trying a direct connection. Keep Clash Verge running.
+# DOTNIX_DIRECT=1 skips the write, and if a proxy-routing impure-env line
+# is already there, removes it and restarts the daemon so uncached fetches
+# go direct (no proxy, a TUN / different port, or Clash is down).
 #
 # Usage:
 #   nix-daemon-proxy.sh [<repo root>]          enable it (idempotent)
 #   nix-daemon-proxy.sh --check [<repo root>]  exit 0 iff the proxy is listening
-#   DOTNIX_DIRECT=1 nix-daemon-proxy.sh        no-op (leave nix.custom.conf)
+#   DOTNIX_DIRECT=1 nix-daemon-proxy.sh        skip / clear the proxy routing
 #
 # Sourced (by bootstrap-macos.sh and tests): defines the helpers below and
 # returns without touching the daemon or the network.
 set -euo pipefail
 
-DOTNIX_NIX_DAEMON_LABEL="systems.determinate.nix-daemon"
-DOTNIX_NIX_CUSTOM_CONF="/etc/nix/nix.custom.conf"
+: "${DOTNIX_NIX_DAEMON_LABEL:=systems.determinate.nix-daemon}"
+: "${DOTNIX_NIX_CUSTOM_CONF:=/etc/nix/nix.custom.conf}"
 
 dotnix_direct() {
   [[ "${DOTNIX_DIRECT:-}" == 1 ]]
@@ -34,6 +36,21 @@ dotnix_direct() {
 dotnix_conf_has_impure_env() {
   local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
   [[ -e "$conf" ]] && grep -qsE '^impure-env[[:space:]]*=' "$conf"
+}
+
+dotnix_conf_has_proxy_impure_env() {
+  local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
+  [[ -e "$conf" ]] && grep -qsE '^impure-env[[:space:]]*=.*https_proxy=' "$conf"
+}
+
+# noop: nothing to strip. clear: a proxy-routing impure-env line is present.
+dotnix_direct_action() {
+  local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
+  if dotnix_conf_has_proxy_impure_env "$conf"; then
+    printf '%s\n' clear
+  else
+    printf '%s\n' noop
+  fi
 }
 
 # Drop only a proxy-routing impure-env line (so a user's other impure-env
@@ -90,7 +107,7 @@ dotnix_bootstrap_proxy_plan() {
     printf '%s\n' enable
     return 0
   fi
-  if dotnix_conf_has_impure_env "$conf"; then
+  if dotnix_conf_has_proxy_impure_env "$conf"; then
     if [[ -n "$(dotnix_find_clash_app "$hm_apps")" ]]; then
       printf '%s\n' start-existing
     else
@@ -113,7 +130,27 @@ if [[ "${1:-}" == "--check" ]]; then
 fi
 
 if [[ "$check_only" != 1 ]] && dotnix_direct; then
-  echo "==> DOTNIX_DIRECT=1: not writing impure-env; daemon downloads stay direct."
+  if [[ "$(dotnix_direct_action)" == noop ]]; then
+    echo "==> DOTNIX_DIRECT=1: no proxy impure-env; daemon downloads stay direct."
+    exit 0
+  fi
+  if [[ ! -e "/Library/LaunchDaemons/${DOTNIX_NIX_DAEMON_LABEL}.plist" ]]; then
+    echo "error: not a Determinate Nix install on macOS; configure the daemon proxy by hand" >&2
+    exit 1
+  fi
+  if ! sudo -v; then
+    echo "error: sudo needs a password prompt; run this from a regular terminal" >&2
+    exit 1
+  fi
+  echo "==> DOTNIX_DIRECT=1: removing the proxy impure-env from ${DOTNIX_NIX_CUSTOM_CONF}..."
+  stripped=$(dotnix_strip_proxy_impure_env <"$DOTNIX_NIX_CUSTOM_CONF")
+  printf '%s\n' "$stripped" | sudo tee "$DOTNIX_NIX_CUSTOM_CONF" >/dev/null
+  sudo launchctl kickstart -k "system/${DOTNIX_NIX_DAEMON_LABEL}"
+  if ! dotnix_wait_for_nix_daemon; then
+    dotnix_print_daemon_unreachable
+    exit 1
+  fi
+  echo "==> Uncached daemon downloads now go direct."
   exit 0
 fi
 
