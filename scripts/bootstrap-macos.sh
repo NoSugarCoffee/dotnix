@@ -8,6 +8,7 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/NoSugarCoffee/dotnix/main/scripts/bootstrap-macos.sh | bash
+#   curl -fsSL ... | DOTNIX_DIRECT=1 bash   # no proxy (or a TUN / other port)
 set -euo pipefail
 
 # This repo as GitHub `owner/name`, and the branch to fetch. A fork changes
@@ -118,16 +119,25 @@ else
   echo "==> ${USER} already a trusted user."
 fi
 
+# Helpers live in nix-daemon-proxy.sh (sourced: no sudo / no network).
+# Prefer the copy next to this script so a local checkout of a PR is used
+# even though the flake tarball below still tracks `branch`.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${here}/nix-daemon-proxy.sh" ]]; then
+  proxy_script="${here}/nix-daemon-proxy.sh"
+else
+  proxy_script="${srcdir}/scripts/nix-daemon-proxy.sh"
+fi
+# Path is a variable (sibling checkout vs downloaded tarball).
+# shellcheck disable=SC1090,SC1091
+. "$proxy_script"
+
 if [[ "$restart_daemon" == 1 ]]; then
   sudo launchctl kickstart -k "system/${daemon_label}"
 fi
 
-if ! nix store info --store daemon >/dev/null 2>&1; then
-  cat >&2 <<EOF
-error: the Nix daemon is not reachable. Restart it and re-run this:
-       sudo launchctl kickstart -k system/${daemon_label}
-       Its log is /var/log/determinate-nix-daemon.log.
-EOF
+if ! dotnix_wait_for_nix_daemon; then
+  dotnix_print_daemon_unreachable
   exit 1
 fi
 
@@ -139,11 +149,61 @@ bootstrap_url="https://raw.githubusercontent.com/${repo}/${branch}/scripts/boots
 # those packages. So without a proxy listening, install just Clash Verge (the
 # one download that must go direct, retryable on its own), open it, and stop;
 # the re-run finds the proxy up, points the daemon at it, and switches.
-if ! bash "${srcdir}/scripts/nix-daemon-proxy.sh" --check "${srcdir}"; then
+#
+# DOTNIX_DIRECT=1 skips that gate and the impure-env write (no proxy, a TUN /
+# system VPN, or a different port). A machine that already has impure-env
+# must not try to fetch Clash: that download would go through the dead proxy.
+proxy_up=0
+if ! dotnix_direct && bash "${proxy_script}" --check "${srcdir}"; then
+  proxy_up=1
+fi
+hm_apps="${HOME}/Applications/Home Manager Apps"
+plan=$(dotnix_bootstrap_proxy_plan "$custom_conf" "$hm_apps" "$proxy_up")
+
+if [[ "$plan" == direct ]]; then
+  echo "==> DOTNIX_DIRECT=1: skipping the daemon proxy; downloads stay direct."
+elif [[ "$plan" == enable ]]; then
+  bash "${proxy_script}" "${srcdir}"
+elif [[ "$plan" == start-existing ]]; then
+  clash_app=$(dotnix_find_clash_app "$hm_apps")
+  open "$clash_app"
+  cat <<EOF
+
+The daemon already routes uncached downloads through the proxy, but nothing
+is listening. Opened the Clash Verge in ~/Applications/Home Manager Apps.
+Start a node, then re-run:
+
+  curl -fsSL ${bootstrap_url} | bash
+
+If you don't need a proxy, re-run with DOTNIX_DIRECT=1 instead:
+
+  curl -fsSL ${bootstrap_url} | DOTNIX_DIRECT=1 bash
+EOF
+  exit 1
+elif [[ "$plan" == tell-user ]]; then
+  cat >&2 <<EOF
+error: the daemon already routes uncached downloads through the proxy, but
+       nothing is listening. Start the Clash Verge you already have
+       (subscription imported, a node selected, mixed port matching
+       lib/proxy.nix), then re-run:
+
+  curl -fsSL ${bootstrap_url} | bash
+
+       If you don't need a proxy, re-run with DOTNIX_DIRECT=1:
+
+  curl -fsSL ${bootstrap_url} | DOTNIX_DIRECT=1 bash
+EOF
+  exit 1
+elif [[ "$plan" == install-clash ]]; then
   echo "==> No proxy listening yet; installing Clash Verge on its own first..."
   clash=$(nix build --no-link --print-out-paths \
     "${srcdir}#homeConfigurations.${flake_target}.pkgs.clash-verge-rev-darwin")
-  open "${clash}/Applications/Clash Verge.app"
+  clash_app=$(dotnix_find_app_bundle "${clash}/Applications")
+  if [[ -z "$clash_app" ]]; then
+    echo "error: nix build produced no .app under ${clash}/Applications" >&2
+    exit 1
+  fi
+  open "$clash_app"
   cat <<EOF
 
 Clash Verge is open (run from the Nix store for now). Import a subscription,
@@ -155,8 +215,10 @@ After that switch, quit this copy and use the one in
 ~/Applications/Home Manager Apps instead.
 EOF
   exit 0
+else
+  echo "error: unknown proxy plan '${plan}'" >&2
+  exit 1
 fi
-bash "${srcdir}/scripts/nix-daemon-proxy.sh" "${srcdir}"
 
 echo "==> Applying Home Manager configuration for ${flake_target} (account ${USER})..."
 nix run "${srcdir}#home-manager" -- switch --flake "${srcdir}#${flake_target}"
