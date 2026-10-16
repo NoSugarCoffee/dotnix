@@ -57,8 +57,10 @@ identity lives in an untracked `~/.gitconfig-local` that home-manager includes c
 
 - **`git add` new files before `nix build`.** The flake source is the git tree; untracked
   `apps/*/` files are invisible to the build until staged.
-- **`sudo` is non-interactive-hostile here.** Anything needing it (bootstrap, some fixes) must
-  be run by the user with `! sudo …` in the prompt — don't try to script it.
+- **`sudo` can't prompt for a password here — not even via `!`.** A `!` command has no
+  terminal either, so `! sudo …` fails the same way. Anything needing sudo (bootstrap,
+  `just nix-proxy`, some fixes) must be run by the user in their own terminal; give them the
+  exact command and ask them to report back.
 - **`home-manager switch` needs macOS "App Management" permission** for the terminal it runs
   in, which the assistant's shell lacks. When activation is needed, ask the user to run
   `! just switch` themselves.
