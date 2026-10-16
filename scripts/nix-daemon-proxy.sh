@@ -28,6 +28,7 @@ set -euo pipefail
 
 : "${DOTNIX_NIX_DAEMON_LABEL:=systems.determinate.nix-daemon}"
 : "${DOTNIX_NIX_CUSTOM_CONF:=/etc/nix/nix.custom.conf}"
+: "${DOTNIX_NIX_DAEMON_PLIST:=/Library/LaunchDaemons/${DOTNIX_NIX_DAEMON_LABEL}.plist}"
 
 dotnix_direct() {
   [[ "${DOTNIX_DIRECT:-}" == 1 ]]
@@ -91,16 +92,20 @@ dotnix_apply_proxy_impure_env() {
     if [[ "$line" =~ ^(extra-)?impure-env[[:space:]]*= ]]; then
       rest="${line#*=}"
       rest="${rest#"${rest%%[![:space:]]*}"}"
+      toks=()
       set -f
       read -ra toks <<<"$rest"
       set +f
-      for tok in "${toks[@]}"; do
-        key="${tok%%=*}"
-        case "$key" in
-          http_proxy | https_proxy | no_proxy) ;;
-          *) kept+=("$tok") ;;
-        esac
-      done
+      # bash 3.2 + set -u: empty "${toks[@]}" is an unbound error.
+      if ((${#toks[@]})); then
+        for tok in "${toks[@]}"; do
+          key="${tok%%=*}"
+          case "$key" in
+            http_proxy | https_proxy | no_proxy) ;;
+            *) kept+=("$tok") ;;
+          esac
+        done
+      fi
     else
       printf '%s\n' "$orig"
     fi
@@ -124,9 +129,12 @@ dotnix_replace_file() {
   local dir tmp
   dir=$(dirname -- "$dest")
   tmp=$(mktemp "${dir}/.dotnix.XXXXXX")
+  # shellcheck disable=SC2064
+  trap "rm -f -- $(printf '%q' "$tmp")" RETURN
   cat >"$tmp"
   chmod 0644 "$tmp"
   mv -f "$tmp" "$dest"
+  trap - RETURN
 }
 
 # Same, as root, staging next to dest (mv is atomic on one filesystem).
@@ -136,11 +144,14 @@ dotnix_sudo_replace_file() {
   local dest="$1"
   local tmp stage
   tmp=$(mktemp)
-  cat >"$tmp"
   stage="${dest}.dotnix-new"
+  # shellcheck disable=SC2064
+  trap "rm -f -- $(printf '%q' "$tmp"); sudo rm -f -- $(printf '%q' "$stage")" RETURN
+  cat >"$tmp"
   sudo install -m 0644 -o root -g wheel "$tmp" "$stage"
   sudo mv -f "$stage" "$dest"
   rm -f "$tmp"
+  trap - RETURN
 }
 
 dotnix_find_app_bundle() {
@@ -210,6 +221,17 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
   return 0
 fi
 
+_dotnix_main_tmps=()
+dotnix_cleanup_main_tmps() {
+  local f
+  if ((${#_dotnix_main_tmps[@]})); then
+    for f in "${_dotnix_main_tmps[@]}"; do
+      rm -f -- "$f"
+    done
+  fi
+}
+trap dotnix_cleanup_main_tmps EXIT
+
 check_only=0
 if [[ "${1:-}" == "--check" ]]; then
   check_only=1
@@ -217,11 +239,14 @@ if [[ "${1:-}" == "--check" ]]; then
 fi
 
 if [[ "$check_only" != 1 ]] && dotnix_direct; then
-  if [[ "$(dotnix_direct_action)" == noop ]]; then
+  # `[[ "$(cmd)" == noop ]]` discards cmd's status, so unreadability
+  # (2) would fall through to the clear path and wipe dest from EOF.
+  action=$(dotnix_direct_action) || exit $?
+  if [[ "$action" == noop ]]; then
     echo "==> DOTNIX_DIRECT=1: no proxy impure-env; daemon downloads stay direct."
     exit 0
   fi
-  if [[ ! -e "/Library/LaunchDaemons/${DOTNIX_NIX_DAEMON_LABEL}.plist" ]]; then
+  if [[ ! -e "$DOTNIX_NIX_DAEMON_PLIST" ]]; then
     echo "error: not a Determinate Nix install on macOS; configure the daemon proxy by hand" >&2
     exit 1
   fi
@@ -230,11 +255,12 @@ if [[ "$check_only" != 1 ]] && dotnix_direct; then
     exit 1
   fi
   echo "==> DOTNIX_DIRECT=1: removing the proxy impure-env from ${DOTNIX_NIX_CUSTOM_CONF}..."
-  {
-    if [[ -e "$DOTNIX_NIX_CUSTOM_CONF" ]]; then
-      dotnix_apply_proxy_impure_env clear <"$DOTNIX_NIX_CUSTOM_CONF"
-    fi
-  } | dotnix_sudo_replace_file "$DOTNIX_NIX_CUSTOM_CONF"
+  wanted=$(mktemp)
+  _dotnix_main_tmps+=("$wanted")
+  if [[ -e "$DOTNIX_NIX_CUSTOM_CONF" ]]; then
+    dotnix_apply_proxy_impure_env clear <"$DOTNIX_NIX_CUSTOM_CONF" >"$wanted"
+  fi
+  dotnix_sudo_replace_file "$DOTNIX_NIX_CUSTOM_CONF" <"$wanted"
   sudo launchctl kickstart -k "system/${DOTNIX_NIX_DAEMON_LABEL}"
   if ! dotnix_wait_for_nix_daemon; then
     dotnix_print_daemon_unreachable
@@ -246,7 +272,7 @@ fi
 
 # Enable (just nix-proxy) is macOS / Determinate only. Probe after that so
 # Linux never hits macOS `nc -G` and reports a false "nothing is listening".
-if [[ "$check_only" != 1 && ! -e "/Library/LaunchDaemons/${DOTNIX_NIX_DAEMON_LABEL}.plist" ]]; then
+if [[ "$check_only" != 1 && ! -e "$DOTNIX_NIX_DAEMON_PLIST" ]]; then
   echo "error: not a Determinate Nix install on macOS; configure the daemon proxy by hand" >&2
   exit 1
 fi
@@ -284,11 +310,12 @@ if ! sudo -v; then
 fi
 
 wanted=$(mktemp)
-{
-  if [[ -e "$custom_conf" ]]; then
-    cat "$custom_conf"
-  fi
-} | dotnix_apply_proxy_impure_env set "$proxy_url" "$no_proxy" >"$wanted"
+_dotnix_main_tmps+=("$wanted")
+if [[ -e "$custom_conf" ]]; then
+  dotnix_apply_proxy_impure_env set "$proxy_url" "$no_proxy" <"$custom_conf" >"$wanted"
+else
+  dotnix_apply_proxy_impure_env set "$proxy_url" "$no_proxy" </dev/null >"$wanted"
+fi
 if ! grep -qsxF "$features_line" "$wanted"; then
   printf '%s\n' "$features_line" >>"$wanted"
 fi
@@ -299,7 +326,6 @@ if [[ ! -e "$custom_conf" ]] || ! cmp -s "$wanted" "$custom_conf"; then
   dotnix_sudo_replace_file "$custom_conf" <"$wanted"
   changed=1
 fi
-rm -f "$wanted"
 
 if [[ "$changed" == 1 ]]; then
   sudo launchctl kickstart -k "system/${DOTNIX_NIX_DAEMON_LABEL}"

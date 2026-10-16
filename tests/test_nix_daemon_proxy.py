@@ -275,6 +275,32 @@ class ApplyProxyImpureEnvTest(unittest.TestCase):
         self.assertNotIn("#", result.stdout)
         self.assertNotIn("*", result.stdout)
 
+    def test_empty_impure_env_line_is_not_unbound(self) -> None:
+        result = run_lib(
+            textwrap.dedent(
+                """\
+                set -u
+                dotnix_apply_proxy_impure_env set http://127.0.0.1:7890 127.0.0.1 <<'EOF'
+                extra-trusted-users = alice
+                impure-env =
+                EOF
+                """
+            )
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout,
+            "extra-trusted-users = alice\n"
+            "impure-env = "
+            "http_proxy=http://127.0.0.1:7890 "
+            "https_proxy=http://127.0.0.1:7890 "
+            "no_proxy=127.0.0.1\n",
+        )
+
+    def test_script_does_not_pipe_into_replace(self) -> None:
+        text = SCRIPT.read_text()
+        self.assertNotRegex(text, r"\|\s*dotnix_(sudo_)?replace_file")
+
 
 class FindAppBundleTest(unittest.TestCase):
     def test_find_any_app_and_clash_named(self) -> None:
@@ -450,6 +476,62 @@ class SiblingProxyScriptTest(unittest.TestCase):
 
 
 class EnablePathTest(unittest.TestCase):
+    def _stub_sudo_and_plist(self, tmp: Path) -> dict[str, str]:
+        """Reach the script's write path without a real Determinate install."""
+        plist = tmp / "daemon.plist"
+        plist.write_text("")
+        fake_bin = tmp / "bin"
+        fake_bin.mkdir()
+        sudo = fake_bin / "sudo"
+        sudo.write_text(
+            textwrap.dedent(
+                """\
+                #!/bin/sh
+                set -e
+                if [ "$1" = "-v" ] || [ "$1" = "launchctl" ]; then
+                  exit 0
+                fi
+                if [ "$1" = "install" ]; then
+                  shift
+                  src=""
+                  dest=""
+                  mode="0644"
+                  while [ $# -gt 0 ]; do
+                    case "$1" in
+                      -m) mode=$2; shift 2 ;;
+                      -o|-g) shift 2 ;;
+                      *)
+                        if [ -z "$src" ]; then src=$1; else dest=$1; fi
+                        shift
+                        ;;
+                    esac
+                  done
+                  cp "$src" "$dest"
+                  chmod "$mode" "$dest"
+                  exit 0
+                fi
+                if [ "$1" = "mv" ]; then
+                  shift
+                  exec mv "$@"
+                fi
+                if [ "$1" = "rm" ]; then
+                  shift
+                  exec rm "$@"
+                fi
+                echo "unexpected sudo $*" >&2
+                exit 90
+                """
+            )
+        )
+        sudo.chmod(sudo.stat().st_mode | stat.S_IXUSR)
+        nix = fake_bin / "nix"
+        nix.write_text("#!/bin/sh\nexit 0\n")
+        nix.chmod(nix.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env["PATH"] = f"{fake_bin}:/usr/bin:/bin"
+        env["DOTNIX_NIX_DAEMON_PLIST"] = str(plist)
+        return env
+
     def test_direct_opt_out_is_noop_without_proxy_line(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             conf = Path(tmp) / "nix.custom.conf"
@@ -499,6 +581,42 @@ class EnablePathTest(unittest.TestCase):
             self.assertIn("not a Determinate Nix install", result.stderr)
             self.assertIn("https_proxy=http://127.0.0.1:7890", conf.read_text())
             self.assertNotIn("no proxy impure-env", result.stdout)
+
+    def test_direct_unreadable_conf_is_left_untouched(self) -> None:
+        """DOTNIX_DIRECT=1 must not truncate an unreadable nix.custom.conf."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            conf = tmp_path / "nix.custom.conf"
+            original = (
+                "extra-substituters = https://example.invalid\n"
+                "extra-trusted-users = alice\n"
+                "impure-env = https_proxy=http://127.0.0.1:7890\n"
+            )
+            conf.write_text(original)
+            conf.chmod(0)
+            try:
+                if os.access(conf, os.R_OK):
+                    self.skipTest("process can read mode 000 files (likely root)")
+                env = self._stub_sudo_and_plist(tmp_path)
+                env["DOTNIX_DIRECT"] = "1"
+                env["DOTNIX_NIX_CUSTOM_CONF"] = str(conf)
+                result = subprocess.run(
+                    ["bash", str(SCRIPT)],
+                    check=False,
+                    text=True,
+                    capture_output=True,
+                    timeout=10,
+                    env=env,
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn("cannot read", result.stderr)
+                self.assertNotIn("removing the proxy", result.stdout)
+                conf.chmod(0o644)
+                self.assertEqual(conf.read_text(), original)
+                self.assertGreater(conf.stat().st_size, 0)
+            finally:
+                if conf.exists():
+                    conf.chmod(0o644)
 
     def test_linux_enable_fails_before_nc(self) -> None:
         if os.path.exists("/Library/LaunchDaemons/systems.determinate.nix-daemon.plist"):
