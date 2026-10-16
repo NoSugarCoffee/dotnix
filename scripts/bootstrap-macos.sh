@@ -122,8 +122,14 @@ fi
 # Helpers live in nix-daemon-proxy.sh (sourced: no sudo / no network).
 # Prefer the copy next to this script so a local checkout of a PR is used
 # even though the flake tarball below still tracks `branch`.
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "${here}/nix-daemon-proxy.sh" ]]; then
+# curl | bash leaves BASH_SOURCE unbound (set -u) or empty; never fall
+# back to cwd, or a nix-daemon-proxy.sh there would get sourced.
+here=""
+_src="${BASH_SOURCE[0]:-}"
+if [[ -n "$_src" ]]; then
+  here="$(cd "$(dirname "$_src")" && pwd)"
+fi
+if [[ -n "$here" && -f "${here}/nix-daemon-proxy.sh" ]]; then
   proxy_script="${here}/nix-daemon-proxy.sh"
 else
   proxy_script="${srcdir}/scripts/nix-daemon-proxy.sh"

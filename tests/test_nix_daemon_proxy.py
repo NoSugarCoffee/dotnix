@@ -90,6 +90,13 @@ class ImpureEnvDetectionTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "no")
 
+            conf.write_text("impure-env = FOO=bar\n")
+            result = run_lib(
+                f'if dotnix_conf_has_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "no")
+
             conf.write_text(
                 "impure-env = http_proxy=http://127.0.0.1:7890 "
                 "https_proxy=http://127.0.0.1:7890 no_proxy=127.0.0.1\n"
@@ -115,6 +122,12 @@ class ImpureEnvDetectionTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "yes")
+            conf.write_text("extra-impure-env = https_proxy=http://127.0.0.1:7890\n")
+            result = run_lib(
+                f'if dotnix_conf_has_proxy_impure_env "{conf}"; then echo yes; else echo no; fi'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "yes")
 
     def test_commented_line_does_not_count(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -127,12 +140,12 @@ class ImpureEnvDetectionTest(unittest.TestCase):
             self.assertEqual(result.stdout.strip(), "no")
 
 
-class StripProxyImpureEnvTest(unittest.TestCase):
-    def test_drops_proxy_line_keeps_custom(self) -> None:
+class ApplyProxyImpureEnvTest(unittest.TestCase):
+    def test_clear_merges_custom_and_drops_proxy(self) -> None:
         result = run_lib(
             textwrap.dedent(
                 """\
-                dotnix_strip_proxy_impure_env <<'EOF'
+                dotnix_apply_proxy_impure_env clear <<'EOF'
                 extra-trusted-users = alice
                 impure-env = FOO=bar
                 impure-env = http_proxy=http://127.0.0.1:7890 https_proxy=http://127.0.0.1:7890 no_proxy=127.0.0.1
@@ -145,15 +158,37 @@ class StripProxyImpureEnvTest(unittest.TestCase):
         self.assertEqual(
             result.stdout,
             "extra-trusted-users = alice\n"
-            "impure-env = FOO=bar\n"
-            "extra-experimental-features = configurable-impure-env\n",
+            "extra-experimental-features = configurable-impure-env\n"
+            "impure-env = FOO=bar\n",
         )
 
-    def test_drops_stale_proxy_url(self) -> None:
+    def test_set_merges_custom_keys_onto_one_line(self) -> None:
         result = run_lib(
             textwrap.dedent(
                 """\
-                dotnix_strip_proxy_impure_env <<'EOF'
+                dotnix_apply_proxy_impure_env set http://127.0.0.1:7890 127.0.0.1 <<'EOF'
+                extra-substituters = https://example.invalid
+                impure-env = FOO=bar
+                extra-impure-env = BAZ=qux
+                EOF
+                """
+            )
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            result.stdout,
+            "extra-substituters = https://example.invalid\n"
+            "impure-env = FOO=bar BAZ=qux "
+            "http_proxy=http://127.0.0.1:7890 "
+            "https_proxy=http://127.0.0.1:7890 "
+            "no_proxy=127.0.0.1\n",
+        )
+
+    def test_clear_drops_only_proxy_line(self) -> None:
+        result = run_lib(
+            textwrap.dedent(
+                """\
+                dotnix_apply_proxy_impure_env clear <<'EOF'
                 impure-env = http_proxy=http://127.0.0.1:1080 https_proxy=http://127.0.0.1:1080
                 EOF
                 """
@@ -161,6 +196,21 @@ class StripProxyImpureEnvTest(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "")
+
+    def test_replace_file_leaves_complete_dest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "nix.custom.conf"
+            dest.write_text("old\n")
+            result = run_lib(
+                f'printf "%s\\n" "extra-substituters = https://example.invalid" '
+                f'"impure-env = FOO=bar" | dotnix_replace_file "{dest}"'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                dest.read_text(),
+                "extra-substituters = https://example.invalid\n"
+                "impure-env = FOO=bar\n",
+            )
 
 
 class FindAppBundleTest(unittest.TestCase):
@@ -226,6 +276,29 @@ class BootstrapProxyPlanTest(unittest.TestCase):
                 "direct",
             )
 
+    def test_direct_with_existing_proxy_line_clears_keys(self) -> None:
+        """DOTNIX_DIRECT=1 + existing proxy impure-env: plan is direct, apply clear drops it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            conf = Path(tmp) / "nix.custom.conf"
+            conf.write_text(
+                "extra-substituters = https://example.invalid\n"
+                "impure-env = FOO=bar http_proxy=http://127.0.0.1:7890 "
+                "https_proxy=http://127.0.0.1:7890 no_proxy=127.0.0.1\n"
+            )
+            self.assertEqual(
+                self._plan(conf=str(conf), hm=tmp, proxy_up="0", env={"DOTNIX_DIRECT": "1"}),
+                "direct",
+            )
+            result = run_lib(
+                f'dotnix_apply_proxy_impure_env clear <"{conf}" | dotnix_replace_file "{conf}"'
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            text = conf.read_text()
+            self.assertIn("extra-substituters = https://example.invalid\n", text)
+            self.assertIn("impure-env = FOO=bar\n", text)
+            self.assertNotIn("https_proxy=", text)
+            self.assertNotIn("http_proxy=", text)
+
     def test_proxy_up_enables(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             conf = Path(tmp) / "nix.custom.conf"
@@ -273,6 +346,44 @@ class BootstrapProxyPlanTest(unittest.TestCase):
                 self._plan(conf=f"{tmp}/missing.conf", hm=tmp, proxy_up="0"),
                 "install-clash",
             )
+
+
+class SiblingProxyScriptTest(unittest.TestCase):
+    def test_empty_bash_source_does_not_use_cwd(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp) / "cwd"
+            srcdir = Path(tmp) / "tarball"
+            cwd.mkdir()
+            (srcdir / "scripts").mkdir(parents=True)
+            (cwd / "nix-daemon-proxy.sh").write_text("DECOY\n")
+            (srcdir / "scripts" / "nix-daemon-proxy.sh").write_text("REAL\n")
+            script = textwrap.dedent(
+                f"""\
+                set -euo pipefail
+                cd "{cwd}"
+                here=""
+                _src="${{BASH_SOURCE[0]:-}}"
+                _src=""
+                if [[ -n "$_src" ]]; then
+                  here="$(cd "$(dirname "$_src")" && pwd)"
+                fi
+                srcdir="{srcdir}"
+                if [[ -n "$here" && -f "${{here}}/nix-daemon-proxy.sh" ]]; then
+                  printf '%s\\n' "${{here}}/nix-daemon-proxy.sh"
+                else
+                  printf '%s\\n' "${{srcdir}}/scripts/nix-daemon-proxy.sh"
+                fi
+                """
+            )
+            result = subprocess.run(
+                ["bash", "-c", script],
+                check=False,
+                text=True,
+                capture_output=True,
+                timeout=10,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), str(srcdir / "scripts" / "nix-daemon-proxy.sh"))
 
 
 class EnablePathTest(unittest.TestCase):

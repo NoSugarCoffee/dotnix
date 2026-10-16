@@ -33,14 +33,15 @@ dotnix_direct() {
   [[ "${DOTNIX_DIRECT:-}" == 1 ]]
 }
 
-dotnix_conf_has_impure_env() {
-  local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
-  [[ -e "$conf" ]] && grep -qsE '^impure-env[[:space:]]*=' "$conf"
-}
-
+# Proxy-routing only (https_proxy=). A user's `impure-env = FOO=bar` is not
+# "configured". Matches extra-impure-env too (StringMap extra- appends).
 dotnix_conf_has_proxy_impure_env() {
   local conf="${1:-$DOTNIX_NIX_CUSTOM_CONF}"
-  [[ -e "$conf" ]] && grep -qsE '^impure-env[[:space:]]*=.*https_proxy=' "$conf"
+  [[ -e "$conf" ]] && grep -qsE '^(extra-)?impure-env[[:space:]]*=.*https_proxy=' "$conf"
+}
+
+dotnix_conf_has_impure_env() {
+  dotnix_conf_has_proxy_impure_env "$@"
 }
 
 # noop: nothing to strip. clear: a proxy-routing impure-env line is present.
@@ -53,10 +54,65 @@ dotnix_direct_action() {
   fi
 }
 
-# Drop only a proxy-routing impure-env line (so a user's other impure-env
-# stays). stdin -> stdout; callers write the result back.
-dotnix_strip_proxy_impure_env() {
-  sed '/^impure-env[[:space:]]*=.*https_proxy=/d'
+# stdin -> stdout. A later plain `impure-env =` replaces the whole
+# StringMap, so custom keys on an earlier line are lost unless we merge.
+# extra-impure-env appends but does not override existing keys (std::map
+# insert). Collect every (extra-)impure-env pair, drop the three proxy
+# keys, then emit one impure-env line. $1 is clear or set; set takes
+# proxy URL and no_proxy as $2 $3.
+dotnix_apply_proxy_impure_env() {
+  local mode="$1"
+  local proxy_url="${2:-}"
+  local no_proxy="${3:-}"
+  local kept=()
+  local line rest tok key
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^(extra-)?impure-env[[:space:]]*= ]]; then
+      rest="${line#*=}"
+      rest="${rest#"${rest%%[![:space:]]*}"}"
+      for tok in $rest; do
+        key="${tok%%=*}"
+        case "$key" in
+          http_proxy | https_proxy | no_proxy) ;;
+          *) kept+=("$tok") ;;
+        esac
+      done
+    else
+      printf '%s\n' "$line"
+    fi
+  done
+  local merged=()
+  if ((${#kept[@]})); then
+    merged+=("${kept[@]}")
+  fi
+  if [[ "$mode" == set ]]; then
+    merged+=("http_proxy=${proxy_url}" "https_proxy=${proxy_url}" "no_proxy=${no_proxy}")
+  fi
+  if ((${#merged[@]})); then
+    printf 'impure-env = %s\n' "${merged[*]}"
+  fi
+}
+
+# stdin -> $1, via a sibling temp so an interrupt cannot truncate dest.
+dotnix_replace_file() {
+  local dest="$1"
+  local dir tmp
+  dir=$(dirname -- "$dest")
+  tmp=$(mktemp "${dir}/.dotnix.XXXXXX")
+  cat >"$tmp"
+  mv -f "$tmp" "$dest"
+}
+
+# Same, as root, staging next to dest (mv is atomic on one filesystem).
+dotnix_sudo_replace_file() {
+  local dest="$1"
+  local tmp stage
+  tmp=$(mktemp)
+  cat >"$tmp"
+  stage="${dest}.dotnix-new"
+  sudo cp "$tmp" "$stage"
+  sudo mv -f "$stage" "$dest"
+  rm -f "$tmp"
 }
 
 dotnix_find_app_bundle() {
@@ -143,8 +199,11 @@ if [[ "$check_only" != 1 ]] && dotnix_direct; then
     exit 1
   fi
   echo "==> DOTNIX_DIRECT=1: removing the proxy impure-env from ${DOTNIX_NIX_CUSTOM_CONF}..."
-  stripped=$(dotnix_strip_proxy_impure_env <"$DOTNIX_NIX_CUSTOM_CONF")
-  printf '%s\n' "$stripped" | sudo tee "$DOTNIX_NIX_CUSTOM_CONF" >/dev/null
+  {
+    if [[ -e "$DOTNIX_NIX_CUSTOM_CONF" ]]; then
+      dotnix_apply_proxy_impure_env clear <"$DOTNIX_NIX_CUSTOM_CONF"
+    fi
+  } | dotnix_sudo_replace_file "$DOTNIX_NIX_CUSTOM_CONF"
   sudo launchctl kickstart -k "system/${DOTNIX_NIX_DAEMON_LABEL}"
   if ! dotnix_wait_for_nix_daemon; then
     dotnix_print_daemon_unreachable
@@ -184,7 +243,6 @@ fi
 
 custom_conf="$DOTNIX_NIX_CUSTOM_CONF"
 features_line="extra-experimental-features = configurable-impure-env"
-env_line="impure-env = http_proxy=${proxy_url} https_proxy=${proxy_url} no_proxy=${no_proxy}"
 
 # Authenticate once up front: a sudo that can't prompt (no terminal) would
 # otherwise fail half-way through. The file itself is world-readable, so
@@ -194,23 +252,23 @@ if ! sudo -v; then
   exit 1
 fi
 
-changed=0
-if ! grep -qsxF "$features_line" "$custom_conf"; then
-  echo "==> Enabling configurable-impure-env in ${custom_conf}..."
-  printf '%s\n' "$features_line" | sudo tee -a "$custom_conf" >/dev/null
-  changed=1
-fi
-if ! grep -qsxF "$env_line" "$custom_conf"; then
-  echo "==> Routing daemon downloads through ${proxy_url} in ${custom_conf}..."
-  # Replace a stale proxy-routing line (lib/proxy.nix changed). Leave any
-  # other impure-env the user added.
+wanted=$(mktemp)
+{
   if [[ -e "$custom_conf" ]]; then
-    stripped=$(dotnix_strip_proxy_impure_env <"$custom_conf")
-    printf '%s\n' "$stripped" | sudo tee "$custom_conf" >/dev/null
+    cat "$custom_conf"
   fi
-  printf '%s\n' "$env_line" | sudo tee -a "$custom_conf" >/dev/null
+} | dotnix_apply_proxy_impure_env set "$proxy_url" "$no_proxy" >"$wanted"
+if ! grep -qsxF "$features_line" "$wanted"; then
+  printf '%s\n' "$features_line" >>"$wanted"
+fi
+
+changed=0
+if [[ ! -e "$custom_conf" ]] || ! cmp -s "$wanted" "$custom_conf"; then
+  echo "==> Routing daemon downloads through ${proxy_url} in ${custom_conf}..."
+  dotnix_sudo_replace_file "$custom_conf" <"$wanted"
   changed=1
 fi
+rm -f "$wanted"
 
 if [[ "$changed" == 1 ]]; then
   sudo launchctl kickstart -k "system/${DOTNIX_NIX_DAEMON_LABEL}"
