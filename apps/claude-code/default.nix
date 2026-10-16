@@ -8,7 +8,9 @@ let
   );
 in
 {
-  home.packages = [ pkgs.claude-code ];
+  # The claude binary itself comes from llm-agents (see flake.nix), whose
+  # cache.numtide.com has it prebuilt; nixpkgs' unfree build is never cached
+  # and would download from downloads.claude.ai at switch time.
   home.activation.claudeCodeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${../../lib/managed_settings.py} \
       --format json --managed ${claudeManagedSettings} \

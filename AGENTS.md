@@ -45,8 +45,8 @@ Wire new agents by adding their attribute name to the `llmAgentsPackages` list i
 Names missing on a system are skipped automatically — do not add a local `apps/*/package.nix`
 (or release-pin / DMG repack) to cover a platform gap that `llm-agents` does not ship yet.
 
-Currently taken from `llm-agents`: `apm`, `ccstatusline`, `claude-desktop`, `grok-bot`, `orca`,
-`paperclip`. Keep the README managed-packages table in sync when that set changes.
+Currently taken from `llm-agents`: `apm`, `ccstatusline`, `claude-code`, `claude-desktop`,
+`grok-bot`, `orca`, `paperclip`. Keep the README managed-packages table in sync when that set changes.
 
 ## Public repo
 
