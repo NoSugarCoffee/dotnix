@@ -30,3 +30,7 @@ update:
 # Route the Nix daemon's uncached downloads through the proxy in lib/proxy.nix (macOS, sudo).
 nix-proxy:
     scripts/nix-daemon-proxy.sh
+
+# Run the Python test suite with the same bash and rsync as CI.
+test:
+    nix shell --inputs-from . nixpkgs#bash nixpkgs#rsync --command python3 -m unittest discover -s tests -t tests

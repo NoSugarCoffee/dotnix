@@ -106,6 +106,19 @@ class CopyAppsTest(unittest.TestCase):
         cls.rsync = shutil.which("rsync")
         if not cls.rsync:
             raise unittest.SkipTest("rsync is required for copyApps sandbox tests")
+        # The block uses `[[ -v DRY_RUN ]]` (bash >= 4.2), which activation
+        # always gets from Nix. macOS's /bin/bash is 3.2 and fails every test
+        # with "conditional binary operator expected"; `just test` brings bash 5.
+        bash_version = subprocess.run(
+            ["bash", "-c", 'echo "${BASH_VERSINFO[0]} ${BASH_VERSINFO[1]}"'],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+        if tuple(map(int, bash_version)) < (4, 2):
+            raise unittest.SkipTest(
+                f"bash {'.'.join(bash_version)} on PATH is older than 4.2; run `just test`"
+            )
         cls.block = extract_copyapps_block()
 
     def setUp(self) -> None:
