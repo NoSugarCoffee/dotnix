@@ -10,6 +10,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import urllib.error
 from dataclasses import replace
 from pathlib import Path
 from unittest import mock
@@ -284,6 +285,54 @@ class ReleasePinsTest(unittest.TestCase):
         self.assertIn("- `ok`: 1.0.0 -> 2.0.0", output.read_text())
         self.assertIn("failed to bump 1 pin(s)", stderr.getvalue())
         self.assertIn("`broken`", stderr.getvalue())
+
+    def test_non_pin_error_does_not_stop_other_pins_or_outputs(self) -> None:
+        self.write_pin("ok", {
+            "source": {"type": "github", "repo": "o/ok"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        broken = self.write_pin("broken", {
+            "source": {"type": "github", "repo": "o/broken"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        before = broken.read_text()
+        self.write_pin("later", {
+            "source": {"type": "github", "repo": "o/later"},
+            "version": "1.0.0",
+            "url": "https://x/{version}.dmg",
+            "hash": {"aarch64-darwin": "sha256-old"},
+        })
+        responses = {
+            **github_latest("o/ok", "v2.0.0", []),
+            **github_latest("o/later", "v3.0.0", []),
+        }
+
+        def http_get_json(url: str) -> object:
+            if "o/broken" in url:
+                raise urllib.error.URLError("network down")
+            return responses[url]
+
+        output = self.pkgs / "github_output"
+        stderr = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output)}),
+            mock.patch.object(sys, "stderr", stderr),
+        ):
+            code = release_pins.run(self.pkgs, http_get_json, FakeUpstreams({}, {}).prefetch)
+
+        self.assertEqual(code, 1)
+        self.assertEqual(self.read_pin("ok")["version"], "2.0.0")
+        self.assertEqual(self.read_pin("later")["version"], "3.0.0")
+        self.assertEqual(broken.read_text(), before)
+        self.assertIn("changed=true", output.read_text())
+        self.assertIn("- `ok`: 1.0.0 -> 2.0.0", output.read_text())
+        self.assertIn("- `later`: 1.0.0 -> 3.0.0", output.read_text())
+        self.assertIn("`broken`", stderr.getvalue())
+        self.assertIn("network down", stderr.getvalue())
 
     def test_digup_asset_pattern_matches_hyphen_and_tauri_underscore_dmgs(self) -> None:
         pin = release_pins.parse_pin(json.loads((REPO / "apps" / "digup" / "pin.json").read_text()), "digup")

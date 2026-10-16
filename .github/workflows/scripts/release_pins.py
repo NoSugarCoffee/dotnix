@@ -173,7 +173,7 @@ def bump_all(pkgs_dir: Path, http_get_json: HttpGetJson, prefetch: Prefetch) -> 
             if bump is not None:
                 pin_file.write_text(dump_pin(bump.pin))
                 summaries.append(bump.summary)
-        except PinError as exc:
+        except Exception as exc:
             errors.append(f"`{name}`: {exc}")
     if errors:
         raise PinError(
