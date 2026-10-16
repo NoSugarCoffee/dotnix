@@ -54,17 +54,25 @@ custom_conf="/etc/nix/nix.custom.conf"
 features_line="extra-experimental-features = configurable-impure-env"
 env_line="impure-env = http_proxy=${proxy_url} https_proxy=${proxy_url} no_proxy=${no_proxy}"
 
+# Authenticate once up front: a sudo that can't prompt (no terminal) would
+# otherwise fail half-way through. The file itself is world-readable, so
+# the checks below need no sudo and can't mistake "unreadable" for "absent".
+if ! sudo -v; then
+  echo "error: sudo needs a password prompt; run this from a regular terminal" >&2
+  exit 1
+fi
+
 changed=0
-if ! sudo grep -qsxF "$features_line" "$custom_conf"; then
+if ! grep -qsxF "$features_line" "$custom_conf"; then
   echo "==> Enabling configurable-impure-env in ${custom_conf}..."
   printf '%s\n' "$features_line" | sudo tee -a "$custom_conf" >/dev/null
   changed=1
 fi
-if ! sudo grep -qsxF "$env_line" "$custom_conf"; then
+if ! grep -qsxF "$env_line" "$custom_conf"; then
   echo "==> Routing daemon downloads through ${proxy_url} in ${custom_conf}..."
   # Drop a stale value (e.g. lib/proxy.nix changed) rather than stacking a
   # second impure-env line after it.
-  if sudo test -e "$custom_conf"; then
+  if [[ -e "$custom_conf" ]]; then
     sudo sed -i '' '/^impure-env[[:space:]]*=/d' "$custom_conf"
   fi
   printf '%s\n' "$env_line" | sudo tee -a "$custom_conf" >/dev/null
