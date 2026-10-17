@@ -5,26 +5,33 @@
   ...
 }:
 let
-  gcOptions = [
-    "--delete-older-than"
-    "14d"
-  ];
+  generationsToKeep = 2;
+  nixGc = pkgs.writeShellScript "nix-gc" ''
+    set -eu
+    for profile in "${config.xdg.stateHome}"/nix/profiles/*; do
+      case "$profile" in *-link) continue ;; esac
+      [ -L "$profile" ] || continue
+      ${config.nix.package}/bin/nix-env --profile "$profile" \
+        --delete-generations +${toString generationsToKeep}
+    done
+    exec ${config.nix.package}/bin/nix-collect-garbage
+  '';
 in
 {
-  launchd.agents.nix-gc.config.ProgramArguments = lib.mkForce (
-    [ "${config.nix.package}/bin/nix-collect-garbage" ] ++ gcOptions
-  );
+  # nix.gc.options only reaches nix-collect-garbage, whose --delete-older-than
+  # is time-bounded; keeping the newest N generations needs nix-env's +N, so
+  # both platforms' job is replaced with a script.
+  launchd.agents.nix-gc.config.ProgramArguments = lib.mkForce [ "${nixGc}" ];
+  systemd.user.services.nix-gc.Service.ExecStart = lib.mkForce "${nixGc}";
   nix = {
     # Bounds generation history so the store can't fill the disk again (a
     # full root disk once broke everything on the Linux box): a weekly timer
-    # (systemd on Linux, launchd on macOS) deletes generations older than two
-    # weeks and garbage-collects what they referenced. Time-bounded because
-    # Nix has no "keep at most N generations" -- rollback still works within
-    # the 14-day window.
+    # (systemd on Linux, launchd on macOS) keeps only the newest generations
+    # of each profile and garbage-collects what the rest referenced, so
+    # rollback reaches back exactly one switch.
     gc = {
       automatic = true;
       dates = "weekly";
-      options = lib.concatStringsSep " " gcOptions;
     };
     # Required by home-manager to generate nix.conf; it only names the nix
     # version used for config validation, nothing is installed.
