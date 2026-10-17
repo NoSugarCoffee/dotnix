@@ -33,7 +33,15 @@ def nix_dedent(s: str) -> str:
     return "\n".join(line[strip:] if len(line) >= strip else line for line in lines)
 
 
+def generations_to_keep() -> int:
+    match = re.search(r"(?m)^  generationsToKeep = (\d+);$", NIX_FILE.read_text())
+    if not match:
+        raise AssertionError("could not parse generationsToKeep from apps/nix/default.nix")
+    return int(match.group(1))
+
+
 def extract_nix_gc() -> str:
+    keep = str(generations_to_keep())
     text = NIX_FILE.read_text()
     start_tok = 'pkgs.writeShellScript "nix-gc" \'\'\n'
     start = text.index(start_tok) + len(start_tok)
@@ -42,7 +50,7 @@ def extract_nix_gc() -> str:
     block = block.replace("${config.nix.package}/bin/nix-env", "nix-env")
     block = block.replace("${config.nix.package}/bin/nix-collect-garbage", "nix-collect-garbage")
     block = block.replace("${config.xdg.stateHome}", "${XDG_STATE_HOME}")
-    block = block.replace("${toString generationsToKeep}", "2")
+    block = block.replace("${toString generationsToKeep}", keep)
     leftovers = re.findall(r"\$\{(?:config|lib|pkgs|toString)[^}]*\}", block)
     if leftovers:
         raise AssertionError(f"unsubstituted nix interpolations: {leftovers}")
@@ -84,11 +92,22 @@ class NixGcCommentTest(unittest.TestCase):
         self.assertNotIn("rollback reaches back exactly one switch", text)
         self.assertIn("after the job runs", text)
 
+    def test_keep_count_is_read_from_nix_declaration(self) -> None:
+        keep = generations_to_keep()
+        self.assertGreaterEqual(keep, 1)
+        self.assertIn(f"generationsToKeep = {keep};", NIX_FILE.read_text())
+
 
 class NixGcScriptTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        cls.keep = generations_to_keep()
         cls.block = extract_nix_gc()
+        if cls.keep < 1:
+            raise AssertionError(f"generationsToKeep must be >= 1, got {cls.keep}")
+        default = f"${{GENERATIONS_TO_KEEP:-{cls.keep}}}"
+        if default not in cls.block:
+            raise AssertionError(f"extracted script does not default to {default}")
 
     def setUp(self) -> None:
         self.box = Path(tempfile.mkdtemp(prefix="nix-gc-"))
@@ -160,7 +179,7 @@ class NixGcScriptTest(unittest.TestCase):
             parts = line.split()
             self.assertIn("--profile", parts, line)
             self.assertIn("--delete-generations", parts, line)
-            self.assertIn("+2", parts, line)
+            self.assertIn(f"+{self.keep}", parts, line)
             profiles.append(parts[parts.index("--profile") + 1])
         return profiles
 
