@@ -148,7 +148,13 @@ in
   # macOS falling back to /usr/libexec/java_home, which knows nothing
   # about asdf installs. asdf-java's hook keeps JAVA_HOME pointed at the
   # active asdf java on every prompt.
+  #
+  # sessionPath lands in .zshenv, but a login shell then runs ~/.zprofile
+  # (unmanaged), where Homebrew's `brew shellenv` prepends /opt/homebrew/bin:
+  # a brew-installed node or go would shadow the pinned asdf versions.
+  # .zshrc runs after it, so move the shims back to the front there.
   programs.zsh.initContent = ''
+    path=("$HOME/.asdf/shims" ''${path:#$HOME/.asdf/shims})
     [ -f "$HOME/.asdf/plugins/java/set-java-home.zsh" ] && . "$HOME/.asdf/plugins/java/set-java-home.zsh"
   '';
 }
