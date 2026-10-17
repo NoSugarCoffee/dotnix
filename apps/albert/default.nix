@@ -6,7 +6,7 @@
   ...
 }:
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.albert-darwin ];
+  home.packages = lib.optional (pkgs.nosugarcoffee ? albert) pkgs.nosugarcoffee.albert;
   # Auto-launch Albert at login. macOS user LaunchAgents fire once the user's
   # Aqua session comes up -- the earliest legitimate hook for a GUI app.
   launchd.agents.albert = {

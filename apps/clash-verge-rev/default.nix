@@ -3,10 +3,10 @@ let
   inherit (import ../../lib/proxy.nix) proxyUrl noProxy;
 in
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [
-    pkgs.clash-verge-rev
-    pkgs.clash-verge-rev-darwin
-  ];
+  # nixpkgs' build on Linux, nur-packages' repack on macOS.
+  home.packages =
+    lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.clash-verge-rev ]
+    ++ lib.optional (pkgs.nosugarcoffee ? clash-verge-rev) pkgs.nosugarcoffee.clash-verge-rev;
   # Route shell tools through the local Clash Verge proxy (default mixed
   # port 7890). Both spellings are set because tools disagree on which
   # they read (curl honors lowercase, some Go/Java tools only uppercase).

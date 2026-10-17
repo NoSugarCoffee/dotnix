@@ -1,4 +1,4 @@
 { lib, pkgs, ... }:
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.cida-darwin ];
+  home.packages = lib.optional (pkgs.nosugarcoffee ? cida) pkgs.nosugarcoffee.cida;
 }

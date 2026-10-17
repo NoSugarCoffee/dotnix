@@ -3,7 +3,7 @@
 # lib/proxy.nix (Clash Verge's mixed port).
 #
 # Packages no binary cache has -- unfree ones like the Android SDK, and the
-# GitHub release assets apps/*/pin.json point at -- are fetched by builders
+# GitHub release assets nur-packages repacks when its cache misses -- are fetched by builders
 # the daemon spawns, and those never see the shell's http(s)_proxy. From
 # mainland China that means timeouts on dl.google.com, downloads.claude.ai and
 # GitHub. `impure-env` hands the proxy to exactly those fetches; binary-cache

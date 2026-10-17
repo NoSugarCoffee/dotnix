@@ -1,4 +1,4 @@
 { lib, pkgs, ... }:
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.ego-lite-darwin ];
+  home.packages = lib.optional (pkgs.nosugarcoffee ? ego-lite) pkgs.nosugarcoffee.ego-lite;
 }

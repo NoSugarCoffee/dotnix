@@ -144,6 +144,21 @@ else
   echo "==> Binary cache mirrors already configured."
 fi
 
+# Same reasoning for NoSugarCoffee/nur-packages' cache (albert, OBS, Clash
+# Verge, ...): the user-level substituter list that adds it only exists after
+# the first switch, so without this the Clash pre-install below and the first
+# switch would build those packages locally -- albert from source.
+nur_cache="https://nosugarcoffee.cachix.org"
+nur_key="nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE="
+if ! sudo grep -qsF "$nur_cache" "$custom_conf" 2>/dev/null; then
+  echo "==> Adding the nur-packages binary cache to ${custom_conf}..."
+  printf 'extra-substituters = %s\nextra-trusted-public-keys = %s\n' "$nur_cache" "$nur_key" \
+    | sudo tee -a "$custom_conf" >/dev/null
+  restart_daemon=1
+else
+  echo "==> nur-packages binary cache already configured."
+fi
+
 # The Home Manager config manages per-user substituter *ordering* (mirrors
 # before cache.nixos.org) via ~/.config/nix/nix.conf, which the daemon
 # silently ignores unless the user is in trusted-users. The Determinate
@@ -233,7 +248,7 @@ EOF
 elif [[ "$plan" == install-clash ]]; then
   echo "==> No proxy listening yet; installing Clash Verge on its own first..."
   clash=$(nix build --no-link --print-out-paths \
-    "${srcdir}#homeConfigurations.${flake_target}.pkgs.clash-verge-rev-darwin")
+    "${srcdir}#homeConfigurations.${flake_target}.pkgs.nosugarcoffee.clash-verge-rev")
   clash_app=$(dotnix_find_app_bundle "${clash}/Applications")
   if [[ -z "$clash_app" ]]; then
     echo "error: nix build produced no .app under ${clash}/Applications" >&2

@@ -37,6 +37,8 @@ in
     # nixConfig is opt-in via --accept-flake-config and never reaches an
     # unattended switch); nix-community.cachix.org serves its bun2nix
     # toolchain. Without them pkgs.pi-coding-agent builds from source.
+    # nosugarcoffee.cachix.org serves NoSugarCoffee/nur-packages (albert
+    # would otherwise compile from source).
     # HARD PREREQUISITE: the daemon silently ignores user-level substituters
     # unless the user is in trusted-users. bootstrap-macos.sh ensures that on
     # macOS; on other machines add it manually to the system nix.conf
@@ -49,12 +51,14 @@ in
       "https://pi.cachix.org/"
       "https://nix-community.cachix.org/"
       "https://cache.numtide.com/"
+      "https://nosugarcoffee.cachix.org/"
       "https://cache.nixos.org/"
     ];
     settings.extra-trusted-public-keys = [
       "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+      "nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE="
     ];
   };
 }

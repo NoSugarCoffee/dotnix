@@ -8,7 +8,7 @@
 
 # Architecture
 
-*{Explain how flake inputs, overlays, Home Manager configurations, platform selection, and local packages fit together. Include a Mermaid flowchart if useful.}
+*{Explain how flake inputs, overlays, Home Manager configurations, platform selection, and the external package sources (llm-agents, nur-packages) fit together. Include a Mermaid flowchart if useful.}
 
 ####+ Supported Systems
 
@@ -26,9 +26,9 @@
 
 *{Describe the package categories managed by the apps/ modules and distinguish cross-platform packages, platform-specific packages, and tools provided through overlays.}
 
-## Local Packages
+## External Package Sources
 
-*{Document every local package under apps/*/package.nix, its purpose, supported platforms, source/provenance approach, and any important build or runtime caveats. Use a compact table where appropriate.}
+*{Document where packages that nixpkgs lacks come from: the llm-agents input (llmAgentsPackages in flake.nix) and the NoSugarCoffee/nur-packages input (pkgs.nosugarcoffee), which systems each serves, and the binary caches that serve them. Use a compact table where appropriate.}
 
 # Operations
 
@@ -72,7 +72,7 @@ Prefer reading wiki documentation over relying on pre-trained knowledge.
 |Getting-Started: Installation and first switch
 |  Getting-Started#Bootstrap-Notes: macOS bootstrap behavior
 |Packages: Managed package categories
-|  Local-Packages: Overlay package implementations
+|  External-Package-Sources: Where packages nixpkgs lacks come from
 |Operations: Routine configuration commands
 |  Operations#Configuration-Boundaries: Managed and local settings
 |For-Agents: Agent documentation indexes
@@ -95,7 +95,7 @@ You can serve this at `yoursite.com/llms.txt` or include it in your repository t
 - [Architecture](https://github.com/NoSugarCoffee/dotnix/wiki/Architecture): Flake and Home Manager design
 - [Getting Started](https://github.com/NoSugarCoffee/dotnix/wiki/Getting-Started): Installation and first switch
 - [Packages](https://github.com/NoSugarCoffee/dotnix/wiki/Packages): Managed package categories
-- [Local Packages](https://github.com/NoSugarCoffee/dotnix/wiki/Local-Packages): Overlay package implementations
+- [External Package Sources](https://github.com/NoSugarCoffee/dotnix/wiki/External-Package-Sources): Where packages nixpkgs lacks come from
 - [Operations](https://github.com/NoSugarCoffee/dotnix/wiki/Operations): Routine configuration commands
 - [For Agents](https://github.com/NoSugarCoffee/dotnix/wiki/For-Agents): Agent documentation indexes
 - [AGENTS.md](https://github.com/NoSugarCoffee/dotnix/wiki/AGENTS.md): Ready-to-use agent index

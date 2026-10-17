@@ -11,11 +11,10 @@ README.
 ## Layout
 
 One directory per app under `apps/<name>/`: `default.nix` is its home-manager module (packages,
-config, launchd, activation), `package.nix` + `pin.json` hold a local derivation when nixpkgs
-lacks one, and its config files sit beside them. `home.nix` imports every `apps/*` directory
-automatically, so adding an app is adding a directory; local derivations still need an overlay
-entry in `flake.nix`. Shared bits live in `lib/` (proxy values, `release-pin.nix`,
-`managed_settings.py`).
+config, launchd, activation), and its config files sit beside it. `home.nix` imports every
+`apps/*` directory automatically, so adding an app is adding a directory. This repo holds no
+package definitions (see "Packages nixpkgs lacks" below). Shared bits live in `lib/` (proxy
+values, `managed_settings.py`).
 
 ## macOS app placement
 
@@ -36,14 +35,28 @@ hand-replace is indistinguishable from that adopt and is overwritten. The store 
 `~/Applications/Home Manager Apps` when we skip. Replacing a running app that already has an
 active system extension may need a reboot or relaunch before macOS loads the new bundle.
 
-## AI agent packages
+## Packages nixpkgs lacks
 
-Prefer prebuilt packages from the `llm-agents` flake input (`github:numtide/llm-agents.nix`)
-over vendoring our own derivations.
+Never add a `package.nix` here. A package nixpkgs doesn't have (or ships Linux-only) comes
+from one of two flake inputs, prebuilt and cached for the systems they ship (not Intel macOS):
+
+- **AI agents → `llm-agents`** (`github:numtide/llm-agents.nix`), below.
+- **Everything else → `nur-packages`** ([NoSugarCoffee/nur-packages](https://github.com/NoSugarCoffee/nur-packages),
+  ours): add `pkgs/<name>/package.nix` (+ `pin.json` for a release download) there; it is
+  updated 4× daily and cached on `nosugarcoffee.cachix.org`. Here it appears as
+  `pkgs.nosugarcoffee.<name>`, holding only what the system supports, so modules take it with
+  `lib.optional (pkgs.nosugarcoffee ? <name>) pkgs.nosugarcoffee.<name>`. On x86_64-darwin,
+  which nixpkgs-unstable dropped, that set comes from its overlay against our 26.05 and builds
+  locally. A new package reaches dotnix once the lock moves: `flake-update.yml`'s daily PR
+  merges after CI, or run `nix flake update nur-packages` yourself.
+
+### AI agent packages
+
+Prefer prebuilt packages from the `llm-agents` flake input over vendoring our own derivations.
 
 Wire new agents by adding their attribute name to the `llmAgentsPackages` list in `flake.nix`.
-Names missing on a system are skipped automatically — do not add a local `apps/*/package.nix`
-(or release-pin / DMG repack) to cover a platform gap that `llm-agents` does not ship yet.
+Names missing on a system are skipped automatically — do not cover a platform gap that
+`llm-agents` does not ship yet with a derivation of our own, here or in `nur-packages`.
 
 Currently taken from `llm-agents`: `apm`, `ccstatusline`, `claude-code`, `claude-desktop`,
 `grok-bot`, `orca`, `paperclip`. Keep the README managed-packages table in sync when that set changes.

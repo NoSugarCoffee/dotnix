@@ -1,4 +1,4 @@
 { lib, pkgs, ... }:
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.pulsar-darwin ];
+  home.packages = lib.optional (pkgs.nosugarcoffee ? pulsar) pkgs.nosugarcoffee.pulsar;
 }
