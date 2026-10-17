@@ -185,6 +185,13 @@ class LaunchAgentsWithoutWaitTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("SURVIVED", result.stdout)
         self.assertFalse((self.dst / "org.example.agent.plist").exists())
+        # The plist only goes once the job was booted out (without --wait)
+        # and the poll saw it gone.
+        calls = self.log.read_text().splitlines()
+        target = f"gui/{os.getuid()}/org.example.agent"
+        self.assertIn(f"bootout {target}", calls)
+        self.assertIn(f"print {target}", calls)
+        self.assertLess(calls.index(f"bootout {target}"), calls.index(f"print {target}"))
 
     def test_still_loaded_warns_and_leaves_plist(self) -> None:
         self.write_plist(self.dst, "org.example.agent.plist", "old\n")

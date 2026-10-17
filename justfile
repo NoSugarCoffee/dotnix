@@ -31,6 +31,7 @@ update:
 nix-proxy:
     scripts/nix-daemon-proxy.sh
 
-# Run the Python test suite with the same bash and rsync as CI.
+# Run the Python test suite with the same bash, rsync and GNU coreutils as CI
+# (activation blocks call GNU-only flags like `readlink -m`).
 test:
-    nix shell --inputs-from . nixpkgs#bash nixpkgs#rsync --command python3 -m unittest discover -s tests -t tests
+    nix shell --inputs-from . nixpkgs#bash nixpkgs#rsync nixpkgs#coreutils --command python3 -m unittest discover -s tests -t tests
