@@ -1,2 +1,2 @@
-`f13605a58cb057a04a335816dac62eb6b5ed335514e04d4a883e8e8f976eafed`
-Imports every apps directory, sets username/home path, enables Home Manager, copies macOS apps with checksum markers and optional local code-signing identity, and preserves privacy grants when a login keychain exists.
+`95f3fce3f8d941ffae2dc8eb57ccb3f638ba0bcc628232f0291fb29808a36d64`
+Imports every apps directory, sets username/home path, enables Home Manager, copies macOS apps with bundle sentinels and optional local code-signing identity, preserves privacy grants, and handles system-extension placement and cleanup.
