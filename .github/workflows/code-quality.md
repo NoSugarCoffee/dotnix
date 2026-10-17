@@ -149,7 +149,8 @@ Each issue should:
 - Anything the build already catches: `ci.yml` runs `nix flake check`, builds
   the activation package on both platforms, and smoke-tests activation and the
   interactive-zsh PATH.
-- Pinned versions and hashes in `apps/*/pin.json`. `release-pins-update.yml`
-  bumps them nightly, so a lagging pin is not a finding.
+- Package versions from the `nur-packages` and `llm-agents` inputs. Their own
+  repos bump them, and `flake-update.yml` moves the lock, so a lagging version
+  is not a finding here.
 - Suggestions to add tooling the repository has deliberately rejected — check
   `README.md` "Notes" and the git history before proposing a new dependency.

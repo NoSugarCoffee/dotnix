@@ -23,6 +23,12 @@
     # against its own nixpkgs-unstable pin and cached on cache.numtide.com,
     # which only hits when the revisions match.
     llm-agents.url = "github:numtide/llm-agents.nix";
+
+    # Our own packages that nixpkgs lacks or ships Linux-only (mostly macOS
+    # app repacks), kept current upstream 4x daily and cached on
+    # nosugarcoffee.cachix.org. Not following our nixpkgs, for the same
+    # reason as llm-agents: the cache only hits on its own pin.
+    nur-packages.url = "github:NoSugarCoffee/nur-packages";
   };
   outputs =
     {
@@ -31,6 +37,7 @@
       home-manager,
       pi,
       llm-agents,
+      nur-packages,
       ...
     }:
     let
@@ -50,20 +57,16 @@
         "x86_64-darwin"
       ];
       forAllSystems = lib.genAttrs systems;
-      localPackagesOverlay = final: prev: {
-        clash-verge-rev-darwin = final.callPackage ./apps/clash-verge-rev/package.nix { };
-        pulsar-darwin = final.callPackage ./apps/pulsar/package.nix { };
-        obs-studio-darwin = final.callPackage ./apps/obs-studio/package.nix { };
-        jetbrains-air-darwin = final.callPackage ./apps/jetbrains-air/package.nix { };
-        ego-lite-darwin = final.callPackage ./apps/ego-lite/package.nix { };
-        agent-access = final.callPackage ./apps/agent-access/package.nix { };
-        cida-darwin = final.callPackage ./apps/cida/package.nix { };
-        digup-darwin = final.callPackage ./apps/digup/package.nix { };
-        # from unstable: stable's albert (33.x) predates the source layout
-        # apps/albert/package.nix's patches target (35.x)
-        albert-darwin =
-          (mkPkgsUnstable final.stdenv.hostPlatform.system).callPackage ./apps/albert/package.nix
-            { };
+      extraPackagesOverlay = final: prev: {
+        # NoSugarCoffee/nur-packages under its own namespace, prebuilt for
+        # the systems it ships. nixpkgs-unstable dropped x86_64-darwin, so
+        # there its overlay builds them against our 26.05 instead (the pins
+        # keep their Intel hashes); either way only what the system supports.
+        nosugarcoffee =
+          nur-packages.packages.${final.stdenv.hostPlatform.system}
+            or (lib.filterAttrs (
+              _: lib.meta.availableOn final.stdenv.hostPlatform
+            ) (nur-packages.overlays.default final prev).nosugarcoffee);
         # code-cursor from unstable: the stable branch pins 3.5.17, dozens of
         # releases behind upstream, and Cursor nags to update on every launch.
         inherit (mkPkgsUnstable final.stdenv.hostPlatform.system)
@@ -72,7 +75,6 @@
           codex
           chatgpt
           ;
-        scroll-reverser = import ./apps/scroll-reverser/package.nix { inherit (prev) scroll-reverser; };
       };
       mkPkgsUnstable =
         system:
@@ -86,7 +88,7 @@
           inherit system;
           config.allowUnfree = true;
           overlays = [
-            localPackagesOverlay
+            extraPackagesOverlay
             pi.overlays.default
           ];
         };

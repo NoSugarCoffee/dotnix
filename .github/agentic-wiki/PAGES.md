@@ -26,9 +26,9 @@
 
 *{Describe the package categories managed by the apps/ modules and distinguish cross-platform packages, platform-specific packages, and tools provided through overlays.}
 
-## Local Packages
+## External Package Sources
 
-*{Document every local package under apps/*/package.nix, its purpose, supported platforms, source/provenance approach, and any important build or runtime caveats. Use a compact table where appropriate.}
+*{Document where packages that nixpkgs lacks come from: the llm-agents input (llmAgentsPackages in flake.nix) and the NoSugarCoffee/nur-packages input (pkgs.nosugarcoffee), which systems each serves, and the binary caches that serve them. Use a compact table where appropriate.}
 
 # Operations
 

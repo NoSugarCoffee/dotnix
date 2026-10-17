@@ -270,6 +270,40 @@
         "type": "github"
       }
     },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1792057456,
+        "narHash": "sha256-SPNJsN5iBfOgxbokJ6Datt5zALRaeyaX9UBOkPyt/d8=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "95b2dd0e78e6642fa7fd8fe5bb673daf4cebb924",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nur-packages": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "lastModified": 1792204443,
+        "narHash": "sha256-pm+9jFTHBQhzJepgpPMyEMr5DPYnEkzEzmtD7YusIaQ=",
+        "owner": "NoSugarCoffee",
+        "repo": "nur-packages",
+        "rev": "8c84380bb64a42fce84d3c4b2564aac04534006c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NoSugarCoffee",
+        "repo": "nur-packages",
+        "type": "github"
+      }
+    },
     "pi": {
       "inputs": {
         "bun2nix": "bun2nix_2",
@@ -301,6 +335,7 @@
         "llm-agents": "llm-agents",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "nur-packages": "nur-packages",
         "pi": "pi"
       }
     },

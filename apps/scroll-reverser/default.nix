@@ -1,13 +1,16 @@
 { lib, pkgs, ... }:
+let
+  scroll-reverser = pkgs.nosugarcoffee.scroll-reverser or null;
+in
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.scroll-reverser ];
+  home.packages = lib.optional (scroll-reverser != null) scroll-reverser;
   # Scroll Reverser only reverses scroll direction while its process is
   # running, so it has to come up with the login session.
-  launchd.agents.scroll-reverser = {
-    enable = pkgs.stdenv.isDarwin;
+  launchd.agents.scroll-reverser = lib.mkIf (scroll-reverser != null) {
+    enable = true;
     config = {
       ProgramArguments = [
-        "${pkgs.scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
+        "${scroll-reverser}/Applications/Scroll Reverser.app/Contents/MacOS/Scroll Reverser"
       ];
       RunAtLoad = true;
       KeepAlive = false;

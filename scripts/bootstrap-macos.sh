@@ -233,7 +233,7 @@ EOF
 elif [[ "$plan" == install-clash ]]; then
   echo "==> No proxy listening yet; installing Clash Verge on its own first..."
   clash=$(nix build --no-link --print-out-paths \
-    "${srcdir}#homeConfigurations.${flake_target}.pkgs.clash-verge-rev-darwin")
+    "${srcdir}#homeConfigurations.${flake_target}.pkgs.nosugarcoffee.clash-verge-rev")
   clash_app=$(dotnix_find_app_bundle "${clash}/Applications")
   if [[ -z "$clash_app" ]]; then
     echo "error: nix build produced no .app under ${clash}/Applications" >&2

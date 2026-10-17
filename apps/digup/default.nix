@@ -1,4 +1,4 @@
 { lib, pkgs, ... }:
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.digup-darwin ];
+  home.packages = lib.optional (pkgs.nosugarcoffee ? digup) pkgs.nosugarcoffee.digup;
 }

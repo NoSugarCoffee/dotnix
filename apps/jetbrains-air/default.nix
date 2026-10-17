@@ -1,6 +1,4 @@
 { lib, pkgs, ... }:
 {
-  home.packages = lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [
-    pkgs.jetbrains-air-darwin
-  ];
+  home.packages = lib.optional (pkgs.nosugarcoffee ? jetbrains-air) pkgs.nosugarcoffee.jetbrains-air;
 }
