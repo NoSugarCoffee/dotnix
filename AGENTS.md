@@ -38,15 +38,17 @@ active system extension may need a reboot or relaunch before macOS loads the new
 ## Packages nixpkgs lacks
 
 Never add a `package.nix` here. A package nixpkgs doesn't have (or ships Linux-only) comes
-from one of two flake inputs, both prebuilt and cached:
+from one of two flake inputs, prebuilt and cached for the systems they ship (not Intel macOS):
 
 - **AI agents → `llm-agents`** (`github:numtide/llm-agents.nix`), below.
 - **Everything else → `nur-packages`** ([NoSugarCoffee/nur-packages](https://github.com/NoSugarCoffee/nur-packages),
   ours): add `pkgs/<name>/package.nix` (+ `pin.json` for a release download) there; it is
   updated 4× daily and cached on `nosugarcoffee.cachix.org`. Here it appears as
   `pkgs.nosugarcoffee.<name>`, holding only what the system supports, so modules take it with
-  `lib.optional (pkgs.nosugarcoffee ? <name>) pkgs.nosugarcoffee.<name>`. A new package reaches
-  dotnix when `flake-update.yml` (or `nix flake update nur-packages`) moves the lock.
+  `lib.optional (pkgs.nosugarcoffee ? <name>) pkgs.nosugarcoffee.<name>`. On x86_64-darwin,
+  which nixpkgs-unstable dropped, that set comes from its overlay against our 26.05 and builds
+  locally. A new package reaches dotnix once the lock moves: `flake-update.yml`'s daily PR
+  merges after CI, or run `nix flake update nur-packages` yourself.
 
 ### AI agent packages
 
