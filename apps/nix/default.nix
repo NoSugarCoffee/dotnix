@@ -5,26 +5,81 @@
   ...
 }:
 let
-  gcOptions = [
-    "--delete-older-than"
-    "14d"
-  ];
+  generationsToKeep = 2;
+  nixGc = pkgs.writeShellScript "nix-gc" ''
+    set -eu
+    generationsToKeep=''${GENERATIONS_TO_KEEP:-${toString generationsToKeep}}
+    xdgProfiles=''${XDG_NIX_PROFILES:-"${config.xdg.stateHome}"/nix/profiles}
+    userProfiles=''${NIX_USER_PROFILES:-/nix/var/nix/profiles/per-user/"$USER"}
+    nixProfileLink=''${NIX_PROFILE_LINK:-"$HOME"/.nix-profile}
+
+    dirs=()
+    add_dir() {
+      local dir=$1 existing
+      [ -n "$dir" ] || return 0
+      while [ "$dir" != "''${dir%/}" ]; do
+        dir=''${dir%/}
+      done
+      [ -d "$dir" ] || return 0
+      [ -w "$dir" ] || return 0
+      for existing in "''${dirs[@]}"; do
+        [ "$existing" = "$dir" ] && return 0
+      done
+      dirs+=("$dir")
+    }
+
+    add_dir "$xdgProfiles"
+    add_dir "$userProfiles"
+    if [ -L "$nixProfileLink" ]; then
+      target=$(readlink "$nixProfileLink") || target=
+      if [ -n "$target" ]; then
+        case "$target" in
+          /*) ;;
+          *) target="$(dirname "$nixProfileLink")/$target" ;;
+        esac
+        add_dir "$(dirname "$target")"
+      fi
+    fi
+
+    pruned=0
+    for dir in "''${dirs[@]}"; do
+      for profile in "$dir"/*; do
+        case "$profile" in *-link) continue ;; esac
+        [ -L "$profile" ] || continue
+        if ${config.nix.package}/bin/nix-env --profile "$profile" \
+          --delete-generations +"$generationsToKeep"; then
+          echo "nix-gc: pruned $profile" >&2
+          pruned=$((pruned + 1))
+        else
+          echo "nix-gc: warning: failed to prune $profile" >&2
+        fi
+      done
+    done
+
+    if [ "$pruned" -eq 0 ]; then
+      echo "nix-gc: no profile was pruned (searched: $xdgProfiles, $userProfiles, parent of $nixProfileLink)" >&2
+      exit 1
+    fi
+
+    exec ${config.nix.package}/bin/nix-collect-garbage
+  '';
 in
 {
-  launchd.agents.nix-gc.config.ProgramArguments = lib.mkForce (
-    [ "${config.nix.package}/bin/nix-collect-garbage" ] ++ gcOptions
-  );
+  # nix.gc.options only reaches nix-collect-garbage, whose --delete-older-than
+  # is time-bounded; keeping the newest N generations needs nix-env's +N, so
+  # both platforms' job is replaced with a script.
+  launchd.agents.nix-gc.config.ProgramArguments = lib.mkForce [ "${nixGc}" ];
+  systemd.user.services.nix-gc.Service.ExecStart = lib.mkForce "${nixGc}";
   nix = {
     # Bounds generation history so the store can't fill the disk again (a
     # full root disk once broke everything on the Linux box): a weekly timer
-    # (systemd on Linux, launchd on macOS) deletes generations older than two
-    # weeks and garbage-collects what they referenced. Time-bounded because
-    # Nix has no "keep at most N generations" -- rollback still works within
-    # the 14-day window.
+    # (systemd on Linux, launchd on macOS) keeps the newest two generations
+    # of each profile and garbage-collects what the rest referenced.
+    # Between runs, every generation since the last GC is still a rollback
+    # target; the two-generation cap only applies after the job runs.
     gc = {
       automatic = true;
       dates = "weekly";
-      options = lib.concatStringsSep " " gcOptions;
     };
     # Required by home-manager to generate nix.conf; it only names the nix
     # version used for config validation, nothing is installed.
