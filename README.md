@@ -89,7 +89,7 @@ just switch
 | `just generations` | Show Home Manager generations |
 | `just update` | Update flake inputs |
 | `just show` | Show flake outputs |
-| `just test` | Run the Python tests with CI's bash and rsync |
+| `just test` | Run the Python tests with CI's bash, rsync and GNU coreutils |
 | `just nix-proxy` | Route the Nix daemon's uncached downloads through Clash (macOS, sudo) |
 
 ## 🔄 Automated flake updates

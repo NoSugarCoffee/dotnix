@@ -329,5 +329,77 @@
       ''
     )
   );
+  # home-manager's setupLaunchAgents stops a changed agent with
+  # `launchctl bootout --wait`, which older launchctl (macOS 15.1) rejects as
+  # "Unrecognized target specifier". The old job then stays loaded, the
+  # bootstrap that follows fails with I/O error 5, and launchd keeps running
+  # the previous generation's command. Where --wait is rejected, stop and
+  # remove each agent setupLaunchAgents would touch first, so it finds no
+  # installed plist and only bootstraps (or reports it already removed).
+  # After writeBoundary (so checkLinkTargets abort cannot leave agents
+  # unloaded) and before setupLaunchAgents. Probing rather than checking the
+  # OS version makes this a no-op once launchctl accepts --wait (macOS 26).
+  # Temporary: upstream fixed it in nix-community/home-manager#9587 on master
+  # only; delete this block once the home-manager input carries that fix.
+  home.activation.launchAgentsWithoutWait = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (
+    lib.hm.dag.entryBetween [ "setupLaunchAgents" ] [ "writeBoundary" ] ''
+      (
+        # Match upstream setupLaunchAgents: the activation script has set -e,
+        # and a failing readlink/rm in this subshell must not abort the switch.
+        set +e
+        probe=$(/bin/launchctl bootout --wait "gui/$UID/org.nix-community.home.no-such-agent" 2>&1 || true)
+        [[ $probe == *"Unrecognized target specifier"* ]] || exit 0
+
+        newDir="$(readlink -m "$newGenPath/LaunchAgents")"
+        oldDir=""
+        [[ -n "''${oldGenPath:-}" ]] && oldDir="$(readlink -m "$oldGenPath/LaunchAgents")"
+        dstDir=${lib.escapeShellArg "${homeDirectory}/Library/LaunchAgents"}
+
+        stopAndRemove() {
+          local agentName="''${1%.plist}"
+          local output
+          if ! output=$(run /bin/launchctl bootout "gui/$UID/$agentName" 2>&1) \
+              && [[ $output != *"No such process"* ]]; then
+            warnEcho "launchAgentsWithoutWait: could not stop '$agentName': $output"
+            return
+          fi
+          # bootout without --wait can return before the job is gone.
+          if [[ ! -v DRY_RUN ]]; then
+            for ((i = 0; i < 50; i++)); do
+              /bin/launchctl print "gui/$UID/$agentName" >/dev/null 2>&1 || break
+              sleep 0.1
+            done
+            if /bin/launchctl print "gui/$UID/$agentName" >/dev/null 2>&1; then
+              warnEcho "launchAgentsWithoutWait: '$agentName' still loaded after 5s; leaving $dstDir/$1 in place"
+              return
+            fi
+          fi
+          run rm -f "$dstDir/$1"
+        }
+
+        # Changed agents: setupLaunchAgents would bootout, then bootstrap.
+        for srcPath in "$newDir"/*.plist; do
+          [[ -e $srcPath ]] || continue
+          agentFile="''${srcPath##*/}"
+          if [[ -f "$dstDir/$agentFile" ]] && ! cmp -s "$srcPath" "$dstDir/$agentFile"; then
+            stopAndRemove "$agentFile"
+          fi
+        done
+
+        # Dropped agents: setupLaunchAgents would bootout, then delete, but
+        # only when the installed copy still matches the old generation.
+        [[ -n $oldDir && -d $oldDir ]] || exit 0
+        for srcPath in "$oldDir"/*.plist; do
+          [[ -e $srcPath ]] || continue
+          agentFile="''${srcPath##*/}"
+          if [[ ! -e "$newDir/$agentFile" && -f "$dstDir/$agentFile" ]] \
+              && cmp -s "$srcPath" "$dstDir/$agentFile"; then
+            stopAndRemove "$agentFile"
+          fi
+        done
+        exit 0
+      )
+    ''
+  );
   programs.home-manager.enable = true;
 }
