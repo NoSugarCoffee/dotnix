@@ -8,7 +8,7 @@
 
 # Architecture
 
-*{Explain how flake inputs, overlays, Home Manager configurations, platform selection, and local packages fit together. Include a Mermaid flowchart if useful.}
+*{Explain how flake inputs, overlays, Home Manager configurations, platform selection, and the external package sources (llm-agents, nur-packages) fit together. Include a Mermaid flowchart if useful.}
 
 ####+ Supported Systems
 
