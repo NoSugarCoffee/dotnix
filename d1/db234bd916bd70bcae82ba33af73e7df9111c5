@@ -1,0 +1,19 @@
+apps/tailscale/default.nix
+  s_7bcc5fd22bc194::t_974f71aa14bbb4 1-10,14-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.50-trip",
+  "base_commit_sha": "d1db234bd916bd70bcae82ba33af73e7df9111c5",
+  "prompts": {},
+  "sessions": {
+    "s_7bcc5fd22bc194": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "18ebaa01-7c1d-48bf-b85f-e9064fa804a7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
