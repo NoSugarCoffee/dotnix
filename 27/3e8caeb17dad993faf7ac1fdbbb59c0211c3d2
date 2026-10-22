@@ -1,0 +1,23 @@
+lib/proxy.nix
+  s_be6935331f64f9::t_307b130ea509af 3-5
+apps/clash-verge-rev/Merge.yaml
+  s_be6935331f64f9::t_ada7ec71181e42 1-45
+apps/clash-verge-rev/default.nix
+  s_be6935331f64f9::t_84639bb7f5dacc 10-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "273e8caeb17dad993faf7ac1fdbbb59c0211c3d2",
+  "prompts": {},
+  "sessions": {
+    "s_be6935331f64f9": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a16257-82f9-7164-8710-5a2119730845",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
