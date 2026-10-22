@@ -20,11 +20,12 @@ in
     packages =
       lib.filter (lib.meta.availableOn pkgs.stdenv.hostPlatform) [ pkgs.clash-verge-rev ]
       ++ lib.optional (pkgs.nosugarcoffee ? clash-verge-rev) pkgs.nosugarcoffee.clash-verge-rev;
-    # The routing policy. The "Merge" override (uid: Merge) is applied to every
-    # subscription, after the profile's own rules override, and its `rules:` key
-    # replaces that list wholesale — so this file, not the GUI, is the source of
-    # truth. The target is a read-only symlink into the store: editing the global
-    # override through Clash Verge would fail to save.
+    # The routing policy. Clash Verge applies the global Merge (uid: Merge)
+    # after the per-profile seq items, and its `rules:` replaces that list
+    # wholesale. A per-profile Merge item or Script runs after the global
+    # Merge, so a subscription that has its own `rules:` would override this
+    # policy. The target is a read-only symlink into the store: editing the
+    # global override through Clash Verge would fail to save.
     file."Library/Application Support/${clashAppId}/profiles/Merge.yaml" =
       lib.mkIf pkgs.stdenv.isDarwin mergeFile;
     # Route shell tools through the local Clash Verge proxy (the mixed port in
