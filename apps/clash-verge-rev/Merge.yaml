@@ -1,0 +1,45 @@
+# Global override — the Clash Verge profile item with uid "Merge"
+# (profiles/Merge.yaml).
+#
+# It applies to every subscription, and Clash Verge applies it *after* the
+# profile's own rules/proxies/groups overrides, so this file is the single
+# source of truth for routing. `rules:` replaces the profile's list wholesale
+# (verge deep-merges maps but overwrites sequences), which is also what
+# neutralises the per-profile rules override that used to delete MATCH,PROXY.
+#
+# Owned by dotnix: do not edit it in the Clash Verge GUI. The path is a
+# read-only symlink into the Nix store, so a GUI save would fail.
+#
+# `mode` is deliberately absent: it is an app-owned control-plane key
+# (CONTROL_PLANE_KEYS in clash-verge-rev), so a value written here is discarded
+# with a warning. Set the mode in Clash Verge's own settings.
+
+# Keep the behaviour the GUI merge already had.
+profile:
+  store-selected: true
+
+rules:
+  # Tailscale stays direct, node or no node: MagicDNS names resolve to CGNAT
+  # addresses the node cannot reach anyway.
+  - DOMAIN-SUFFIX,tailscale.com,DIRECT
+  - DOMAIN-SUFFIX,tailscale.io,DIRECT
+  - DOMAIN-SUFFIX,ts.net,DIRECT
+  - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
+
+  # Feishu / Lark: heavy and latency-sensitive, no reason to leave the country.
+  - DOMAIN-SUFFIX,feishu.cn,DIRECT
+  - DOMAIN-SUFFIX,feishu.net,DIRECT
+  - DOMAIN-SUFFIX,feishucdn.com,DIRECT
+  - DOMAIN-SUFFIX,larksuite.com,DIRECT
+  - DOMAIN-SUFFIX,larkenterprise.com,DIRECT
+
+  # The rest of the country, by domain.
+  #
+  # Deliberately no `GEOIP,CN`: clash's own DNS is not configured here, so an IP
+  # rule makes mihomo resolve the hostname while matching, and a poisoned answer
+  # would make a blocked domain look Chinese — sending it direct and breaking
+  # it. Domain rules cannot be poisoned, so they are the only CN split used.
+  - GEOSITE,cn,DIRECT
+
+  # Catch-all: everything else, Claude Code included, goes through the node.
+  - MATCH,PROXY
