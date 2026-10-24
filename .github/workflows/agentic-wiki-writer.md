@@ -89,7 +89,7 @@ safe-outputs:
     push-wiki:
       description: >
         Push generated wiki pages to the repository wiki.
-        Pass a JSON object mapping filenames to markdown content.
+        The files argument is a JSON string, not an object.
       runs-on: ubuntu-latest
       output: "Wiki pages pushed successfully"
       permissions:
@@ -101,7 +101,7 @@ safe-outputs:
       max: 5
       inputs:
         files:
-          description: "JSON object mapping filenames to markdown content, e.g. {\"Home.md\": \"...\", \"_Sidebar.md\": \"...\"}. Top-level keys MUST be the filenames themselves -- do NOT nest this under an extra {\"files\": {...}} wrapper."
+          description: "JSON string whose decoded value is a flat object mapping wiki filenames to markdown, e.g. {\"Home.md\":\"...\",\"_Sidebar.md\":\"...\"}. Pass that encoded string as files. Do not pass the object itself, and do not put a nested files key inside the string."
           required: true
           type: string
       steps:
@@ -112,9 +112,9 @@ safe-outputs:
             token: ${{ secrets.GITHUB_TOKEN }}
         - name: Write wiki pages
           run: |
-            # Defensively unwraps a {"files": {...}} envelope the model
-            # sometimes emits despite the input schema describing a flat
-            # filename->content map (observed on openai/gpt-5.6-luna, 2026-09-02).
+            # .files is a JSON string. Decode it, and unwrap a single nested
+            # {"files": {...}} object when the string itself was double-wrapped
+            # (observed on openai/gpt-5.6-luna, 2026-09-02).
             jq -r '
               .items[] | select(.type == "push_wiki") | .files | fromjson
               | (if (type == "object" and has("files") and (keys | length) == 1) then .files else . end)
@@ -194,7 +194,7 @@ You are a wiki generator for this repository. Your job is to produce high-qualit
   git add .github/agentic-wiki/PAGES.md && git commit -m "Add wiki documentation template"
   ```
   Then call `create_pull_request` with an explicit `branch` (see Step 2c). Do **not** `git push` — the safe-output pushes and opens the PR for you from that commit.
-- **Wiki page output:** Do NOT write wiki pages to disk. Do NOT create output directories. Construct all page content as strings and pass them to the `push-wiki` safe-output as JSON. See Step 3f.
+- **Wiki page output:** Do NOT write wiki pages into the repository. Publish them with `safeoutputs push_wiki`, passing `files` as a JSON string. See Step 3f.
 - **Repo info for source links:** Do NOT use `git` commands. Read `.git/config` with `cat` to find the remote URL and default branch.
 - **Repo memory path:** Do NOT hardcode the repo-memory path. Discover it by running `ls /tmp/gh-aw/repo-memory/` to find the directory name, then use that path. It is typically `/tmp/gh-aw/repo-memory/default/`. All memory files must be flat (no subdirectories) — you cannot mkdir inside repo-memory.
 - Always use **relative paths** for repo files (e.g., `.github/agentic-wiki/PAGES.md`), never absolute paths.
@@ -351,7 +351,8 @@ If there is no `source-map.json` (first run), regenerate all pages.
 - **Never spawn a sub-agent or background agent to generate pages.** Generate all pages directly in the main conversation loop.
 - **Each page must be kept under 3 KB of markdown.** Keep pages focused and concise.
 - **Each `push-wiki` JSON payload must stay under 30 KB total.** If a batch would exceed 30 KB (including the sidebar), split it into a smaller batch.
-- **If a `push-wiki` call fails with an API error**, it is likely a timeout caused by a large payload. Retry up to 2 times with progressively smaller batches (halving the batch size each retry, minimum 1 page per call). If a single-page call also fails, the error is unrecoverable — report it and stop.
+- **If a `push-wiki` call fails because `files` is missing or is not a string**, the pages are fine and the encoding is wrong. Resend the same batch with the Step 3f command. Do not shrink the batch for a schema error.
+- **If a `push-wiki` call fails with an API or timeout error**, halve the batch (minimum 1 page) and retry up to 2 times. If a single-page call still times out, the error is unrecoverable — report it and stop.
 
 For each page that needs regeneration:
 
@@ -367,34 +368,40 @@ Before finalizing each page, review your generated content against the **Self-Re
 
 ### 3f. Push to wiki
 
-**Do NOT write wiki page files to disk.** Do NOT create output directories. Do NOT use shell commands to write files.
+**Do NOT write wiki pages into the repository.** Do NOT create output directories for them.
 
 **Do NOT use sub-agents or background agents for page generation.** Generate all pages directly in the main conversation loop.
 
-Construct wiki page content as strings and pass them to the `push-wiki` safe-output as JSON objects. **Push in batches of at most 4 pages per call** to avoid API timeouts:
+`push_wiki` has one argument, `files`, and it must be a **JSON string**. The string decodes to a flat object whose keys are the filenames. A bare filename map, and a `files` value that is an object, are both rejected before anything is saved. Those rejections count toward the safe-output retry limit (2), so the first call has to use the string form below. `safeoutputs push_wiki --help` shows the same contract: `--files <value>`.
 
-1. Divide the full list of pages into batches of up to 4 pages each.
-2. For each batch, build a JSON object mapping filenames to markdown content.
-3. Include `_Sidebar.md` (generated following the **Sidebar Generation** rules below) **only in the final batch**.
-4. Before calling `push-wiki`, estimate the total JSON payload size. **If the payload exceeds 30 KB, reduce the batch size** (use 2 pages per call or fewer) until it fits.
-5. Call `push-wiki` once per batch. Proceed to the next batch only after the current call succeeds.
-6. **If a `push-wiki` call fails with an API or timeout error**, halve the current batch size (minimum 1 page per call) and retry up to 2 times. API errors during generation are most often caused by large response payloads, not transient network issues. If a single-page call still fails, the error is unrecoverable — report it and stop.
+**Push in batches of at most 4 pages per call.**
 
-A single-batch JSON object looks like:
-```json
-{
-  "Home.md": "Welcome to the project...\n\n## Overview\n...",
-  "Architecture.md": "## System Design\n..."
-}
+1. Divide the pages into batches of up to 4.
+2. Include `_Sidebar.md` (from the **Sidebar Generation** rules) only in the final batch.
+3. Keep each call under 30 KB. If a batch would exceed that, use fewer pages.
+4. Put each page in a shell variable with a quoted heredoc, build the filename map, then stringify it. This is the only call shape:
+
+```bash
+home=$(cat <<'EOF'
+## Overview
+...
+EOF
+)
+architecture=$(cat <<'EOF'
+## System Design
+...
+EOF
+)
+jq -n --arg home "$home" --arg architecture "$architecture" \
+  '{"Home.md":$home,"Architecture.md":$architecture}' \
+  | jq -Rs '{files:.}' | safeoutputs push_wiki .
 ```
 
-The final batch must add the sidebar:
-```json
-{
-  "Getting-Started.md": "## Prerequisites\n...",
-  "_Sidebar.md": "- [[Home|Home]]\n- [[Architecture|Architecture]]\n..."
-}
-```
+The final batch adds the sidebar the same way: another `--arg sidebar "$sidebar"` and `"_Sidebar.md":$sidebar` inside the object that gets stringified.
+
+5. Call `push_wiki` once per batch. Proceed only after the current call succeeds.
+6. If the error says `files must be a string` or lists the filenames as unknown parameters, resend that same map with the command above. Do not shrink the batch for a schema error.
+7. If the call fails with an API or timeout error, halve the batch (minimum 1 page) and retry up to 2 times. If a single-page call still fails that way, report it and stop.
 
 Pages use the slug as their filename (e.g., `Getting-Started.md`).
 
