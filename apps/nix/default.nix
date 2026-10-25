@@ -63,8 +63,20 @@ let
 
     exec ${config.nix.package}/bin/nix-collect-garbage
   '';
+  # The daemon's own CLI; the profile path is fixed by the Determinate
+  # installer, which bootstrap-macos.sh requires on macOS.
+  determinateNix = pkgs.runCommandLocal "determinate-nix-bin" { } ''
+    mkdir -p $out
+    ln -s /nix/var/nix/profiles/default/bin $out/bin
+  '';
 in
 {
+  # home-manager runs activation with nix.package (nixpkgs' nix) on PATH, which
+  # warns on every Determinate-only setting in /etc/nix/nix.conf (eval-cores,
+  # lazy-trees). extraActivationPath precedes it, so the system nix wins.
+  # Pinning Determinate's nix as a flake input instead would build it from
+  # source: its binaries are only on the auth-gated FlakeHub cache.
+  home.extraActivationPath = lib.optional pkgs.stdenv.hostPlatform.isDarwin determinateNix;
   # nix.gc.options only reaches nix-collect-garbage, whose --delete-older-than
   # is time-bounded; keeping the newest N generations needs nix-env's +N, so
   # both platforms' job is replaced with a script.
@@ -81,8 +93,8 @@ in
       automatic = true;
       dates = "weekly";
     };
-    # Required by home-manager to generate nix.conf; it only names the nix
-    # version used for config validation, nothing is installed.
+    # Required by home-manager to generate nix.conf; it validates that config,
+    # runs the nix-gc job, and is the activation nix on Linux.
     package = pkgs.nix;
     # Prefer the China mirrors over cache.nixos.org: the system-level
     # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
