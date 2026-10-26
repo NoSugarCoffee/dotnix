@@ -1,3 +1,6 @@
 model = "gpt-6-sol"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
+# Every nix rebuild gives codex a new store path, which the keychain treats as
+# an untrusted app, so each new process prompts for its MCP OAuth tokens.
+mcp_oauth_credentials_store = "file"
