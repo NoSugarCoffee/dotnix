@@ -1,2 +1,2 @@
-`6b984a2d136f609a1c732daedc20ec2bf71d81599579a43a370aa03897725c85`
-Managed Codex keys select gpt-6-sol, never approval policy, and danger-full-access sandbox mode.
+`9d285fee6ba68851c699b01643f27624a76fd70661f42f487f9395f24392223c`
+Managed Codex keys select gpt-6-sol, never approval policy, danger-full-access sandbox mode, and file-backed MCP OAuth credentials.
