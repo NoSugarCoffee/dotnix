@@ -1,0 +1,21 @@
+README.md
+  s_ea03b537a9d585::t_863e2c7ff053c3 80
+apps/telnet/default.nix
+  s_ea03b537a9d585::t_863e2c7ff053c3 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "dc09d3c66c4545ba29b26dce2741d97f29a1ab67",
+  "prompts": {},
+  "sessions": {
+    "s_ea03b537a9d585": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17e69-bb4f-70c0-96bd-ba073721b3e3",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
