@@ -288,6 +288,16 @@ after_run() {
 stop_claude() {
   if [ -n "${claude_pid:-}" ]; then
     kill -s "$1" "$claude_pid" 2>/dev/null || :
+    # Async children inherit SIG_IGN for INT/QUIT. Real claude may also
+    # swallow INT, so escalate to TERM if it is still running.
+    n=0
+    while [ "$n" -lt 8 ] && kill -0 "$claude_pid" 2>/dev/null; do
+      sleep 0.05
+      n=$((n + 1))
+    done
+    if kill -0 "$claude_pid" 2>/dev/null; then
+      kill -s TERM "$claude_pid" 2>/dev/null || :
+    fi
     wait "$claude_pid" 2>/dev/null || :
     claude_pid=
   fi

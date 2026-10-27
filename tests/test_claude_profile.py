@@ -34,6 +34,7 @@ FAKE_CLAUDE = textwrap.dedent(
     case " $* " in *" break-json "*)
       printf 'not-json' >"$d/.claude.json";;
     esac
+    case " $* " in *" ignore-int "*) trap '' INT;; esac
     case " $* " in *" wait-ready "*)
       : >"$HOME/.fake-claude-ready"
       while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
@@ -193,7 +194,7 @@ class ClaudeProfileTest(unittest.TestCase):
         self.fail("wrapper did not exit after signal")
 
     def test_mcp_added_before_signal_survives_the_next_run(self) -> None:
-        for sig in (signal.SIGTERM, signal.SIGHUP):
+        for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
             with self.subTest(signal=sig.name):
                 (self.home / ".fake-claude-ready").unlink(missing_ok=True)
                 (self.home / ".fake-claude-continue").unlink(missing_ok=True)
@@ -202,7 +203,8 @@ class ClaudeProfileTest(unittest.TestCase):
                         {"oauthAccount": "shared-account", "mcpServers": {"gitlab": {}}, "projects": {"/repo": {}}}
                     )
                 )
-                proc = self.start_profile("add-mcp", "wait-ready")
+                extra = ("ignore-int",) if sig == signal.SIGINT else ()
+                proc = self.start_profile("add-mcp", *extra, "wait-ready")
                 self.addCleanup(proc.kill)
                 self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
                 self.wait_for(self.home / ".fake-claude-ready")
