@@ -77,7 +77,7 @@ just switch
 | **Dev** | [git](https://git-scm.com/) · [git-open](https://github.com/paulirish/git-open) · [gh](https://cli.github.com/) · [glab](https://gitlab.com/gitlab-org/cli) · [docker](https://www.docker.com/) (client) · [docker-compose](https://docs.docker.com/compose/) · [asdf](https://asdf-vm.com/) (go, nodejs, java, maven) · [pnpm](https://pnpm.io/) · [python3](https://www.python.org/) (ipython, pip) · [rust](https://www.rust-lang.org/) (cargo, rust-analyzer, clippy, rustfmt) · [ruby](https://www.ruby-lang.org/) · [just](https://just.systems/) · [android-sdk](https://developer.android.com/tools) · [lark-cli](https://www.npmjs.com/package/@larksuite/cli) | [colima](https://github.com/abiosoft/colima) · [cocoapods](https://cocoapods.org/) | — |
 | **Browsers** | — | [google-chrome](https://www.google.com/chrome/) · [ego-lite](https://github.com/citrolabs/ego-lite) | — |
 | **Screen** | [obs-studio](https://obsproject.com/) | [macshot](https://github.com/sw33tLie/macshot) | — |
-| **Network** | [clash-verge-rev](https://www.clashverge.dev/) | [tailscale](https://tailscale.com/) (app + CLI) | [tailscale](https://tailscale.com/) (CLI + daemon) |
+| **Network** | [clash-verge-rev](https://www.clashverge.dev/) · [inetutils](https://www.gnu.org/software/inetutils/) (telnet and other network tools) | [tailscale](https://tailscale.com/) (app + CLI) | [tailscale](https://tailscale.com/) (CLI + daemon) |
 | **Utilities** | — | [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) · [digup](https://github.com/ARahim3/DigUp) | [copyq](https://hluk.github.io/CopyQ/) |
 
 ## 🔧 Commands
