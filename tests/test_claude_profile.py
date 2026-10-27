@@ -83,11 +83,27 @@ class ClaudeProfileTest(unittest.TestCase):
         return subprocess.Popen(
             ["bash", str(SCRIPT), "work", *args],
             text=True,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             start_new_session=True,
             env={**self.env, "FAKE_CLAUDE_STATUS": "0"},
         )
+
+    def start_profile_tty(self, *args: str) -> subprocess.Popen[str]:
+        master, slave = os.openpty()
+        self.addCleanup(os.close, master)
+        proc = subprocess.Popen(
+            ["bash", str(SCRIPT), "work", *args],
+            stdin=slave,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+            text=True,
+            env={**self.env, "FAKE_CLAUDE_STATUS": "0"},
+        )
+        os.close(slave)
+        return proc
 
     def wait_for(self, path: Path, timeout: float = 5.0) -> None:
         deadline = time.monotonic() + timeout
@@ -181,7 +197,7 @@ class ClaudeProfileTest(unittest.TestCase):
         except OSError:
             pass
 
-    def wait_exited(self, proc: subprocess.Popen[str], timeout: float = 5.0) -> None:
+    def wait_exited(self, proc: subprocess.Popen[str], timeout: float = 15.0) -> None:
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             if proc.poll() is not None:
@@ -234,6 +250,19 @@ class ClaudeProfileTest(unittest.TestCase):
         self.assertEqual(follow_up.returncode, 0, follow_up.stderr)
         self.assertIn("added", self.shared_json()["mcpServers"])
         self.assertIn("added", self.profile_json()["mcpServers"])
+
+    def test_process_group_int_does_not_kill_interactive_claude(self) -> None:
+        proc = self.start_profile_tty("ignore-int", "wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+
+        os.killpg(proc.pid, signal.SIGINT)
+        time.sleep(1.0)
+
+        self.assertIsNone(proc.poll(), "single process-group INT must not quit the wrapper")
+        result = self.finish_profile(proc)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_prunes_shared_symlinks_whose_targets_are_gone(self) -> None:
         plugins = self.shared / "plugins"

@@ -285,19 +285,22 @@ after_run() {
 
 # Signal traps are the only callers; shellcheck does not see those as calls.
 # shellcheck disable=SC2317,SC2329
+# ~3s (60 * 0.05). A failed/interrupted sleep must not abort under set -e.
 wait_for_pid() {
   n=0
-  while [ "$n" -lt 8 ] && kill -0 "$1" 2>/dev/null; do
+  while [ "$n" -lt 60 ] && kill -0 "$1" 2>/dev/null; do
     sleep 0.05 || :
     n=$((n + 1))
   done
 }
 
+restore_tty() {
+  stty sane < /dev/tty 2>/dev/null || stty sane 2>/dev/null || :
+}
+
 stop_claude() {
   if [ -n "${claude_pid:-}" ]; then
     kill -s "$1" "$claude_pid" 2>/dev/null || :
-    # Async children inherit SIG_IGN for INT/QUIT. Real claude may also
-    # swallow INT, so escalate to TERM, then KILL, if it is still running.
     wait_for_pid "$claude_pid"
     if kill -0 "$claude_pid" 2>/dev/null; then
       kill -s TERM "$claude_pid" 2>/dev/null || :
@@ -305,15 +308,29 @@ stop_claude() {
     fi
     if kill -0 "$claude_pid" 2>/dev/null; then
       kill -s KILL "$claude_pid" 2>/dev/null || :
+      restore_tty
     fi
     wait "$claude_pid" 2>/dev/null || :
     claude_pid=
   fi
 }
 
+int_count=0
+on_int() {
+  int_count=$((int_count + 1))
+  # Interactive Ctrl-C already delivered SIGINT to the whole foreground
+  # process group. Claude uses the first one to cancel/clear, not quit.
+  # Only a second Ctrl-C, or INT with no tty (-p / piped), escalates.
+  if [ -t 0 ] && [ "$int_count" -lt 2 ]; then
+    return 0
+  fi
+  stop_claude TERM
+  exit 130
+}
+
 trap after_run EXIT
 trap 'stop_claude HUP; exit 129' HUP
-trap 'stop_claude INT; exit 130' INT
+trap on_int INT
 trap 'stop_claude TERM; exit 143' TERM
 
 # Explicit stdin redirect keeps the caller's stdin (bash otherwise points a
@@ -324,7 +341,15 @@ trap 'stop_claude TERM; exit 143' TERM
   exec claude "$@"
 ) 0<&0 &
 claude_pid=$!
-wait "$claude_pid" || status=$?
-claude_pid=
+while [ -n "${claude_pid:-}" ]; do
+  wait "$claude_pid" && status=0 || status=$?
+  if [ -z "${claude_pid:-}" ]; then
+    break
+  fi
+  if ! kill -0 "$claude_pid" 2>/dev/null; then
+    claude_pid=
+    break
+  fi
+done
 after_run
 exit "$status"
