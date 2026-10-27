@@ -395,7 +395,7 @@ class ClaudeProfileTest(unittest.TestCase):
         self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
 
     def test_mcp_write_back_runs_when_claude_self_signals_int(self) -> None:
-        result = self.run_profile("add-mcp", "die-int")
+        self.run_profile("add-mcp", "die-int")
 
         self.assertIn("added", self.shared_json()["mcpServers"])
         self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
