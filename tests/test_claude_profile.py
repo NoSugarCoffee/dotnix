@@ -198,6 +198,10 @@ class ClaudeProfileTest(unittest.TestCase):
         proc.kill()
         self.fail("wrapper did not exit after signal")
 
+    def assert_died_from_sigint(self, returncode: int | None) -> None:
+        # bash 128+SIGINT, or Python's -SIGINT when the wrapper dies by the signal.
+        self.assertIn(returncode, (128 + signal.SIGINT, -signal.SIGINT), returncode)
+
     def test_mcp_added_before_signal_survives_the_next_run(self) -> None:
         for sig, code in ((signal.SIGTERM, 143), (signal.SIGHUP, 129)):
             with self.subTest(signal=sig.name):
@@ -391,12 +395,14 @@ class ClaudeProfileTest(unittest.TestCase):
 
         os.killpg(proc.pid, signal.SIGINT)
         self.wait_exited(proc)
+        self.assert_died_from_sigint(proc.returncode)
         self.assertIn("added", self.shared_json()["mcpServers"])
         self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
 
     def test_mcp_write_back_runs_when_claude_self_signals_int(self) -> None:
-        self.run_profile("add-mcp", "die-int")
+        result = self.run_profile("add-mcp", "die-int")
 
+        self.assert_died_from_sigint(result.returncode)
         self.assertIn("added", self.shared_json()["mcpServers"])
         self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
 
