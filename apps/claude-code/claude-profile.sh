@@ -201,8 +201,11 @@ if source is None:
     sys.exit(0 if not source_path or not os.path.exists(source_path) else 1)
 target = load(target_path)
 if target is None:
+    # Existing but unreadable: skip the write so a mid-write ~/.claude.json
+    # or a corrupt profile file is not replaced with only mcpServers/projects.
     if os.path.exists(target_path):
-        sys.exit(1)
+        print(f"claude-profile: skipped sync, {target_path} is not valid JSON", file=sys.stderr)
+        sys.exit(0)
     target = {}
 
 def as_dict(doc, key):
@@ -235,7 +238,7 @@ else:
 # 0600 from the start. open() then chmod leaves mcpServers readable under the
 # umask until chmod runs.
 tmp_path = f"{target_path}.tmp.{os.getpid()}"
-fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
 with os.fdopen(fd, "w") as f:
     json.dump(target, f, indent=2)
 os.replace(tmp_path, target_path)
@@ -244,7 +247,7 @@ EOF
 
 link_shared_entries
 sync_json "$shared_json" "$config_dir/.claude.json"
-launch_snapshot="$config_dir/.claude.json.launch"
+launch_snapshot=$(mktemp "$config_dir/.claude.json.launch.XXXXXX")
 if [ -f "$shared_json" ]; then
   cp "$shared_json" "$launch_snapshot"
 else
@@ -295,7 +298,13 @@ trap 'stop_claude HUP; exit 129' HUP
 trap 'stop_claude INT; exit 130' INT
 trap 'stop_claude TERM; exit 143' TERM
 
-claude "$@" &
+# Explicit stdin redirect keeps the caller's stdin (bash otherwise points a
+# non-interactive async command at /dev/null). Reset INT/QUIT so Ctrl-C
+# reaches claude; a background job otherwise inherits SIG_IGN.
+(
+  trap - INT QUIT
+  exec claude "$@"
+) 0<&0 &
 claude_pid=$!
 wait "$claude_pid" || status=$?
 claude_pid=

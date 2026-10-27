@@ -38,6 +38,10 @@ FAKE_CLAUDE = textwrap.dedent(
       : >"$HOME/.fake-claude-ready"
       while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
     esac
+    case " $* " in *" echo-stdin "*) cat >"$HOME/.fake-claude-stdin";; esac
+    case " $* " in *" report-sigign "*)
+      python3 -c "import os,signal; from pathlib import Path; Path(os.environ['HOME'],'.fake-claude-sigign').write_text('int=%s quit=%s\\n' % (signal.getsignal(signal.SIGINT) is signal.SIG_IGN, signal.getsignal(signal.SIGQUIT) is signal.SIG_IGN))";;
+    esac
     exit "${FAKE_CLAUDE_STATUS:-0}"
     """
 )
@@ -319,6 +323,59 @@ class ClaudeProfileTest(unittest.TestCase):
         self.assertEqual(self.profile_json()["oauthAccount"], "work-account")
         migrated = list((self.home / ".claude-profiles" / ".migrated").glob("*/*/.claude.json"))
         self.assertEqual(migrated, [])
+
+    def test_forwards_piped_stdin_to_claude(self) -> None:
+        result = subprocess.run(
+            ["bash", str(SCRIPT), "work", "echo-stdin"],
+            check=False,
+            text=True,
+            capture_output=True,
+            timeout=30,
+            input="hello from pipe\n",
+            env=self.env,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.home / ".fake-claude-stdin").read_text(), "hello from pipe\n")
+
+    def test_sigint_and_sigquit_are_not_ignored_in_claude(self) -> None:
+        result = self.run_profile("report-sigign")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.home / ".fake-claude-sigign").read_text(), "int=False quit=False\n")
+
+    def test_sigint_to_the_wrapper_stops_claude(self) -> None:
+        proc = self.start_profile("wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+
+        os.kill(proc.pid, signal.SIGINT)
+        self.wait_exited(proc)
+        self.assertEqual(proc.returncode, 130)
+
+    def test_skips_writeback_when_shared_json_is_corrupt(self) -> None:
+        proc = self.start_profile("add-mcp", "wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+
+        (self.home / ".claude.json").write_text("{half-written")
+        result = self.finish_profile(proc)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.home / ".claude.json").read_text(), "{half-written")
+        self.assertIn("not valid JSON", result.stderr)
+
+    def test_skips_entry_sync_when_profile_json_is_corrupt(self) -> None:
+        self.profile.mkdir(parents=True)
+        (self.profile / ".claude.json").write_text("{half-written")
+
+        result = self.run_profile()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.profile / ".claude.json").read_text(), "{half-written")
+        self.assertIn("not valid JSON", result.stderr)
 
     def test_rejects_dot_prefixed_profile_names(self) -> None:
         result = subprocess.run(
