@@ -6,8 +6,21 @@ let
   claudeManagedSettings = pkgs.writeText "claude-managed-settings.json" (
     builtins.toJSON (import ./settings.nix { inherit (import ../../lib/proxy.nix) proxyUrl noProxy; })
   );
+  # One Claude Code account per profile, every other setting shared with
+  # ~/.claude (see the header of ./claude-profile.sh). claude itself is left to
+  # PATH so the wrapper always runs the installed one.
+  claudeProfile = pkgs.writeShellApplication {
+    name = "claude-profile";
+    runtimeInputs = [
+      pkgs.python3
+      pkgs.rsync
+    ];
+    text = builtins.readFile ./claude-profile.sh;
+  };
 in
 {
+  home.packages = [ claudeProfile ];
+
   # The claude binary itself comes from llm-agents (see flake.nix), whose
   # cache.numtide.com has it prebuilt; nixpkgs' unfree build is never cached
   # and would download from downloads.claude.ai at switch time.
