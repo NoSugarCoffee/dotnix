@@ -98,7 +98,7 @@ adopt_into_shared() {
   ensure_migrated_dir
   cp -Rp "$shared_path" "$migrated_dir/$name"
   if [ -d "$local_path" ] && [ -d "$shared_path" ]; then
-    rsync -a "$local_path/" "$shared_path/"
+    rsync -a --delete "$local_path/" "$shared_path/"
     rm -rf "$local_path"
   else
     rm -rf "$shared_path"
@@ -159,14 +159,16 @@ source_path, target_path, base_path = sys.argv[1], sys.argv[2], sys.argv[3]
 
 
 def load(path):
-    if not path or not os.path.exists(path):
-        return None
+    if not os.path.exists(path):
+        return {}
     try:
         with open(path) as f:
             data = json.load(f)
-    except (OSError, json.JSONDecodeError):
-        return None
-    return data if isinstance(data, dict) else None
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"claude-profile: {path} is not valid JSON ({error}); fix or remove it")
+    if not isinstance(data, dict):
+        raise SystemExit(f"claude-profile: {path} is not a JSON object; fix or remove it")
+    return data
 
 
 def merge_dicts(base, ours, theirs):
@@ -194,19 +196,12 @@ def merge_dicts(base, ours, theirs):
     return result
 
 
+if not os.path.exists(source_path):
+    sys.exit(0)
+# A corrupt file fails the sync rather than being skipped or overwritten with
+# only mcpServers/projects; the caller reports it.
 source = load(source_path)
-if source is None:
-    # Missing source: nothing to copy. Unreadable source: fail so the caller
-    # can report it instead of keeping a stale target.
-    sys.exit(0 if not source_path or not os.path.exists(source_path) else 1)
 target = load(target_path)
-if target is None:
-    # Existing but unreadable: skip the write so a mid-write ~/.claude.json
-    # or a corrupt profile file is not replaced with only mcpServers/projects.
-    if os.path.exists(target_path):
-        print(f"claude-profile: skipped sync, {target_path} is not valid JSON", file=sys.stderr)
-        sys.exit(0)
-    target = {}
 
 def as_dict(doc, key):
     value = doc.get(key)
@@ -214,8 +209,6 @@ def as_dict(doc, key):
 
 if base_path:
     base = load(base_path)
-    if base is None:
-        base = {}
     for key in SHARED_KEYS:
         # A key the source omits is a deletion. Merge against an empty "ours"
         # so a concurrent session can still keep entries this run did not touch,
@@ -246,7 +239,10 @@ EOF
 }
 
 link_shared_entries
-sync_json "$shared_json" "$config_dir/.claude.json"
+if ! sync_json "$shared_json" "$config_dir/.claude.json"; then
+  printf 'claude-profile: failed to sync %s into the profile\n' "$shared_json" >&2
+  exit 1
+fi
 launch_snapshot=$(mktemp "$config_dir/.claude.json.launch.XXXXXX")
 if [ -f "$shared_json" ]; then
   cp "$shared_json" "$launch_snapshot"
@@ -254,17 +250,14 @@ else
   printf '%s\n' '{}' >"$launch_snapshot"
 fi
 
-export CLAUDE_CONFIG_DIR="$config_dir"
-status=0
-after_ran=0
-claude_pid=
-
-after_run() {
-  [ "${after_ran:-0}" -eq 1 ] && return 0
-  after_ran=1
-  # set -e is off while these run so a failure is reported and does not
-  # replace Claude's exit status. The subshell turns it back on so a command
-  # in the middle of a function still fails the step.
+# A failed write-back is reported without masking claude's own exit status.
+# It may run a second time from a signal or EXIT trap, so it is idempotent.
+# set -e is off here so a link/warn failure cannot skip sync_json. The
+# subshell turns it back on: `(cmd) || report` would disable it inside
+# functions (bash), so status is captured instead.
+written_back=0
+write_back() {
+  [ "$written_back" -eq 1 ] && return 0
   set +e
   (set -e; link_shared_entries)
   link_status=$?
@@ -272,41 +265,34 @@ after_run() {
   warn_status=$?
   sync_json "$config_dir/.claude.json" "$shared_json" "$launch_snapshot"
   sync_status=$?
-  rm -f "$launch_snapshot"
   set -e
   [ "$link_status" -eq 0 ] ||
     printf 'claude-profile: failed to link shared entries\n' >&2
   [ "$warn_status" -eq 0 ] ||
     printf 'claude-profile: failed to check for unshared entries\n' >&2
-  [ "$sync_status" -eq 0 ] ||
-    printf 'claude-profile: failed to write shared config back to %s\n' "$shared_json" >&2
-  return 0
-}
-
-# Signal traps are the only callers; shellcheck does not see those as calls.
-# shellcheck disable=SC2317,SC2329
-stop_claude() {
-  if [ -n "${claude_pid:-}" ]; then
-    kill -s "$1" "$claude_pid" 2>/dev/null || :
-    wait "$claude_pid" 2>/dev/null || :
-    claude_pid=
+  if [ "$sync_status" -eq 0 ]; then
+    rm -f "$launch_snapshot"
+  else
+    printf 'claude-profile: failed to write shared config back to %s; this session'"'"'s MCP and project changes are only in %s\n' \
+      "$shared_json" "$config_dir/.claude.json" >&2
+    if [ "$status" -eq 0 ]; then
+      status=1
+    fi
   fi
+  written_back=1
 }
 
-trap after_run EXIT
-trap 'stop_claude HUP; exit 129' HUP
-trap 'stop_claude INT; exit 130' INT
-trap 'stop_claude TERM; exit 143' TERM
+export CLAUDE_CONFIG_DIR="$config_dir"
+status=0
+# claude runs in the foreground so it keeps the terminal's stdin and handles
+# Ctrl-C itself; a single Ctrl-C in claude cancels, it does not quit, so INT is
+# deliberately not trapped. If claude dies by SIGINT (Ctrl-C before Ink, or
+# -p), bash dies by that signal too; EXIT still runs write_back. HUP/TERM stay
+# set to the end because the signal can reach bash after claude has exited.
+trap 'status=129; write_back; exit "$status"' HUP
+trap 'status=143; write_back; exit "$status"' TERM
+trap write_back EXIT
+claude "$@" || status=$?
 
-# Explicit stdin redirect keeps the caller's stdin (bash otherwise points a
-# non-interactive async command at /dev/null). Reset INT/QUIT so Ctrl-C
-# reaches claude; a background job otherwise inherits SIG_IGN.
-(
-  trap - INT QUIT
-  exec claude "$@"
-) 0<&0 &
-claude_pid=$!
-wait "$claude_pid" || status=$?
-claude_pid=
-after_run
+write_back
 exit "$status"
