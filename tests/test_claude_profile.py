@@ -35,6 +35,11 @@ FAKE_CLAUDE = textwrap.dedent(
       printf 'not-json' >"$d/.claude.json";;
     esac
     case " $* " in *" ignore-int "*) trap '' INT;; esac
+    case " $* " in *" die-int "*) kill -INT $$;; esac
+    case " $* " in *" fail-link "*)
+      printf '{"theme":"edited"}' >"$d/settings.json.tmp" && mv "$d/settings.json.tmp" "$d/settings.json"
+      chmod a-w "$HOME/.claude";;
+    esac
     case " $* " in *" wait-ready "*)
       : >"$HOME/.fake-claude-ready"
       while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
@@ -281,6 +286,18 @@ class ClaudeProfileTest(unittest.TestCase):
         self.assertEqual(shared_json["mcpServers"], {"gitlab": {}})
         self.assertEqual(shared_json["oauthAccount"], "shared-account")
 
+    def test_link_failure_still_writes_mcp_and_keeps_claude_status(self) -> None:
+        # adopt_into_shared (rm/mv/rsync) must not abort write_back under set -e:
+        # sync_json still runs and claude's status is kept.
+        self.addCleanup(lambda: self.shared.exists() and os.chmod(self.shared, 0o700))
+
+        result = self.run_profile("add-mcp", "fail-link", status=7)
+
+        self.assertEqual(result.returncode, 7, result.stderr)
+        self.assertIn("failed to link shared entries", result.stderr)
+        self.assertIn("added", self.shared_json()["mcpServers"])
+        self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
+
     def test_synced_json_stays_private(self) -> None:
         previous = os.umask(0)
         try:
@@ -362,6 +379,26 @@ class ClaudeProfileTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(sorted(p.name for p in (self.shared / "plans").iterdir()), ["kept.md"])
         self.assertTrue((self.profile / "plans").is_symlink())
+
+    def test_mcp_write_back_runs_when_claude_dies_from_sigint(self) -> None:
+        # Default SIGINT disposition (unlike ignore-int): Ctrl-C to the group
+        # kills claude, then bash dies by SIGINT too. EXIT must still write back.
+        proc = self.start_profile("add-mcp", "wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+        self.assertIn("added", self.profile_json()["mcpServers"])
+
+        os.killpg(proc.pid, signal.SIGINT)
+        self.wait_exited(proc)
+        self.assertIn("added", self.shared_json()["mcpServers"])
+        self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
+
+    def test_mcp_write_back_runs_when_claude_self_signals_int(self) -> None:
+        result = self.run_profile("add-mcp", "die-int")
+
+        self.assertIn("added", self.shared_json()["mcpServers"])
+        self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
 
     def test_ctrl_c_is_left_to_claude(self) -> None:
         # Ctrl-C reaches the whole foreground group; claude treats it as cancel,

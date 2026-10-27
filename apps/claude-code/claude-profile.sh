@@ -251,13 +251,26 @@ else
 fi
 
 # A failed write-back is reported without masking claude's own exit status.
-# It may run a second time from a signal trap, so it is idempotent.
+# It may run a second time from a signal or EXIT trap, so it is idempotent.
+# set -e is off here so a link/warn failure cannot skip sync_json. The
+# subshell turns it back on: `(cmd) || report` would disable it inside
+# functions (bash), so status is captured instead.
 written_back=0
 write_back() {
   [ "$written_back" -eq 1 ] && return 0
-  link_shared_entries
-  warn_unshared_entries
-  if sync_json "$config_dir/.claude.json" "$shared_json" "$launch_snapshot"; then
+  set +e
+  (set -e; link_shared_entries)
+  link_status=$?
+  (set -e; warn_unshared_entries)
+  warn_status=$?
+  sync_json "$config_dir/.claude.json" "$shared_json" "$launch_snapshot"
+  sync_status=$?
+  set -e
+  [ "$link_status" -eq 0 ] ||
+    printf 'claude-profile: failed to link shared entries\n' >&2
+  [ "$warn_status" -eq 0 ] ||
+    printf 'claude-profile: failed to check for unshared entries\n' >&2
+  if [ "$sync_status" -eq 0 ]; then
     rm -f "$launch_snapshot"
   else
     printf 'claude-profile: failed to write shared config back to %s; this session'"'"'s MCP and project changes are only in %s\n' \
@@ -273,11 +286,12 @@ export CLAUDE_CONFIG_DIR="$config_dir"
 status=0
 # claude runs in the foreground so it keeps the terminal's stdin and handles
 # Ctrl-C itself; a single Ctrl-C in claude cancels, it does not quit, so INT is
-# deliberately not trapped. bash runs these traps once claude exits; closing
-# the terminal or killing the process group reaches claude as well. They stay
+# deliberately not trapped. If claude dies by SIGINT (Ctrl-C before Ink, or
+# -p), bash dies by that signal too; EXIT still runs write_back. HUP/TERM stay
 # set to the end because the signal can reach bash after claude has exited.
 trap 'status=129; write_back; exit "$status"' HUP
 trap 'status=143; write_back; exit "$status"' TERM
+trap write_back EXIT
 claude "$@" || status=$?
 
 write_back
