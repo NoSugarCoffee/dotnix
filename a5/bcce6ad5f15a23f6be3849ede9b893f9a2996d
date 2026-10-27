@@ -1,0 +1,11 @@
+tests/test_claude_profile.py
+  2144a30f4109e945 206
+apps/claude-code/claude-profile.sh
+  2144a30f4109e945 163,167-171,199-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "a5bcce6ad5f15a23f6be3849ede9b893f9a2996d",
+  "prompts": {}
+}
