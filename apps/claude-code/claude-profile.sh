@@ -74,6 +74,21 @@ absorb_into_shared() {
   mv "$local_path" "$migrated_dir/$name"
 }
 
+# A shared entry removed from ~/.claude leaves its profile symlink behind.
+# Claude then cannot recreate it: mkdir fails with "File exists" on the
+# dangling link. Only links that point into the shared dir are removed.
+prune_stale_shared_links() {
+  for local_path in "$config_dir"/* "$config_dir"/.[!.]*; do
+    [ -L "$local_path" ] || continue
+    target=$(readlink "$local_path") || continue
+    case "$target" in
+      "$shared_dir"/*)
+        [ -e "$target" ] || rm -f "$local_path"
+        ;;
+    esac
+  done
+}
+
 # After migration: the profile's entry replaced our symlink, so it wins. The
 # shared copy it overwrites is kept under .migrated.
 adopt_into_shared() {
@@ -111,6 +126,7 @@ link_shared_entries() {
     fi
     ln -sfn "$shared_path" "$local_path"
   done
+  prune_stale_shared_links
   : >"$linked_marker"
 }
 
@@ -144,13 +160,13 @@ source_path, target_path, base_path = sys.argv[1], sys.argv[2], sys.argv[3]
 
 def load(path):
     if not path or not os.path.exists(path):
-        return {}
+        return None
     try:
         with open(path) as f:
             data = json.load(f)
-        return data if isinstance(data, dict) else {}
     except (OSError, json.JSONDecodeError):
         return None
+    return data if isinstance(data, dict) else None
 
 
 def merge_dicts(base, ours, theirs):
@@ -180,30 +196,48 @@ def merge_dicts(base, ours, theirs):
 
 source = load(source_path)
 if source is None:
-    sys.exit(0)
+    # Missing source: nothing to copy. Unreadable source: fail so the caller
+    # can report it instead of keeping a stale target.
+    sys.exit(0 if not source_path or not os.path.exists(source_path) else 1)
 target = load(target_path)
 if target is None:
+    if os.path.exists(target_path):
+        sys.exit(1)
     target = {}
+
+def as_dict(doc, key):
+    value = doc.get(key)
+    return value if isinstance(value, dict) else {}
 
 if base_path:
     base = load(base_path)
     if base is None:
         base = {}
     for key in SHARED_KEYS:
-        target[key] = merge_dicts(
-            base[key] if isinstance(base.get(key), dict) else {},
-            source[key] if isinstance(source.get(key), dict) else {},
-            target[key] if isinstance(target.get(key), dict) else {},
-        )
+        # A key the source omits is a deletion. Merge against an empty "ours"
+        # so a concurrent session can still keep entries this run did not touch,
+        # and drop the key entirely when nothing remains.
+        if key not in source:
+            merged = merge_dicts(as_dict(base, key), {}, as_dict(target, key))
+            if merged:
+                target[key] = merged
+            else:
+                target.pop(key, None)
+        else:
+            target[key] = merge_dicts(as_dict(base, key), as_dict(source, key), as_dict(target, key))
 else:
     for key in SHARED_KEYS:
         if key in source:
             target[key] = source[key]
+        else:
+            target.pop(key, None)
 
+# 0600 from the start. open() then chmod leaves mcpServers readable under the
+# umask until chmod runs.
 tmp_path = f"{target_path}.tmp.{os.getpid()}"
-with open(tmp_path, "w") as f:
+fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+with os.fdopen(fd, "w") as f:
     json.dump(target, f, indent=2)
-os.chmod(tmp_path, 0o600)
 os.replace(tmp_path, target_path)
 EOF
 }
@@ -225,13 +259,29 @@ claude_pid=
 after_run() {
   [ "${after_ran:-0}" -eq 1 ] && return 0
   after_ran=1
-  link_shared_entries || :
-  warn_unshared_entries || :
-  sync_json "$config_dir/.claude.json" "$shared_json" "$launch_snapshot" || :
+  # set -e is off while these run so a failure is reported and does not
+  # replace Claude's exit status. The subshell turns it back on so a command
+  # in the middle of a function still fails the step.
+  set +e
+  (set -e; link_shared_entries)
+  link_status=$?
+  (set -e; warn_unshared_entries)
+  warn_status=$?
+  sync_json "$config_dir/.claude.json" "$shared_json" "$launch_snapshot"
+  sync_status=$?
   rm -f "$launch_snapshot"
+  set -e
+  [ "$link_status" -eq 0 ] ||
+    printf 'claude-profile: failed to link shared entries\n' >&2
+  [ "$warn_status" -eq 0 ] ||
+    printf 'claude-profile: failed to check for unshared entries\n' >&2
+  [ "$sync_status" -eq 0 ] ||
+    printf 'claude-profile: failed to write shared config back to %s\n' "$shared_json" >&2
   return 0
 }
 
+# Signal traps are the only callers; shellcheck does not see those as calls.
+# shellcheck disable=SC2317,SC2329
 stop_claude() {
   if [ -n "${claude_pid:-}" ]; then
     kill -s "$1" "$claude_pid" 2>/dev/null || :
@@ -249,4 +299,5 @@ claude "$@" &
 claude_pid=$!
 wait "$claude_pid" || status=$?
 claude_pid=
+after_run
 exit "$status"

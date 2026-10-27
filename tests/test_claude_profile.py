@@ -31,6 +31,9 @@ FAKE_CLAUDE = textwrap.dedent(
     case " $* " in *" add-mcp "*)
       python3 -c "import json,sys; p=sys.argv[1]; d=json.load(open(p)); d['mcpServers']['added']={}; json.dump(d, open(p,'w'))" "$d/.claude.json";;
     esac
+    case " $* " in *" break-json "*)
+      printf 'not-json' >"$d/.claude.json";;
+    esac
     case " $* " in *" wait-ready "*)
       : >"$HOME/.fake-claude-ready"
       while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
@@ -186,19 +189,100 @@ class ClaudeProfileTest(unittest.TestCase):
         self.fail("wrapper did not exit after signal")
 
     def test_mcp_added_before_signal_survives_the_next_run(self) -> None:
-        proc = self.start_profile("add-mcp", "wait-ready")
-        self.addCleanup(proc.kill)
-        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
-        self.wait_for(self.home / ".fake-claude-ready")
-        self.assertIn("added", self.profile_json()["mcpServers"])
+        for sig in (signal.SIGTERM, signal.SIGHUP):
+            with self.subTest(signal=sig.name):
+                (self.home / ".fake-claude-ready").unlink(missing_ok=True)
+                (self.home / ".fake-claude-continue").unlink(missing_ok=True)
+                (self.home / ".claude.json").write_text(
+                    json.dumps(
+                        {"oauthAccount": "shared-account", "mcpServers": {"gitlab": {}}, "projects": {"/repo": {}}}
+                    )
+                )
+                proc = self.start_profile("add-mcp", "wait-ready")
+                self.addCleanup(proc.kill)
+                self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+                self.wait_for(self.home / ".fake-claude-ready")
+                self.assertIn("added", self.profile_json()["mcpServers"])
 
-        os.kill(proc.pid, signal.SIGTERM)
-        self.wait_exited(proc)
+                os.kill(proc.pid, sig)
+                self.wait_exited(proc)
 
-        follow_up = self.run_profile()
-        self.assertEqual(follow_up.returncode, 0, follow_up.stderr)
-        self.assertIn("added", self.shared_json()["mcpServers"])
-        self.assertIn("added", self.profile_json()["mcpServers"])
+                follow_up = self.run_profile()
+                self.assertEqual(follow_up.returncode, 0, follow_up.stderr)
+                self.assertIn("added", self.shared_json()["mcpServers"])
+                self.assertIn("added", self.profile_json()["mcpServers"])
+                self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
+
+    def test_prunes_shared_symlinks_whose_targets_are_gone(self) -> None:
+        plugins = self.shared / "plugins"
+        plugins.mkdir()
+
+        result = self.run_profile()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.profile / "plugins").is_symlink())
+        outside = self.profile / "kept-link"
+        outside.symlink_to(self.home / "does-not-exist")
+        shutil.rmtree(plugins)
+
+        result = self.run_profile()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.profile / "plugins").is_symlink())
+        self.assertFalse((self.profile / "plugins").exists())
+        self.assertTrue(outside.is_symlink())
+        self.assertEqual((self.profile / "settings.json").resolve(), (self.shared / "settings.json").resolve())
+        (self.profile / "plugins").mkdir()
+
+    def test_absent_shared_key_is_deleted_instead_of_written_back(self) -> None:
+        self.profile.mkdir(parents=True)
+        (self.profile / ".claude.json").write_text(
+            json.dumps(
+                {
+                    "oauthAccount": "work-account",
+                    "userID": "w",
+                    "mcpServers": {"stale": {}},
+                    "projects": {"/old": {}},
+                }
+            )
+        )
+        (self.home / ".claude.json").write_text(
+            json.dumps({"oauthAccount": "shared-account", "projects": {"/repo": {}}})
+        )
+
+        result = self.run_profile()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        profile_json = self.profile_json()
+        self.assertEqual(profile_json["oauthAccount"], "work-account")
+        self.assertEqual(profile_json["userID"], "w")
+        self.assertNotIn("mcpServers", profile_json)
+        self.assertEqual(profile_json["projects"], {"/repo": {}})
+        shared_json = self.shared_json()
+        self.assertNotIn("mcpServers", shared_json)
+        self.assertEqual(shared_json["oauthAccount"], "shared-account")
+        self.assertEqual(shared_json["projects"], {"/repo": {}})
+
+    def test_write_back_failure_keeps_claude_status(self) -> None:
+        result = self.run_profile("break-json", "new-file", status=7)
+
+        self.assertEqual(result.returncode, 7, result.stderr)
+        self.assertIn("failed to write shared config back", result.stderr)
+        self.assertIn("new-feature.json exists only in", result.stderr)
+        shared_json = self.shared_json()
+        self.assertEqual(shared_json["mcpServers"], {"gitlab": {}})
+        self.assertEqual(shared_json["oauthAccount"], "shared-account")
+
+    def test_synced_json_stays_private(self) -> None:
+        previous = os.umask(0)
+        try:
+            result = self.run_profile()
+        finally:
+            os.umask(previous)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for path in (self.home / ".claude.json", self.profile / ".claude.json"):
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600, path)
 
     def test_writeback_keeps_projects_a_concurrent_claude_added(self) -> None:
         proc = self.start_profile("add-mcp", "wait-ready")
