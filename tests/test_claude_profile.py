@@ -35,6 +35,7 @@ FAKE_CLAUDE = textwrap.dedent(
       printf 'not-json' >"$d/.claude.json";;
     esac
     case " $* " in *" ignore-int "*) trap '' INT;; esac
+    case " $* " in *" ignore-term "*) trap '' TERM;; esac
     case " $* " in *" wait-ready "*)
       : >"$HOME/.fake-claude-ready"
       while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
@@ -218,6 +219,21 @@ class ClaudeProfileTest(unittest.TestCase):
                 self.assertIn("added", self.shared_json()["mcpServers"])
                 self.assertIn("added", self.profile_json()["mcpServers"])
                 self.assertEqual(self.shared_json()["oauthAccount"], "shared-account")
+
+    def test_sigint_kills_claude_that_ignores_int_and_term(self) -> None:
+        proc = self.start_profile("add-mcp", "ignore-int", "ignore-term", "wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+        self.assertIn("added", self.profile_json()["mcpServers"])
+
+        os.kill(proc.pid, signal.SIGINT)
+        self.wait_exited(proc)
+
+        follow_up = self.run_profile()
+        self.assertEqual(follow_up.returncode, 0, follow_up.stderr)
+        self.assertIn("added", self.shared_json()["mcpServers"])
+        self.assertIn("added", self.profile_json()["mcpServers"])
 
     def test_prunes_shared_symlinks_whose_targets_are_gone(self) -> None:
         plugins = self.shared / "plugins"

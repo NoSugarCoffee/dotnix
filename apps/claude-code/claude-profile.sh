@@ -285,18 +285,26 @@ after_run() {
 
 # Signal traps are the only callers; shellcheck does not see those as calls.
 # shellcheck disable=SC2317,SC2329
+wait_for_pid() {
+  n=0
+  while [ "$n" -lt 8 ] && kill -0 "$1" 2>/dev/null; do
+    sleep 0.05 || :
+    n=$((n + 1))
+  done
+}
+
 stop_claude() {
   if [ -n "${claude_pid:-}" ]; then
     kill -s "$1" "$claude_pid" 2>/dev/null || :
     # Async children inherit SIG_IGN for INT/QUIT. Real claude may also
-    # swallow INT, so escalate to TERM if it is still running.
-    n=0
-    while [ "$n" -lt 8 ] && kill -0 "$claude_pid" 2>/dev/null; do
-      sleep 0.05
-      n=$((n + 1))
-    done
+    # swallow INT, so escalate to TERM, then KILL, if it is still running.
+    wait_for_pid "$claude_pid"
     if kill -0 "$claude_pid" 2>/dev/null; then
       kill -s TERM "$claude_pid" 2>/dev/null || :
+      wait_for_pid "$claude_pid"
+    fi
+    if kill -0 "$claude_pid" 2>/dev/null; then
+      kill -s KILL "$claude_pid" 2>/dev/null || :
     fi
     wait "$claude_pid" 2>/dev/null || :
     claude_pid=
