@@ -34,6 +34,7 @@ FAKE_CLAUDE = textwrap.dedent(
     case " $* " in *" break-json "*)
       printf 'not-json' >"$d/.claude.json";;
     esac
+    case " $* " in *" ignore-int "*) trap '' INT;; esac
     case " $* " in *" wait-ready "*)
       : >"$HOME/.fake-claude-ready"
       while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
@@ -193,7 +194,7 @@ class ClaudeProfileTest(unittest.TestCase):
         self.fail("wrapper did not exit after signal")
 
     def test_mcp_added_before_signal_survives_the_next_run(self) -> None:
-        for sig in (signal.SIGTERM, signal.SIGHUP):
+        for sig, code in ((signal.SIGTERM, 143), (signal.SIGHUP, 129)):
             with self.subTest(signal=sig.name):
                 (self.home / ".fake-claude-ready").unlink(missing_ok=True)
                 (self.home / ".fake-claude-continue").unlink(missing_ok=True)
@@ -208,8 +209,11 @@ class ClaudeProfileTest(unittest.TestCase):
                 self.wait_for(self.home / ".fake-claude-ready")
                 self.assertIn("added", self.profile_json()["mcpServers"])
 
-                os.kill(proc.pid, sig)
+                # Closing the terminal or a supervisor signals the whole group.
+                os.killpg(proc.pid, sig)
                 self.wait_exited(proc)
+                self.assertEqual(proc.returncode, code)
+                self.assertIn("added", self.shared_json()["mcpServers"])
 
                 follow_up = self.run_profile()
                 self.assertEqual(follow_up.returncode, 0, follow_up.stderr)
@@ -344,17 +348,38 @@ class ClaudeProfileTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((self.home / ".fake-claude-sigign").read_text(), "int=False quit=False\n")
 
-    def test_sigint_to_the_wrapper_stops_claude(self) -> None:
-        proc = self.start_profile("wait-ready")
+    def test_adopted_directory_keeps_deletions_made_in_the_profile(self) -> None:
+        (self.shared / "plans").mkdir()
+        (self.shared / "plans" / "kept.md").write_text("kept")
+        (self.shared / "plans" / "deleted.md").write_text("deleted")
+        self.run_profile()
+        (self.profile / "plans").unlink()
+        (self.profile / "plans").mkdir()
+        (self.profile / "plans" / "kept.md").write_text("kept")
+
+        result = self.run_profile()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(sorted(p.name for p in (self.shared / "plans").iterdir()), ["kept.md"])
+        self.assertTrue((self.profile / "plans").is_symlink())
+
+    def test_ctrl_c_is_left_to_claude(self) -> None:
+        # Ctrl-C reaches the whole foreground group; claude treats it as cancel,
+        # so the session must keep running and still write back when it exits.
+        proc = self.start_profile("add-mcp", "ignore-int", "wait-ready")
         self.addCleanup(proc.kill)
         self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
         self.wait_for(self.home / ".fake-claude-ready")
 
-        os.kill(proc.pid, signal.SIGINT)
-        self.wait_exited(proc)
-        self.assertEqual(proc.returncode, 130)
+        os.killpg(proc.pid, signal.SIGINT)
+        time.sleep(0.5)
+        self.assertIsNone(proc.poll(), "Ctrl-C ended the claude session")
 
-    def test_skips_writeback_when_shared_json_is_corrupt(self) -> None:
+        result = self.finish_profile(proc)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("added", self.shared_json()["mcpServers"])
+
+    def test_fails_writeback_when_shared_json_is_corrupt(self) -> None:
         proc = self.start_profile("add-mcp", "wait-ready")
         self.addCleanup(proc.kill)
         self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
@@ -363,17 +388,26 @@ class ClaudeProfileTest(unittest.TestCase):
         (self.home / ".claude.json").write_text("{half-written")
         result = self.finish_profile(proc)
 
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 1, result.stderr)
         self.assertEqual((self.home / ".claude.json").read_text(), "{half-written")
         self.assertIn("not valid JSON", result.stderr)
+        self.assertIn("failed to write shared config back", result.stderr)
 
-    def test_skips_entry_sync_when_profile_json_is_corrupt(self) -> None:
+    def test_unreadable_shared_json_at_launch_prints_an_error(self) -> None:
+        (self.home / ".claude.json").write_text("{half-written")
+
+        result = self.run_profile()
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("failed to sync", result.stderr)
+
+    def test_refuses_to_launch_when_profile_json_is_corrupt(self) -> None:
         self.profile.mkdir(parents=True)
         (self.profile / ".claude.json").write_text("{half-written")
 
         result = self.run_profile()
 
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.returncode, 1, result.stderr)
         self.assertEqual((self.profile / ".claude.json").read_text(), "{half-written")
         self.assertIn("not valid JSON", result.stderr)
 
