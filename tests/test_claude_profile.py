@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 import textwrap
+import time
 import unittest
 from pathlib import Path
 
@@ -16,7 +18,8 @@ SCRIPT = REPO / "apps" / "claude-code" / "claude-profile.sh"
 
 # Stands in for claude: optionally replaces settings.json the way an atomic
 # write does, creates a profile-only file, or adds an MCP server, then exits
-# with FAKE_CLAUDE_STATUS.
+# with FAKE_CLAUDE_STATUS. wait-ready writes a sentinel and blocks until
+# continue is touched so tests can signal the wrapper or edit ~/.claude.json.
 FAKE_CLAUDE = textwrap.dedent(
     """\
     #!/bin/sh
@@ -27,6 +30,10 @@ FAKE_CLAUDE = textwrap.dedent(
     case " $* " in *" new-file "*) : >"$d/new-feature.json";; esac
     case " $* " in *" add-mcp "*)
       python3 -c "import json,sys; p=sys.argv[1]; d=json.load(open(p)); d['mcpServers']['added']={}; json.dump(d, open(p,'w'))" "$d/.claude.json";;
+    esac
+    case " $* " in *" wait-ready "*)
+      : >"$HOME/.fake-claude-ready"
+      while [ ! -f "$HOME/.fake-claude-continue" ]; do sleep 0.05; done;;
     esac
     exit "${FAKE_CLAUDE_STATUS:-0}"
     """
@@ -62,6 +69,35 @@ class ClaudeProfileTest(unittest.TestCase):
             timeout=30,
             env={**self.env, "FAKE_CLAUDE_STATUS": str(status)},
         )
+
+    def start_profile(self, *args: str) -> subprocess.Popen[str]:
+        return subprocess.Popen(
+            ["bash", str(SCRIPT), "work", *args],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+            env={**self.env, "FAKE_CLAUDE_STATUS": "0"},
+        )
+
+    def wait_for(self, path: Path, timeout: float = 5.0) -> None:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if path.exists():
+                return
+            time.sleep(0.05)
+        self.fail(f"timed out waiting for {path}")
+
+    def finish_profile(self, proc: subprocess.Popen[str]) -> subprocess.CompletedProcess[str]:
+        (self.home / ".fake-claude-continue").touch()
+        stdout, stderr = proc.communicate(timeout=30)
+        return subprocess.CompletedProcess(proc.args, proc.returncode or 0, stdout, stderr)
+
+    def shared_json(self) -> dict:
+        return json.loads((self.home / ".claude.json").read_text())
+
+    def profile_json(self) -> dict:
+        return json.loads((self.profile / ".claude.json").read_text())
 
     def write_existing_profile(self) -> None:
         (self.profile / "projects" / "profile-project").mkdir(parents=True)
@@ -129,6 +165,84 @@ class ClaudeProfileTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 2)
         self.assertFalse((self.home / "escape").exists())
+
+    def _kill_group(self, pid: int) -> None:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except OSError:
+            pass
+
+    def wait_exited(self, proc: subprocess.Popen[str], timeout: float = 5.0) -> None:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if proc.poll() is not None:
+                if proc.stdout:
+                    proc.stdout.close()
+                if proc.stderr:
+                    proc.stderr.close()
+                return
+            time.sleep(0.05)
+        proc.kill()
+        self.fail("wrapper did not exit after signal")
+
+    def test_mcp_added_before_signal_survives_the_next_run(self) -> None:
+        proc = self.start_profile("add-mcp", "wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+        self.assertIn("added", self.profile_json()["mcpServers"])
+
+        os.kill(proc.pid, signal.SIGTERM)
+        self.wait_exited(proc)
+
+        follow_up = self.run_profile()
+        self.assertEqual(follow_up.returncode, 0, follow_up.stderr)
+        self.assertIn("added", self.shared_json()["mcpServers"])
+        self.assertIn("added", self.profile_json()["mcpServers"])
+
+    def test_writeback_keeps_projects_a_concurrent_claude_added(self) -> None:
+        proc = self.start_profile("add-mcp", "wait-ready")
+        self.addCleanup(proc.kill)
+        self.addCleanup(lambda pid=proc.pid: self._kill_group(pid))
+        self.wait_for(self.home / ".fake-claude-ready")
+
+        concurrent = self.shared_json()
+        concurrent["projects"]["/repo"]["hasTrustDialogAccepted"] = True
+        concurrent["projects"]["/other"] = {"allowedTools": ["Bash"]}
+        (self.home / ".claude.json").write_text(json.dumps(concurrent))
+
+        result = self.finish_profile(proc)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        shared = self.shared_json()
+        self.assertEqual(shared["mcpServers"], {"gitlab": {}, "added": {}})
+        self.assertEqual(shared["projects"]["/repo"], {"hasTrustDialogAccepted": True})
+        self.assertEqual(shared["projects"]["/other"], {"allowedTools": ["Bash"]})
+        self.assertEqual(shared["oauthAccount"], "shared-account")
+
+    def test_does_not_link_shared_json_or_legacy_config_into_the_profile(self) -> None:
+        self.profile.mkdir(parents=True)
+        (self.profile / ".claude.json").write_text(json.dumps({"oauthAccount": "work-account", "userID": "w"}))
+        (self.shared / ".claude.json").write_text(json.dumps({"oauthAccount": "shared-account"}))
+        (self.shared / ".claude.json.bak").write_text("{}")
+        (self.shared / ".config.json").write_text("{}")
+
+        result = self.run_profile()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.profile / ".claude.json").is_symlink())
+        self.assertFalse((self.profile / ".claude.json.bak").exists())
+        self.assertFalse((self.profile / ".config.json").exists())
+        self.assertEqual(self.profile_json()["oauthAccount"], "work-account")
+        migrated = list((self.home / ".claude-profiles" / ".migrated").glob("*/*/.claude.json"))
+        self.assertEqual(migrated, [])
+
+    def test_rejects_dot_prefixed_profile_names(self) -> None:
+        result = subprocess.run(
+            ["bash", str(SCRIPT), ".migrated"], check=False, text=True, capture_output=True, env=self.env
+        )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse((self.home / ".claude-profiles" / ".migrated" / ".migrated").exists())
 
 
 if __name__ == "__main__":
