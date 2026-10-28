@@ -73,7 +73,6 @@
           macshot
           code-cursor
           codex
-          chatgpt
           ;
       };
       mkPkgsUnstable =
