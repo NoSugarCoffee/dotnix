@@ -1,0 +1,20 @@
+apps/qingjian/default.nix
+  s_39a9e2a565922c::t_c21abf0a46b0db 19
+  s_39a9e2a565922c::t_47ea3f6ae0cea0 30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "e2b3f395dde9f130c67f23a845a4f7e7864e73e6",
+  "prompts": {},
+  "sessions": {
+    "s_39a9e2a565922c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c17484fe-e64f-4be3-b329-3b2d43877b57",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
