@@ -1,0 +1,23 @@
+flake.lock
+  s_39a9e2a565922c::t_36812f5a9fe933 294-295,298
+apps/qingjian/default.nix
+  s_39a9e2a565922c::t_40d137895ce489 1-35
+README.md
+  s_39a9e2a565922c::t_8d16c254fed5b9 81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "16d51804ff7358e8462e21829b93e6ff176992da",
+  "prompts": {},
+  "sessions": {
+    "s_39a9e2a565922c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c17484fe-e64f-4be3-b329-3b2d43877b57",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
