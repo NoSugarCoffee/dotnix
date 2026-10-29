@@ -2,7 +2,8 @@
 
 CI runs this via `python3 -m unittest discover`. The activation is Darwin-only
 in the module; the sentinel helper follows home.nix (xattr there, a hidden
-file elsewhere) so the ownership decision can run on Linux without ditto.
+file elsewhere). ditto, codesign, and pkill are stubbed on PATH so the copy
+and failure paths do not depend on the host having those tools.
 """
 
 from __future__ import annotations
@@ -86,15 +87,28 @@ class CuaDriverAppActivationTest(unittest.TestCase):
         self.marker.parent.mkdir()
         self.dest = self.apps / "CuaDriver.app"
 
-    def run_activation(self) -> subprocess.CompletedProcess[str]:
+    def run_activation(self, stubs: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
         script = self.box / "activate.sh"
         text = self.block
-        text = text.replace("sourceApp=${lib.escapeShellArg \"${cua-driver}/Applications/CuaDriver.app\"}", f"sourceApp={self.store}")
+        text = text.replace(
+            'sourceApp=${lib.escapeShellArg "${cua-driver}/Applications/CuaDriver.app"}',
+            f"sourceApp={self.store}",
+        )
         text = text.replace("dest=/Applications/CuaDriver.app", f"dest={self.dest}")
         text = text.replace(
             'marker=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/cua-driver-app-source"}',
             f"marker={self.marker}",
         )
+        env = os.environ.copy()
+        if stubs:
+            stubdir = self.box / "bin"
+            stubdir.mkdir()
+            for name, body in stubs.items():
+                path = stubdir / name
+                path.write_text(f"#!/bin/sh\n{body}")
+                path.chmod(0o755)
+                text = text.replace(f"/usr/bin/{name}", name)
+            env["PATH"] = f"{stubdir}{os.pathsep}{env.get('PATH', '')}"
         if "${" in text:
             raise AssertionError(f"activation still has nix syntax:\n{text}")
         script.write_text(text)
@@ -109,7 +123,7 @@ class CuaDriverAppActivationTest(unittest.TestCase):
         return subprocess.run(
             ["bash", str(runner)],
             cwd=self.box,
-            env=os.environ.copy(),
+            env=env,
             text=True,
             capture_output=True,
             check=False,
@@ -133,11 +147,29 @@ class CuaDriverAppActivationTest(unittest.TestCase):
         self.make_installed("OURS\n")
         stamp(self.dest, "old-store")
         self.marker.symlink_to(self.box / "old-store")
-        result = self.run_activation()
+        result = self.run_activation(stubs={"ditto": "echo ditto-failed >&2\nexit 1\n"})
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("copying CuaDriver.app", result.stderr)
+        self.assertIn("cua-driver: copying CuaDriver.app", result.stderr)
+        self.assertNotIn("signature verification", result.stderr)
         self.assertEqual((self.dest / "Contents" / "MacOS" / "cua-driver").read_text(), "OURS\n")
         self.assertTrue(self.dest.is_dir())
+
+    def test_stamped_app_is_replaced_when_the_store_path_changes(self) -> None:
+        self.make_installed("OLD\n")
+        stamp(self.dest, "old-store")
+        self.marker.symlink_to(self.box / "old-store")
+        result = self.run_activation(
+            stubs={
+                "ditto": 'cp -a "$1" "$2"\n',
+                "codesign": "exit 0\n",
+                "pkill": "exit 0\n",
+            }
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.dest / "Contents" / "MacOS" / "cua-driver").read_text(), "store\n")
+        self.assertEqual(os.readlink(self.marker), str(self.store))
+        self.assertTrue(has_sentinel(self.dest))
+        self.assertFalse((self.apps / ".CuaDriver.app.hm-new").exists())
 
     def test_current_stamped_app_is_left_untouched(self) -> None:
         self.make_installed("CURRENT\n")
