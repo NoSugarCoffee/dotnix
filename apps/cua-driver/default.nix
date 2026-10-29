@@ -6,156 +6,10 @@
   ...
 }:
 let
-  # Pinned signed release of the MIT driver (libs/cua-driver). The upstream
-  # flake builds that crate from source for Linux only and publishes no
-  # Darwin package and no binary cache, so every system here uses the
-  # release archive the upstream installer installs. Cua Spaces (FSL) and
-  # the optional perception extension are not in these archives and are
-  # not installed. The pin lives next to the /Applications copy below:
-  # `cua-driver mcp` relaunches exactly /Applications/CuaDriver.app.
-  version = "0.38.0";
-  tag = "cua-driver-rs-v${version}";
-
-  sources = {
-    aarch64-darwin = {
-      label = "darwin-arm64";
-      hash = "sha256-X3EZHAgsoHyd/BO3yabuxgqCgYwkWpNTTMDreRFHHXI=";
-    };
-    x86_64-darwin = {
-      label = "darwin-x86_64";
-      hash = "sha256-aHIakW8tmyAjOhRiPg9mPK9hMLqQGEZaV6F4Eg2WvE4=";
-    };
-    x86_64-linux = {
-      label = "linux-x86_64";
-      hash = "sha256-owXL1TH5TWQTxdswDDPfaOOtvouSuWBM+OZFxfbLH6M=";
-    };
-  };
-  source = sources.${pkgs.stdenv.hostPlatform.system} or null;
-
-  skills = pkgs.fetchurl {
-    url = "https://github.com/trycua/cua/releases/download/${tag}/${tag}-skills.tar.gz";
-    hash = "sha256-D+PWB+chLWxYByokGRYzQgYdz1y4m6EkPepZPX4zvg8=";
-  };
-  # `cua-driver skills install` keeps the host platform's guide and drops
-  # the other two. SKILL.md still links the kept file.
-  excludedSkillDocs =
-    if pkgs.stdenv.isDarwin then
-      [
-        "WINDOWS.md"
-        "LINUX.md"
-      ]
-    else
-      [
-        "WINDOWS.md"
-        "MACOS.md"
-      ];
-
-  installSkills = ''
-    mkdir -p "$out/share/cua-driver/skill"
-    tar -xzf ${skills} -C "$out/share/cua-driver/skill" --strip-components=1
-    rm -f ${lib.concatMapStringsSep " " (name: "$out/share/cua-driver/skill/${name}") excludedSkillDocs}
-  '';
-
-  cua-driver =
-    if source == null then
-      null
-    else if pkgs.stdenv.isDarwin then
-      pkgs.stdenv.mkDerivation {
-        pname = "cua-driver";
-        inherit version;
-
-        src = pkgs.fetchurl {
-          url = "https://github.com/trycua/cua/releases/download/${tag}/cua-driver-rs-${version}-${source.label}.tar.gz";
-          inherit (source) hash;
-        };
-        sourceRoot = "cua-driver-rs-${version}-${source.label}";
-
-        # The Developer ID signature has to survive into /Applications.
-        # Fixup would rewrite the Mach-O and invalidate it.
-        dontBuild = true;
-        dontFixup = true;
-
-        installPhase = ''
-          runHook preInstall
-          mkdir -p "$out/libexec" "$out/bin"
-          cp -a CuaDriver.app "$out/libexec/CuaDriver.app"
-          # PATH entry. `mcp` relaunches /Applications/CuaDriver.app when
-          # that copy exists; the store bundle is the fallback for
-          # --version before the copy, and for a switch that could not
-          # write /Applications.
-          cat > "$out/bin/cua-driver" <<EOF
-          #!/bin/sh
-          installed=/Applications/CuaDriver.app/Contents/MacOS/cua-driver
-          bundled=$out/libexec/CuaDriver.app/Contents/MacOS/cua-driver
-          if [ -x "\$installed" ]; then
-            exec "\$installed" "\$@"
-          fi
-          exec "\$bundled" "\$@"
-          EOF
-          chmod 755 "$out/bin/cua-driver"
-          ${installSkills}
-          runHook postInstall
-        '';
-
-        meta = {
-          description = "Computer-use MCP server and CLI";
-          homepage = "https://github.com/trycua/cua";
-          license = lib.licenses.mit;
-          mainProgram = "cua-driver";
-          platforms = [
-            "aarch64-darwin"
-            "x86_64-darwin"
-          ];
-          sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-        };
-      }
-    else
-      pkgs.stdenv.mkDerivation {
-        pname = "cua-driver";
-        inherit version;
-
-        src = pkgs.fetchurl {
-          url = "https://github.com/trycua/cua/releases/download/${tag}/cua-driver-rs-${version}-${source.label}.tar.gz";
-          inherit (source) hash;
-        };
-        sourceRoot = "cua-driver-rs-${version}-${source.label}";
-
-        nativeBuildInputs = [
-          pkgs.autoPatchelfHook
-          pkgs.makeWrapper
-        ];
-        buildInputs = [
-          pkgs.xorg.libX11
-          pkgs.xorg.libXi
-          pkgs.libxkbcommon
-          pkgs.stdenv.cc.cc.lib
-        ];
-
-        dontBuild = true;
-
-        # Only cua-driver is linked onto PATH. cua-cursor-theme stays beside
-        # the binary; ImageMagick's import is on that process's PATH because
-        # window capture shells out to it. The SDK, Node addon, and Wayland
-        # helper from the same archive are left unpacked and unused.
-        installPhase = ''
-          runHook preInstall
-          mkdir -p "$out/libexec/cua-driver" "$out/bin"
-          install -m 755 cua-driver cua-cursor-theme "$out/libexec/cua-driver/"
-          makeWrapper "$out/libexec/cua-driver/cua-driver" "$out/bin/cua-driver" \
-            --prefix PATH : "$out/libexec/cua-driver:${lib.makeBinPath [ pkgs.imagemagick ]}"
-          ${installSkills}
-          runHook postInstall
-        '';
-
-        meta = {
-          description = "Computer-use MCP server and CLI";
-          homepage = "https://github.com/trycua/cua";
-          license = lib.licenses.mit;
-          mainProgram = "cua-driver";
-          platforms = [ "x86_64-linux" ];
-          sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
-        };
-      };
+  # The signed release lives in NoSugarCoffee/nur-packages. This module only
+  # puts it on PATH, copies the macOS bundle to the path `mcp` relaunches,
+  # and registers it with Claude Code.
+  cua-driver = pkgs.nosugarcoffee.cua-driver or null;
 
   # ~/.claude.json is the file `claude mcp add` writes and the file
   # claude-profile syncs (SHARED_KEYS includes mcpServers). settings.json
@@ -164,30 +18,41 @@ let
   # start in that mode unless CUA_DRIVER_CAPABILITY_MANIFEST_FILE and
   # CUA_DRIVER_CAPABILITY_MANIFEST_APPROVED=1 are set, and on macOS the
   # relaunched app does not inherit this env as its permission mode.
-  mcpServers = pkgs.writeText "claude-cua-driver-mcp.json" (
-    builtins.toJSON {
-      mcpServers."cua-driver" = {
-        type = "stdio";
-        command = "${cua-driver}/bin/cua-driver";
-        args = [ "mcp" ];
-      };
-    }
-  );
+  mcpServers =
+    if cua-driver == null then
+      null
+    else
+      pkgs.writeText "claude-cua-driver-mcp.json" (
+        builtins.toJSON {
+          mcpServers."cua-driver" = {
+            type = "stdio";
+            command = "${cua-driver}/bin/cua-driver";
+            args = [ "mcp" ];
+          };
+        }
+      );
 in
 {
   home = {
     packages = lib.optional (cua-driver != null) cua-driver;
 
     file = lib.mkIf (cua-driver != null) {
-      ".cua-driver/skills/cua-driver".source = "${cua-driver}/share/cua-driver/skill";
+      # The driver's own skill directory, and the Claude Code link. The
+      # Claude link targets the home copy so `cua-driver skills install`
+      # sees one pack.
+      ".cua-driver/skills/cua-driver".source = cua-driver.skills;
       ".claude/skills/cua-driver".source =
         config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/.cua-driver/skills/cua-driver";
     };
 
     activation = {
+      # A real directory, not a symlink: TCC grants and the relaunch are
+      # keyed to /Applications/CuaDriver.app. copyApps would place this
+      # bundle under ~/Applications instead, because it has no system
+      # extension.
       cuaDriverApp = lib.mkIf (cua-driver != null && pkgs.stdenv.isDarwin) (
         lib.hm.dag.entryAfter [ "installPackages" ] ''
-          sourceApp=${lib.escapeShellArg "${cua-driver}/libexec/CuaDriver.app"}
+          sourceApp=${lib.escapeShellArg "${cua-driver}/Applications/CuaDriver.app"}
           dest=/Applications/CuaDriver.app
           staging=/Applications/.CuaDriver.app.hm-new
           marker=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/cua-driver-app-source"}

@@ -291,15 +291,16 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1793230666,
-        "narHash": "sha256-G+NVH/P+nHJiErcL6Y/u0vWQfkMZnJV+ADrleKuDpdg=",
+        "lastModified": 1793282578,
+        "narHash": "sha256-3Wg3uN2hlyub9VVEIfK87zNoQVK6C3/NT/PKw7L4Xdg=",
         "owner": "NoSugarCoffee",
         "repo": "nur-packages",
-        "rev": "e1c6db4bb800d6712b427a4452f37fc6405098f3",
+        "rev": "e023c97e3562ad5f2ad1fd471f5f70b8a5d75da2",
         "type": "github"
       },
       "original": {
         "owner": "NoSugarCoffee",
+        "ref": "cursor/cua-driver-5d29",
         "repo": "nur-packages",
         "type": "github"
       }
