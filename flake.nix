@@ -28,10 +28,7 @@
     # app repacks), kept current upstream 4x daily and cached on
     # nosugarcoffee.cachix.org. Not following our nixpkgs, for the same
     # reason as llm-agents: the cache only hits on its own pin.
-    # Temporary pin of NoSugarCoffee/nur-packages#12 (cua-driver). After that
-    # PR merges, point this back at github:NoSugarCoffee/nur-packages and run
-    # `nix flake update nur-packages`.
-    nur-packages.url = "github:NoSugarCoffee/nur-packages/cursor/cua-driver-5d29";
+    nur-packages.url = "github:NoSugarCoffee/nur-packages";
   };
   outputs =
     {
