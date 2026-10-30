@@ -78,7 +78,7 @@ just switch
 | **Browsers** | — | [google-chrome](https://www.google.com/chrome/) · [ego-lite](https://github.com/citrolabs/ego-lite) | — |
 | **Screen** | [obs-studio](https://obsproject.com/) | [macshot](https://github.com/sw33tLie/macshot) | — |
 | **Network** | [clash-verge-rev](https://www.clashverge.dev/) · [inetutils](https://www.gnu.org/software/inetutils/) (telnet and other network tools) | [tailscale](https://tailscale.com/) (app + CLI) | [tailscale](https://tailscale.com/) (CLI + daemon) |
-| **Utilities** | [1password-cli](https://developer.1password.com/docs/cli/) | [1password](https://1password.com/) (app, in `/Applications`) · [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) · [digup](https://github.com/ARahim3/DigUp) · [qingjian](https://qingjian.app) | [copyq](https://hluk.github.io/CopyQ/) |
+| **Utilities** | [1password-cli](https://developer.1password.com/docs/cli/) | [1password](https://1password.com/) (app, in `/Applications`) · [albert](https://albertlauncher.github.io/) · [maccy](https://maccy.app/) · [scroll-reverser](https://pilotmoon.com/scrollreverser/) · [cida](https://github.com/Xuanwo/cida) · [digup](https://github.com/ARahim3/DigUp) | [copyq](https://hluk.github.io/CopyQ/) |
 
 ## 🔧 Commands
 
