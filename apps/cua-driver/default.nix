@@ -8,8 +8,8 @@
 let
   # The signed release lives in NoSugarCoffee/nur-packages. This module only
   # puts the CLI on PATH and copies the macOS bundle to the path `mcp`
-  # relaunches. Claude Code's MCP server list is owned by dotai (APM), not
-  # by a switch.
+  # relaunches. Agents drive it through the CLI and its skill; no MCP server
+  # is registered, and any MCP list belongs to dotai (APM).
   cua-driver = pkgs.nosugarcoffee.cua-driver or null;
 
   # The package also ships $out/Applications/CuaDriver.app. home.packages
@@ -32,11 +32,13 @@ in
     packages = lib.optional (cuaDriverBin != null) cuaDriverBin;
 
     file = lib.mkIf (cua-driver != null) {
-      # The driver's own skill directory, and the Claude Code link. The
-      # Claude link targets the home copy so `cua-driver skills install`
-      # sees one pack.
+      # The driver's own skill directory, and the agent links. The links
+      # target the home copy so `cua-driver skills install` sees one pack.
+      # ~/.agents/skills serves Codex, Pi and Cursor.
       ".cua-driver/skills/cua-driver".source = cua-driver.skills;
       ".claude/skills/cua-driver".source =
+        config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/.cua-driver/skills/cua-driver";
+      ".agents/skills/cua-driver".source =
         config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/.cua-driver/skills/cua-driver";
     };
 

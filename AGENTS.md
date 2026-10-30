@@ -63,6 +63,14 @@ Names missing on a system are skipped automatically — do not cover a platform 
 Currently taken from `llm-agents`: `apm`, `ccstatusline`, `claude-code`, `claude-desktop`,
 `grok-bot`, `orca`, `paperclip`. Keep the README managed-packages table in sync when that set changes.
 
+## Boundary with dotai
+
+dotnix installs programs and their settings (binaries, apps, Claude Code / Codex / Pi settings),
+plus anything that ships with a program, such as the skill pack a package bundles: link it from
+the module so it moves with the installed version. [dotai](https://github.com/NoSugarCoffee/dotai)
+owns what agents are told: rules, global instructions, authored and vendored skills, hooks and
+MCP server lists. Don't register MCP servers or pin standalone skills here.
+
 ## Public repo
 
 No work-internal hostnames, tokens, or identities in commits or PR bodies. Work-specific git
