@@ -8,8 +8,8 @@
 let
   # The signed release lives in NoSugarCoffee/nur-packages. This module only
   # puts the CLI on PATH and copies the macOS bundle to the path `mcp`
-  # relaunches. Claude Code's MCP server list is owned by dotai (APM), not
-  # by a switch.
+  # relaunches. Agents drive it through the CLI and its skill; no MCP server
+  # is registered, and any MCP list belongs to dotai (APM).
   cua-driver = pkgs.nosugarcoffee.cua-driver or null;
 
   # The package also ships $out/Applications/CuaDriver.app. home.packages
