@@ -35,7 +35,7 @@ def extract_activation() -> str:
     text = MODULE.read_text()
     marker = text.index("sourceApp=")
     start = text.rfind("\n", 0, marker) + 1
-    end = text.index("cuaDriverMcp", marker)
+    end = text.index("\n", text.index("''", marker))
     block = text[start:end]
     closer = block.rfind("''")
     if closer < 0:

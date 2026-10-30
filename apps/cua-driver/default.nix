@@ -7,8 +7,9 @@
 }:
 let
   # The signed release lives in NoSugarCoffee/nur-packages. This module only
-  # puts the CLI on PATH, copies the macOS bundle to the path `mcp`
-  # relaunches, and registers it with Claude Code.
+  # puts the CLI on PATH and copies the macOS bundle to the path `mcp`
+  # relaunches. Claude Code's MCP server list is owned by dotai (APM), not
+  # by a switch.
   cua-driver = pkgs.nosugarcoffee.cua-driver or null;
 
   # The package also ships $out/Applications/CuaDriver.app. home.packages
@@ -25,27 +26,6 @@ let
         mkdir -p "$out/bin"
         ln -s "${cua-driver}/bin/cua-driver" "$out/bin/cua-driver"
       '';
-
-  # ~/.claude.json is the file `claude mcp add` writes and the file
-  # claude-profile syncs (SHARED_KEYS includes mcpServers). settings.json
-  # is a different file. Deep merge keeps every other server and the
-  # account fields. bounded is intentionally unset: the driver refuses to
-  # start in that mode unless CUA_DRIVER_CAPABILITY_MANIFEST_FILE and
-  # CUA_DRIVER_CAPABILITY_MANIFEST_APPROVED=1 are set, and on macOS the
-  # relaunched app does not inherit this env as its permission mode.
-  mcpServers =
-    if cuaDriverBin == null then
-      null
-    else
-      pkgs.writeText "claude-cua-driver-mcp.json" (
-        builtins.toJSON {
-          mcpServers."cua-driver" = {
-            type = "stdio";
-            command = "${cuaDriverBin}/bin/cua-driver";
-            args = [ "mcp" ];
-          };
-        }
-      );
 in
 {
   home = {
@@ -134,14 +114,6 @@ in
               $DRY_RUN_CMD ln -sfn "$sourceApp" "$marker"
             fi
           fi
-        ''
-      );
-
-      cuaDriverMcp = lib.mkIf (cua-driver != null) (
-        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${../../lib/managed_settings.py} \
-            --format json --managed ${mcpServers} \
-            --mode 600 "$HOME/.claude.json"
         ''
       );
     };
