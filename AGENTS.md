@@ -22,8 +22,10 @@ values, `managed_settings.py`).
 `~/Applications/Home Manager Apps`, except bundles containing `Contents/Library/SystemExtensions`
 (VPN, virtual camera, driver), which go to `/Applications`. macOS only activates a system
 extension from there; elsewhere it fails, and Tailscale's standalone app even aborts at launch.
-Routing is keyed on the bundle, so a new app with a system extension needs no opt-in. Don't add
-per-app symlinks or activation steps to work around placement. Ownership of an `/Applications`
+Routing is keyed on the bundle, so a new app with a system extension needs no opt-in. An app
+that checks its own path with nothing in the bundle to detect (1Password refuses to start outside
+`/Applications`) is listed in `dotnix.darwin.systemFolderApps` by its module, and then follows the
+same rules. Don't add per-app symlinks or activation steps to work around placement. Ownership of an `/Applications`
 copy is an xattr (`home-manager.copied`) on the `.app` directory, written before rsync and
 again after as a defensive restamp (the copy does not pass `-X`/`-A`).
 `~/.local/state/home-manager/copied-system-apps` is only an index for cleanup; a sweep of
