@@ -7,7 +7,10 @@
   ...
 }:
 {
-  imports = lib.mapAttrsToList (name: _: ./apps + "/${name}") (
+  imports = [
+    ./lib/system-folder-apps.nix
+  ]
+  ++ lib.mapAttrsToList (name: _: ./apps + "/${name}") (
     lib.filterAttrs (_: type: type == "directory") (builtins.readDir ./apps)
   );
   home = {
@@ -21,6 +24,7 @@
         targetFolder=${lib.escapeShellArg config.targets.darwin.copyApps.directory}
         markerFolder=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/copied-apps"}
         systemFolder=/Applications
+        systemFolderApps=(${lib.escapeShellArgs config.dotnix.darwin.systemFolderApps})
         systemMarkerFolder=${lib.escapeShellArg "${config.xdg.stateHome}/home-manager/copied-system-apps"}
         sourceFolder=${
           pkgs.buildEnv {
@@ -48,6 +52,18 @@
         # so a new app that ships one needs no per-app opt-in.
         hasSystemExtension() {
           [[ -d "$1/Contents/Library/SystemExtensions" ]]
+        }
+
+        # Some apps check their own path and refuse to run elsewhere (1Password:
+        # "not installed inside of /Applications") with nothing in the bundle
+        # to detect; their modules list them in dotnix.darwin.systemFolderApps.
+        needsSystemFolder() {
+          local storePath="$1" name="$2" listed
+          hasSystemExtension "$storePath" && return 0
+          for listed in "''${systemFolderApps[@]}"; do
+            [[ "$listed" == "$name" ]] && return 0
+          done
+          return 1
         }
 
         # Ownership of an /Applications copy is bound to the bundle, not the
@@ -181,7 +197,7 @@
           # --delete. A dest we already stamped stays ours so an interrupted
           # copy (rsync then crash before the sidecar) can finish.
           removeStale=1
-          if hasSystemExtension "$storePath"; then
+          if needsSystemFolder "$storePath" "$name"; then
             # /Applications is root:admin 0775, so an admin account writes it
             # without sudo; anyone else keeps the old behaviour plus a hint.
             if [[ -w "$systemFolder" ]]; then
@@ -214,7 +230,7 @@
                 staleMarkerFolder=$markerFolder
               fi
             else
-              echo "warning: $name ships a system extension, which macOS only loads from $systemFolder; that is not writable by $USER, so $name stays in $targetFolder" >&2
+              echo "warning: $name only works from $systemFolder, which is not writable by $USER, so $name stays in $targetFolder" >&2
             fi
           fi
           marker="$appMarkerFolder/$name"

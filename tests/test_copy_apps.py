@@ -64,6 +64,12 @@ def extract_copyapps_block() -> str:
         count=1,
     )
     block = re.sub(
+        r"systemFolderApps=\(\$\{lib\.escapeShellArgs config\.dotnix\.darwin\.systemFolderApps\}\)",
+        "systemFolderApps=($SYSTEM_FOLDER_APPS)",
+        block,
+        count=1,
+    )
+    block = re.sub(
         r"systemMarkerFolder=\$\{lib\.escapeShellArg \"\$\{config\.xdg\.stateHome\}/home-manager/copied-system-apps\"\}",
         "systemMarkerFolder=$SYSTEM_MARKER_FOLDER",
         block,
@@ -130,6 +136,7 @@ class CopyAppsTest(unittest.TestCase):
         self.markers = self.box / "state" / "copied-apps"
         self.sys_markers = self.box / "state" / "copied-system-apps"
         self.home = self.box / "home"
+        self.system_folder_apps = ""
         for path in (self.source, self.hm, self.apps, self.markers, self.sys_markers, self.home):
             path.mkdir(parents=True)
 
@@ -143,6 +150,7 @@ class CopyAppsTest(unittest.TestCase):
                 "SYSTEM_MARKER_FOLDER": str(self.sys_markers),
                 "SOURCE_FOLDER": str(self.source),
                 "HOME": str(self.home),
+                "SYSTEM_FOLDER_APPS": self.system_folder_apps,
             }
         )
         return env
@@ -217,6 +225,22 @@ class CopyAppsTest(unittest.TestCase):
             capture_output=True,
             check=False,
         )
+
+    def test_listed_app_without_extension_goes_to_system_folder(self) -> None:
+        self.make_app(self.source / "Vault.app", ext=False, bundle_id="com.example.vault")
+        self.system_folder_apps = "Vault.app"
+        result = self.run_copyapps()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.apps / "Vault.app" / "Contents" / "MacOS" / "app").read_text(), "store-bytes\n")
+        self.assertTrue(self.has_sentinel(self.apps / "Vault.app"))
+        self.assertFalse((self.hm / "Vault.app").exists())
+
+    def test_unlisted_app_without_extension_stays_in_target_folder(self) -> None:
+        self.make_app(self.source / "Plain.app", ext=False, bundle_id="com.example.plain")
+        result = self.run_copyapps()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.hm / "Plain.app").exists())
+        self.assertFalse((self.apps / "Plain.app").exists())
 
     def test_hand_installed_without_sidecar_is_left_alone(self) -> None:
         self.make_app(self.source / "ExtApp.app")
