@@ -1,0 +1,19 @@
+apps/cua-driver/default.nix
+  s_369fe18834b3cd::t_297bda3df989d6 35-37,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "adf20914d23c6900fb9f2c89f123d89cfe434535",
+  "prompts": {},
+  "sessions": {
+    "s_369fe18834b3cd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57650b8a-ef22-4d5f-b505-8b8be3f006b2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
