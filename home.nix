@@ -333,9 +333,15 @@
 
         # A crash can leave an owned bundle with no sidecar. The sidecar
         # loop above would miss it; sweep /Applications for our sentinel.
+        # CuaDriver.app is stamped with the same xattr by apps/cua-driver,
+        # which copies it to /Applications itself. Only its bin is on PATH,
+        # so it is never in $sourceFolder; this sweep must not remove it.
         for app in "$systemFolder"/*.app; do
           [[ -e "$app" ]] || continue
           name=$(basename "$app")
+          if [[ "$name" == "CuaDriver.app" ]]; then
+            continue
+          fi
           if hasCopySentinel "$app" && [[ ! -e "$sourceFolder/$name" ]]; then
             echo "removing $name from $systemFolder..." >&2
             run rm -rf "$app"

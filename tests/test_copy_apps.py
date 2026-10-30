@@ -370,6 +370,24 @@ class CopyAppsTest(unittest.TestCase):
         self.assertFalse(orphan.exists())
         self.assertTrue((self.hm / "Other.app").exists())
 
+    def test_cua_driver_stamp_in_applications_is_not_swept(self) -> None:
+        # apps/cua-driver owns /Applications/CuaDriver.app and stamps it.
+        # copyApps must not treat that stamp as a leftover system-extension app.
+        self.make_app(self.source / "Other.app", ext=False, bundle_id="com.example.other")
+        kept = self.make_app(self.apps / "CuaDriver.app", ext=False, bundle_id="com.trycua.driver", payload="OURS\n")
+        self.stamp(kept, "/nix/store/cua-driver/Applications/CuaDriver.app")
+        duplicate = self.make_app(
+            self.hm / "CuaDriver.app",
+            ext=False,
+            bundle_id="com.trycua.driver",
+            payload="HOME-MANAGER-APPS\n",
+        )
+        result = self.run_copyapps()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(kept.is_dir())
+        self.assertEqual((kept / "Contents" / "MacOS" / "app").read_text(), "OURS\n")
+        self.assertFalse(duplicate.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
