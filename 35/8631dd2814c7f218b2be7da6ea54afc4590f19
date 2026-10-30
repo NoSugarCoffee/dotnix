@@ -1,0 +1,19 @@
+README.md
+  s_a2fde11029b2e4::t_0cf2b311b9339a 81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "358631dd2814c7f218b2be7da6ea54afc4590f19",
+  "prompts": {},
+  "sessions": {
+    "s_a2fde11029b2e4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18d56-2842-7690-bd27-20943adc110a",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
