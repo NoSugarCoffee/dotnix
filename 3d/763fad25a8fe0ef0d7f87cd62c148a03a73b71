@@ -1,0 +1,21 @@
+lib/system-folder-apps.nix
+  s_38bdb33047b421::t_729fb6c5b31c21 1-13
+apps/1password/default.nix
+  s_38bdb33047b421::t_94ab56df2834ed 1-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "3d763fad25a8fe0ef0d7f87cd62c148a03a73b71",
+  "prompts": {},
+  "sessions": {
+    "s_38bdb33047b421": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a94888e2-db17-4f31-a432-4fd81f100973",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
