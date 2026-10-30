@@ -158,6 +158,10 @@ class CuaDriverAppActivationTest(unittest.TestCase):
         self.make_installed("OLD\n")
         stamp(self.dest, "old-store")
         self.marker.symlink_to(self.box / "old-store")
+        # Nix store bundles are mode 555. ditto keeps that, and stamping then
+        # fails unless the staged copy is made writable first.
+        for path in [self.store, *self.store.rglob("*")]:
+            path.chmod(0o555)
         result = self.run_activation(
             stubs={
                 "ditto": 'cp -a "$1" "$2"\n',

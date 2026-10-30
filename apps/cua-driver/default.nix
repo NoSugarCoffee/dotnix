@@ -108,14 +108,20 @@ in
           else
             $DRY_RUN_CMD mkdir -p "$(dirname "$marker")"
             $DRY_RUN_CMD rm -rf "$staging"
+            # The store bundle is mode 555. ditto keeps that, and xattr/rm then
+            # fail on the staged copy (macOS CI aborted the whole switch).
+            # Owner can chmod a 555 tree; the signature hashes contents, not mode.
             if ! $DRY_RUN_CMD /usr/bin/ditto "$sourceApp" "$staging"; then
               warnEcho "cua-driver: copying CuaDriver.app to $destParent failed"
+            elif ! $DRY_RUN_CMD /bin/chmod -R u+w "$staging"; then
+              warnEcho "cua-driver: could not make the staged CuaDriver.app writable"
+              $DRY_RUN_CMD rm -rf "$staging" || warnEcho "cua-driver: could not remove $staging"
             elif ! $DRY_RUN_CMD /usr/bin/codesign --verify --deep --strict "$staging"; then
               warnEcho "cua-driver: copied CuaDriver.app failed signature verification; the previous app was left in place"
-              $DRY_RUN_CMD rm -rf "$staging"
+              $DRY_RUN_CMD rm -rf "$staging" || warnEcho "cua-driver: could not remove $staging"
             elif ! writeCopySentinel "$staging" "$sourceApp"; then
               warnEcho "cua-driver: failed to stamp CuaDriver.app; leaving the previous app in place"
-              $DRY_RUN_CMD rm -rf "$staging"
+              $DRY_RUN_CMD rm -rf "$staging" || warnEcho "cua-driver: could not remove $staging"
             else
               # Only reached when $dest is missing or already stamped.
               # The running daemon holds the old binary.
