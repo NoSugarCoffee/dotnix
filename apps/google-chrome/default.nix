@@ -23,7 +23,6 @@
         "Grammarly" = "kbfnbcaeplbcioakkpcpgfkobkghlhen";
         "JSONView" = "cgphfnglahpambfhocchajalljaeegef";
         "Obsidian Web Clipper" = "cnjifjpddelmedmihgijeibhnjfabmlf";
-        "Proxy SwitchyOmega (V3)" = "hihblcmlaaademjlakdpicchbjnnnkbo";
         "React Developer Tools" = "fmkadmapgofadopljbjfkapdkoienihi";
         "RSS Subscription Extension" = "nlbjncdgjeocebhnmkbbbdekmmmcbfjd";
         "Sourcegraph" = "dgjhfomjieaadpoljlnidmbgkdffpack";
