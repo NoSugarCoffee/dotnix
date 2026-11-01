@@ -1,0 +1,22 @@
+apps/google-chrome/default.nix
+  s_3986d316c263f6::t_6f6c005223dff3 16-33
+  s_3986d316c263f6::t_a5019c04b9eeb1 13-15,34
+README.md
+  s_3986d316c263f6::t_c4e688158ce991 138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "f74625238e4fbcf93680fec4fdab31d235d310fa",
+  "prompts": {},
+  "sessions": {
+    "s_3986d316c263f6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ebd12d6-7799-4c2d-87a4-a0fc926195a2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
