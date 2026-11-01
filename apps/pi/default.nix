@@ -7,17 +7,19 @@
 let
   # Pi user extensions: computer-use (screen/GUI), browser-native (web automation),
   # a2a-adaptor (agent-to-agent calls), provider-kiro (Kiro API model provider,
-  # OAuth-authenticated), auto-name (names the Pi session and the containing
-  # tmux/herdr/zellij surfaces from the conversation). These are not ordinary
-  # packages on PATH; they are Pi agent capabilities installed into
-  # ~/.pi/agent/npm/node_modules/ via `pi install`. An activation script ensures
-  # they exist after a fresh machine bootstrap, so switching PCs doesn't require
-  # manual re-installation.
+  # OAuth-authenticated), provider-opencode-console (OpenCode Console and Go model
+  # providers, device-code OAuth and live model discovery), auto-name (names the
+  # Pi session and the containing tmux/herdr/zellij surfaces from the
+  # conversation). These are not ordinary packages on PATH; they are Pi agent
+  # capabilities installed into ~/.pi/agent/npm/node_modules/ via `pi install`. An
+  # activation script ensures they exist after a fresh machine bootstrap, so
+  # switching PCs doesn't require manual re-installation.
   piExtensions = [
     "npm:@injaneity/pi-computer-use"
     "npm:pi-agent-browser-native"
     "npm:pi-a2a-adaptor"
     "npm:pi-provider-kiro"
+    "npm:pi-provider-opencode-console"
     "npm:@normful/pi-auto-name"
   ];
   # Extension sources that must not linger on the machine, either because they
@@ -26,12 +28,18 @@ let
   # package, remote-pi and pi-mcp-adapter were removed deliberately, and
   # pi-zellij-tab-namer was superseded by @normful/pi-auto-name (it called modelRegistry.getApiKey,
   # removed in current Pi, so it silently never renamed anything). `pi remove`
-  # drops them from ~/.pi/agent/settings.json.
+  # drops them from ~/.pi/agent/settings.json. pi-opencode-go-provider was a second,
+  # redundant OpenCode Go provider (monotykamary, registering provider id
+  # `opencode-go`) installed by hand both from npm and as a git clone;
+  # pi-provider-opencode-console covers the same accounts as `opencode-go-console`,
+  # so both of its sources are pruned.
   piRemovedExtensions = [
     "npm:pi-computer-use"
     "npm:remote-pi"
     "npm:pi-mcp-adapter"
     "npm:pi-zellij-tab-namer"
+    "npm:pi-opencode-go-provider"
+    "https://github.com/monotykamary/pi-opencode-go-provider"
   ];
 in
 {
