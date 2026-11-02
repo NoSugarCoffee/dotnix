@@ -15,6 +15,7 @@ from typing import Callable, Literal
 Format = Literal["json", "toml"]
 
 TOML_TABLE = re.compile(r"^\s*\[")
+TOML_TABLE_HEADER = re.compile(r"^\s*\[\s*([A-Za-z0-9_-]+)\s*\]\s*(?:#.*)?$")
 TOML_ASSIGNMENT = re.compile(r"^\s*([A-Za-z0-9_-]+)\s*=")
 
 
@@ -27,29 +28,61 @@ def merge_json(current: str, managed: str) -> str:
     return json.dumps(merged, indent=2, ensure_ascii=False) + "\n"
 
 
+def _toml_section_end(lines: list[str], start: int) -> int:
+    return next((i for i in range(start, len(lines)) if TOML_TABLE.match(lines[i])), len(lines))
+
+
+def _set_toml_keys(lines: list[str], start: int, end: int, values: dict[str, object]) -> list[str]:
+    replacements = {key: f"{key} = {json.dumps(value)}\n" for key, value in values.items()}
+    updated = list(lines)
+    seen: set[str] = set()
+    for index in range(start, end):
+        match = TOML_ASSIGNMENT.match(updated[index])
+        if match and match.group(1) in replacements:
+            updated[index] = replacements[match.group(1)]
+            seen.add(match.group(1))
+    missing = [line for key, line in replacements.items() if key not in seen]
+    if missing and end and not updated[end - 1].endswith("\n"):
+        missing.insert(0, "\n")
+    return updated[:end] + missing + updated[end:]
+
+
+def _set_toml_table(lines: list[str], name: str, values: dict[str, object]) -> list[str]:
+    header = next((i for i, line in enumerate(lines) if (m := TOML_TABLE_HEADER.match(line)) and m.group(1) == name), None)
+    if header is None:
+        trailer = "" if not lines or lines[-1].endswith("\n") else "\n"
+        table = [f"{trailer}\n[{name}]\n", *(f"{key} = {json.dumps(value)}\n" for key, value in values.items())]
+        return lines + table
+    return _set_toml_keys(lines, header + 1, _toml_section_end(lines, header + 1), values)
+
+
 def merge_toml(current: str, managed: str) -> str:
     _load_toml(current, "current")
     values = _load_toml(managed, "managed")
-    tables = [key for key, value in values.items() if isinstance(value, dict)]
-    if tables:
-        raise ManagedSettingsError(f"managed TOML may only hold top-level keys, found tables {tables}")
-    replacements = {key: f"{key} = {json.dumps(value)}\n" for key, value in values.items()}
+    root = {key: value for key, value in values.items() if not isinstance(value, dict)}
+    tables = {key: value for key, value in values.items() if isinstance(value, dict)}
+    nested = [f"{name}.{key}" for name, table in tables.items() for key, value in table.items() if isinstance(value, dict)]
+    if nested:
+        raise ManagedSettingsError(f"managed TOML may only hold top-level keys and one level of tables, found {nested}")
     lines = current.splitlines(keepends=True)
-    root_end = next((i for i, line in enumerate(lines) if TOML_TABLE.match(line)), len(lines))
-    seen: set[str] = set()
-    for index in range(root_end):
-        match = TOML_ASSIGNMENT.match(lines[index])
-        if match and match.group(1) in replacements:
-            lines[index] = replacements[match.group(1)]
-            seen.add(match.group(1))
-    missing = [line for key, line in replacements.items() if key not in seen]
-    if missing:
-        if root_end and not lines[root_end - 1].endswith("\n"):
-            missing.insert(0, "\n")
-        lines[root_end:root_end] = missing
+    lines = _set_toml_keys(lines, 0, _toml_section_end(lines, 0), root)
+    for name, table in tables.items():
+        lines = _set_toml_table(lines, name, table)
     result = "".join(lines)
-    _load_toml(result, "merged")
+    merged = _load_toml(result, "merged")
+    drifted = sorted(key for key, value in values.items() if not _toml_contains(merged.get(key), value))
+    if drifted:
+        raise ManagedSettingsError(
+            f"managed keys {drifted} are set in a form this merge cannot rewrite (dotted key or inline table); "
+            "move them under a plain [table] header"
+        )
     return result
+
+
+def _toml_contains(actual: object, expected: object) -> bool:
+    if isinstance(expected, dict):
+        return isinstance(actual, dict) and all(_toml_contains(actual.get(k), v) for k, v in expected.items())
+    return actual == expected
 
 
 MERGERS: dict[Format, Callable[[str, str], str]] = {"json": merge_json, "toml": merge_toml}

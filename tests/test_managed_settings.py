@@ -73,9 +73,49 @@ class ManagedSettingsTest(unittest.TestCase):
         self.assertFalse(changed)
         self.assertIn('model = "mini"', target.read_text())
 
-    def test_managed_toml_with_tables_is_rejected(self) -> None:
+    def test_toml_sets_managed_key_inside_an_existing_table_and_keeps_its_siblings(self) -> None:
+        current = 'model = "m"\n\n[features]\nhooks = true\nmemories = true\n\n[tui]\nnotifications = true\n'
+
+        merged = managed_settings.merge_toml(current, "[features]\nmemories = false\n")
+
+        self.assertEqual(
+            merged, 'model = "m"\n\n[features]\nhooks = true\nmemories = false\n\n[tui]\nnotifications = true\n'
+        )
+
+    def test_toml_adds_managed_key_to_an_existing_table_that_lacks_it(self) -> None:
+        merged = managed_settings.merge_toml("[features]\nhooks = true\n", "[features]\nmemories = false\n")
+
+        self.assertEqual(tomllib.loads(merged)["features"], {"hooks": True, "memories": False})
+
+    def test_toml_appends_a_missing_managed_table(self) -> None:
+        merged = managed_settings.merge_toml('model = "m"', "[features]\nmemories = false\n")
+
+        self.assertEqual(merged, 'model = "m"\n\n[features]\nmemories = false\n')
+
+    def test_toml_leaves_a_same_named_table_key_in_another_table_alone(self) -> None:
+        current = "[profiles.fast.features]\nmemories = true\n"
+
+        merged = managed_settings.merge_toml(current, "[features]\nmemories = false\n")
+
+        config = tomllib.loads(merged)
+        self.assertIs(config["profiles"]["fast"]["features"]["memories"], True)
+        self.assertIs(config["features"]["memories"], False)
+
+    def test_toml_refuses_a_managed_key_it_cannot_rewrite(self) -> None:
         with self.assertRaises(managed_settings.ManagedSettingsError):
-            managed_settings.merge_toml("", "[tui]\nnotifications = true\n")
+            managed_settings.merge_toml("features.memories = true\n", "[features]\nmemories = false\n")
+
+    def test_managed_toml_with_nested_tables_is_rejected(self) -> None:
+        with self.assertRaises(managed_settings.ManagedSettingsError):
+            managed_settings.merge_toml("", "[tui.sub]\nnotifications = true\n")
+
+    def test_switch_turns_codex_memories_back_off(self) -> None:
+        target = self.dir / "config.toml"
+        target.write_text('model = "m"\n\n[features]\nhooks = true\nmemories = true\n')
+
+        managed_settings.sync("toml", CODEX_MANAGED, CODEX_SEED, target, 0o600)
+
+        self.assertEqual(tomllib.loads(target.read_text())["features"], {"hooks": True, "memories": False})
 
     def test_json_deep_merges_objects_and_replaces_arrays(self) -> None:
         target = self.dir / "settings.json"
