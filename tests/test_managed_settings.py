@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import tomllib
@@ -21,6 +22,16 @@ _spec.loader.exec_module(managed_settings)
 
 CODEX_MANAGED = (REPO / "apps" / "codex" / "managed.toml").read_text()
 CODEX_SEED = (REPO / "apps" / "codex" / "config.toml").read_text()
+
+
+def render_claude_managed_settings() -> str:
+    return subprocess.run(
+        [
+            "nix-instantiate", "--eval", "--strict", "--json",
+            "--expr", f"import {REPO / 'apps' / 'claude-code' / 'settings.nix'} {{ proxyUrl = \"\"; noProxy = \"\"; }}",
+        ],
+        check=True, capture_output=True, text=True,
+    ).stdout
 
 
 class ManagedSettingsTest(unittest.TestCase):
@@ -82,6 +93,14 @@ class ManagedSettingsTest(unittest.TestCase):
             "permissions": {"deny": ["Read(.env)"], "allow": ["Bash"]},
             "enabledPlugins": {"x": True},
         })
+
+    def test_switch_turns_claude_auto_memory_back_off_after_memory_toggle(self) -> None:
+        target = self.dir / "settings.json"
+        target.write_text(json.dumps({"autoMemoryEnabled": True}))
+
+        managed_settings.sync("json", render_claude_managed_settings(), "{}\n", target, 0o644)
+
+        self.assertIs(json.loads(target.read_text())["autoMemoryEnabled"], False)
 
     def test_json_keeps_non_ascii_unescaped(self) -> None:
         target = self.dir / "settings.json"

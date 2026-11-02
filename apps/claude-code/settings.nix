@@ -20,6 +20,7 @@
   theme = "dark";
   tui = "fullscreen";
   remoteControlAtStartup = true;
+  autoMemoryEnabled = false;
   # Names the ccstatusline binary as Claude Code's status line. Widget layout
   # remains machine-owned in ~/.config/ccstatusline/settings.json.
   statusLine = {
