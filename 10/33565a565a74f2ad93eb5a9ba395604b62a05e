@@ -1,0 +1,21 @@
+tests/test_managed_settings.py
+  s_3e84269f55ed92::t_f0af25c97e7057 9,27-36,97-103
+apps/claude-code/settings.nix
+  s_3e84269f55ed92::t_f0af25c97e7057 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "1033565a565a74f2ad93eb5a9ba395604b62a05e",
+  "prompts": {},
+  "sessions": {
+    "s_3e84269f55ed92": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8f00e76-cc4c-4030-87f0-99ad769e0e27",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
