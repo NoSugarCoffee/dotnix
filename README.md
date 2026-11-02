@@ -131,6 +131,7 @@ line-level and fails loudly if either doesn't match.
 
 ## 📝 Notes
 
+- **macOS Open With uses the current app copies.** After copying apps, each switch registers the real apps in `~/Applications/Home Manager Apps` and Home Manager-owned apps in `/Applications`, then unregisters `/nix/store` bundles with matching bundle identifiers. Apps belonging only to other profiles keep their registrations, and old Nix generations remain available for rollback. Opening a store bundle directly can register it again; run `bash scripts/refresh-macos-apps.sh` to clean the menu without switching or deleting generations.
 - **zsh is managed.** Move an existing `~/.zshrc` aside before the first switch; machine-local config goes in an untracked `~/.zshrc-local`.
 - **git config is not.** Per-checkout identity needs `includeIf` paths, so `~/.gitconfig` is hand-written.
 - **Codex and Claude Code settings stay writable.** A switch seeds them if missing and resets only the keys declared in `apps/codex/managed.toml` and `apps/claude-code/settings.nix`.

@@ -351,6 +351,15 @@
       ''
     )
   );
+  # Old store bundles stay registered even while generations are retained for
+  # rollback. Remove duplicates of managed copies, preserving other profiles.
+  home.activation.refreshMacOSApps = lib.mkIf config.targets.darwin.copyApps.enable (
+    lib.hm.dag.entryAfter [ "copyApps" "cuaDriverApp" ] ''
+      run ${lib.getExe pkgs.bash} ${./scripts/refresh-macos-apps.sh} \
+        ${lib.escapeShellArg "${homeDirectory}/${config.targets.darwin.copyApps.directory}"} \
+        || warnEcho "Could not fully refresh LaunchServices; rerun scripts/refresh-macos-apps.sh."
+    ''
+  );
   # home-manager's setupLaunchAgents stops a changed agent with
   # `launchctl bootout --wait`, which older launchctl (macOS 15.1) rejects as
   # "Unrecognized target specifier". The old job then stays loaded, the
