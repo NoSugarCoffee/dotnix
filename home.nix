@@ -352,7 +352,7 @@
     )
   );
   # Old store bundles stay registered even while generations are retained for
-  # rollback. Keep Finder's Open With menu pointed at the current real copies.
+  # rollback. Remove duplicates of managed copies, preserving other profiles.
   home.activation.refreshMacOSApps = lib.mkIf config.targets.darwin.copyApps.enable (
     lib.hm.dag.entryAfter [ "copyApps" "cuaDriverApp" ] ''
       run ${lib.getExe pkgs.bash} ${./scripts/refresh-macos-apps.sh} \
