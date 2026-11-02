@@ -1,0 +1,26 @@
+README.md
+  s_05a448da353aa2::t_edaed464634a86 134
+home.nix
+  s_05a448da353aa2::t_edaed464634a86 355
+scripts/refresh-macos-apps.sh
+  s_05a448da353aa2::t_edaed464634a86 2,9-10,18-22,31-42,46,48-49,54-74,76,82
+tests/test_refresh_macos_apps.py
+  s_05a448da353aa2::t_3c4edfe2a3ad21 49
+  s_05a448da353aa2::t_bb42abe36bb128 1,5,17-48,50-82,84-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.51-trip",
+  "base_commit_sha": "fc24197d801fb1395c107a3baa5a748833f8ba2d",
+  "prompts": {},
+  "sessions": {
+    "s_05a448da353aa2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19cfb-7b14-7a21-b6d1-e0839db99132",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
