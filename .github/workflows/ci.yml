@@ -73,6 +73,18 @@ jobs:
               exit $status
             '
 
+      # nix flake check does not instantiate home.packages, and the macOS job
+      # below only builds aarch64-darwin. Importing nixpkgs-unstable throws on
+      # x86_64-darwin; force the package list for every homeConfiguration.
+      - name: Evaluate home.packages for every homeConfiguration
+        run: |
+          set -euo pipefail
+          user=$(nix eval --raw .#username)
+          for name in "$user" "${user}-x86_64-linux" "${user}-aarch64-darwin" "${user}-x86_64-darwin"; do
+            count=$(nix eval ".#homeConfigurations.\"${name}\".config.home.packages" --apply 'ps: builtins.length ps')
+            echo "$name: $count packages"
+          done
+
       # The one-liner applies this config to whatever $USER/$HOME say by
       # running scripts/inject-account.sh against a throwaway copy of the
       # source with no `.git` present -- like the real tarball download. That
