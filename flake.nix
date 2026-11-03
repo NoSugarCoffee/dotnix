@@ -57,24 +57,34 @@
         "x86_64-darwin"
       ];
       forAllSystems = lib.genAttrs systems;
-      extraPackagesOverlay = final: prev: {
-        # NoSugarCoffee/nur-packages under its own namespace, prebuilt for
-        # the systems it ships. nixpkgs-unstable dropped x86_64-darwin, so
-        # there its overlay builds them against our 26.05 instead (the pins
-        # keep their Intel hashes); either way only what the system supports.
-        nosugarcoffee =
-          nur-packages.packages.${final.stdenv.hostPlatform.system}
-            or (lib.filterAttrs (
-              _: lib.meta.availableOn final.stdenv.hostPlatform
-            ) (nur-packages.overlays.default final prev).nosugarcoffee);
-        # code-cursor from unstable: the stable branch pins 3.5.17, dozens of
-        # releases behind upstream, and Cursor nags to update on every launch.
-        inherit (mkPkgsUnstable final.stdenv.hostPlatform.system)
-          macshot
-          code-cursor
-          codex
-          ;
-      };
+      # nixpkgs-unstable (26.11) throws while evaluating on x86_64-darwin, so
+      # that import stays inside the non-Intel branch of each attribute.
+      # `// lib.optionalAttrs (final.stdenv.hostPlatform.system != ...)` at
+      # this overlay's root recurses: the fixpoint needs the attribute names
+      # before stdenv exists. Intel keeps the 26.05 attributes. macshot is
+      # not in 26.05, so it is null there and the module omits it.
+      extraPackagesOverlay =
+        final: prev:
+        let
+          system = final.stdenv.hostPlatform.system;
+          unstable = mkPkgsUnstable system;
+        in
+        {
+          # NoSugarCoffee/nur-packages under its own namespace, prebuilt for
+          # the systems it ships. nixpkgs-unstable dropped x86_64-darwin, so
+          # there its overlay builds them against our 26.05 instead (the pins
+          # keep their Intel hashes); either way only what the system supports.
+          nosugarcoffee =
+            nur-packages.packages.${system}
+              or (lib.filterAttrs (
+                _: lib.meta.availableOn final.stdenv.hostPlatform
+              ) (nur-packages.overlays.default final prev).nosugarcoffee);
+          # code-cursor from unstable: the stable branch pins 3.5.17, dozens of
+          # releases behind upstream, and Cursor nags to update on every launch.
+          macshot = if system == "x86_64-darwin" then prev.macshot or null else unstable.macshot;
+          code-cursor = if system == "x86_64-darwin" then prev.code-cursor else unstable.code-cursor;
+          codex = if system == "x86_64-darwin" then prev.codex else unstable.codex;
+        };
       mkPkgsUnstable =
         system:
         import nixpkgs-unstable {
