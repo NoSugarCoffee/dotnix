@@ -81,7 +81,7 @@ jobs:
           set -euo pipefail
           user=$(nix eval --raw .#username)
           for name in "$user" "${user}-x86_64-linux" "${user}-aarch64-darwin" "${user}-x86_64-darwin"; do
-            count=$(nix eval ".#homeConfigurations.\"${name}\".config.home.packages" --apply 'ps: builtins.length ps')
+            count=$(nix eval ".#homeConfigurations.\"${name}\".config.home.packages" --apply 'ps: assert builtins.all (p: builtins.isString p.drvPath) ps; builtins.length ps')
             echo "$name: $count packages"
           done
 
