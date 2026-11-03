@@ -1,2 +1,2 @@
-`sha256: 3e8cd45a75886668c002724508490e2377321574f3f29a132790a08da1ab4002`
-Reproducible Home Manager dotfiles for Linux and macOS on nixpkgs/Home Manager 26.05. Covers direct macOS bootstrap, proxy-aware first switch, managed packages and Chrome extensions, Pi extensions, commands, automated flake updates, fork username flow, Colima, asdf, Claude profiles, CUA Driver, and managed versus local settings.
+`sha256: 670a382b318f3202f28ca8fb7fcd25dd92f417bbdaea83c77368ad098ec42a26`
+Reproducible Home Manager dotfiles for Linux and macOS on nixpkgs/Home Manager 26.05. Documents bootstrap, proxy-aware switching, managed packages, platform behavior, commands, and managed versus machine-local settings.

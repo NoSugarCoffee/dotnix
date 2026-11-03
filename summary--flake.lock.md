@@ -1,2 +1,2 @@
-`sha256: f6962e83c8f2b26f078e6f45394708d08cdeb99b8dfa9161b9842a098a612a2b`
-Locked flake graph for nixpkgs, Home Manager, pi.nix, llm-agents.nix, NoSugarCoffee/nur-packages, and supporting inputs, including exact revisions, timestamps, nar hashes, and transitive package graphs. The current lock reflects the latest automated input refresh.
+`sha256: 7d8ce7ec412f848f9c4fa7dbbc1f4a94abbcf83c7f5b733d90d56ed0dc6e3e3d`
+Locked flake graph for nixpkgs, Home Manager, pi.nix, llm-agents.nix, NoSugarCoffee/nur-packages, and transitive inputs. Reflects the latest automated input refresh.

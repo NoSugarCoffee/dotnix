@@ -1,2 +1,2 @@
-`c10a8bc32d07f964b854a2fc198183a40a655a5440b328a47dcb78bc6bc4f395`
-Imports every apps directory, sets username/home path, enables Home Manager, copies macOS apps with bundle sentinels and optional local code-signing identity, preserves privacy grants, and handles system-extension placement and cleanup.
+`sha256: b5a83da15999dc6571f0b94474b826a8598b784865d73524d0a1dac6af250900`
+Imports every apps directory, configures shared and platform-specific packages, settings, shell paths, launchd jobs, Nix GC, and macOS app copying. App bundles are routed by system-extension detection or module opt-in and stamped for ownership; current activation also refreshes LaunchServices with a dedicated awk path.
