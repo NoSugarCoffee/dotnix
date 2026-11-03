@@ -6,6 +6,26 @@
   pkgs,
   ...
 }:
+let
+  # Home Manager activation (stateVersion >= 22.11) starts from an empty PATH
+  # and adds only bash, coreutils, diffutils, findutils, gettext, gnugrep,
+  # gnused, jq, ncurses, and nix. This script also calls awk, which is not in
+  # that set, so the store copy fails with "awk: command not found". The
+  # wrapper puts every external command the script invokes on PATH itself.
+  # LaunchServices, PlistBuddy, and xattr stay absolute macOS paths inside
+  # scripts/refresh-macos-apps.sh, which remains runnable on its own.
+  refreshMacOSApps = pkgs.writeShellApplication {
+    name = "refresh-macos-apps";
+    runtimeInputs = [
+      pkgs.coreutils # mktemp, rm, sort
+      pkgs.gawk # awk
+      pkgs.gnugrep # grep
+    ];
+    # This nixpkgs writeShellApplication does not set meta.mainProgram.
+    meta.mainProgram = "refresh-macos-apps";
+    text = builtins.readFile ./scripts/refresh-macos-apps.sh;
+  };
+in
 {
   imports = [
     ./lib/system-folder-apps.nix
@@ -355,7 +375,7 @@
   # rollback. Remove duplicates of managed copies, preserving other profiles.
   home.activation.refreshMacOSApps = lib.mkIf config.targets.darwin.copyApps.enable (
     lib.hm.dag.entryAfter [ "copyApps" "cuaDriverApp" ] ''
-      run ${lib.getExe pkgs.bash} ${./scripts/refresh-macos-apps.sh} \
+      run ${lib.getExe refreshMacOSApps} \
         ${lib.escapeShellArg "${homeDirectory}/${config.targets.darwin.copyApps.directory}"} \
         || warnEcho "Could not fully refresh LaunchServices; rerun scripts/refresh-macos-apps.sh."
     ''
