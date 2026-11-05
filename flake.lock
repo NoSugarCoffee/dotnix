@@ -291,11 +291,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1793833157,
-        "narHash": "sha256-YqzahggC8S/i6m+9TuWSO3ZL8m0HaNom7Txq8dWw+q8=",
+        "lastModified": 1793888921,
+        "narHash": "sha256-P7NtHs3ipX1fr83Z4B3IK82S9LDFtY8XmzycoVWRZso=",
         "owner": "NoSugarCoffee",
         "repo": "nur-packages",
-        "rev": "8575fed2227c9727882a5355610e8e7ffa1a4939",
+        "rev": "1cba9a2e40f4a01bd75be4c62b2be3cf3ae6c213",
         "type": "github"
       },
       "original": {
