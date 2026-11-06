@@ -117,3 +117,29 @@ The five default triage labels are used as-is (`needs-triage`, `needs-info`, `re
 
 Single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root, both created when first
 needed. See `docs/agents/domain.md`.
+
+## Cursor Cloud specific instructions
+
+Cloud Agent VMs do not run systemd, so Nix is a single-user install (`--no-daemon`), not the
+Determinate multi-user daemon `scripts/bootstrap-macos.sh` configures on macOS. Login shells
+source `/etc/profile.d/nix.sh`, a copy of the installer's script: Home Manager replaces
+`~/.nix-profile`, and the copy still adds `$HOME/.nix-profile/bin` to `PATH`. `nix` is also
+linked into `/usr/local/bin`.
+
+`~/.config/nix/nix.conf` trusts `cache.nixos.org`, `cache.numtide.com`,
+`nosugarcoffee.cachix.org`, `pi.cachix.org`, and `nix-community.cachix.org`, with
+cache.nixos.org first. `apps/nix/default.nix` prefers the China mirrors on a desktop; those
+are the wrong order from this network. `pi.cachix.org` and `nix-community.cachix.org` are
+what keep `pi-coding-agent` from building Node from source.
+
+- Tests: `nix develop -c just test` from the flake root. `just` is only in the devShell.
+  The recipe uses host `python3` and nixpkgs bash, rsync, and coreutils.
+- Lint uses the same tools as the `lint` job in `.github/workflows/ci.yml`: `statix`,
+  `deadnix`, `nixfmt`, `ruff`, and `shellcheck`, via `nix shell --inputs-from .`.
+- Linux closure, same as `build-linux`: `nix build .#homeConfigurations.$(nix eval --raw .#username)-x86_64-linux.activationPackage`.
+  `nix flake check` does not instantiate `home.packages`; the lint job evaluates those
+  separately.
+- Do not run `just switch` here. It applies the personal account in `flake.nix`, installs
+  asdf languages under that home, and the managed shell exports `HTTP_PROXY` and
+  `HTTPS_PROXY` at `127.0.0.1:7890`. Nothing listens on that port, so later commands in
+  that shell miss the network. User systemd is absent, and activation skips it.
