@@ -134,7 +134,7 @@ flake_target="${USER}-${system}"
 # gets reverted, since Determinate's tooling manages that file itself.
 # Idempotent: only appends if not already present.
 custom_conf="/etc/nix/nix.custom.conf"
-mirrors="https://mirror.sjtu.edu.cn/nix-channels/store https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirrors.ustc.edu.cn/nix-channels/store"
+mirrors="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirrors.ustc.edu.cn/nix-channels/store"
 restart_daemon=0
 if ! sudo grep -qsF "$mirrors" "$custom_conf" 2>/dev/null; then
   echo "==> Adding mainland China binary cache mirrors to ${custom_conf}..."
