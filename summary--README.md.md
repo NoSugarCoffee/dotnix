@@ -1,2 +1,2 @@
-`sha256: 81969c2a894191de019dd8ebac374e95233f985591b701a3a5828ada2a7bce9e`
+`sha256: e39e0fb79d65668c359fb9f7942f1952038bcb60801e96a4f5d3172c8c92c704`
 Reproducible Home Manager dotfiles for Linux and macOS on nixpkgs/Home Manager 26.05. Documents bootstrap, proxy-aware switching, managed packages, platform behavior, commands, automated updates, and managed versus machine-local settings. Current bootstrap guidance uses TUNA and USTC mirrors; the SJTU cache mirror was removed.
