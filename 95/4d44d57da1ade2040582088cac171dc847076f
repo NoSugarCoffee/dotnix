@@ -1,0 +1,21 @@
+scripts/new-local-builds.sh
+  s_01c2d247d8fd82::t_1c9c6ea655906f 1-46
+.github/workflows/ci.yml
+  s_01c2d247d8fd82::t_928ae435629187 153-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.52-trip",
+  "base_commit_sha": "954d44d57da1ade2040582088cac171dc847076f",
+  "prompts": {},
+  "sessions": {
+    "s_01c2d247d8fd82": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3a3b021c-af4b-4f07-87e5-b25765034c26",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NoSugarCoffee <25247325+NoSugarCoffee@users.noreply.github.com>"
+    }
+  }
+}
