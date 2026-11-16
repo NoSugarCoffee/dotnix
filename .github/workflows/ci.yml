@@ -150,11 +150,20 @@ jobs:
             # deletes (orca v1.4.226).
             extra-substituters = https://cache.numtide.com https://nosugarcoffee.cachix.org
             extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE=
+      - id: user
+        run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
+      # Only the flake-update bot's PR: a hand-written PR adding a package
+      # nobody caches is a deliberate choice, not cache lag.
+      - name: Flake update adds no local builds on macOS
+        if: github.event_name == 'pull_request' && github.head_ref == 'chore/flake-update'
+        run: >-
+          scripts/new-local-builds.sh
+          "github:${{ github.repository }}/${{ github.event.pull_request.base.sha }}"
+          .
+          "homeConfigurations.${{ steps.user.outputs.name }}-aarch64-darwin.activationPackage"
       - uses: DeterminateSystems/magic-nix-cache-action@v14
         with:
           use-flakehub: false
-      - id: user
-        run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
       - run: nix build .#homeConfigurations.${{ steps.user.outputs.name }}-aarch64-darwin.activationPackage
 
       # Building the derivation only proves it evaluates and fetches/compiles.
