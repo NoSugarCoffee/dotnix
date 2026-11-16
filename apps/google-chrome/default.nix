@@ -15,7 +15,6 @@
     package = null;
     extensions = map (id: { inherit id; }) (
       lib.attrValues {
-        "1Password" = "aeblfdkhhhdcdjpifhhbdiojplfjncoa";
         "Bitwarden" = "nngceckbapebfimnlniiiahkandclblb";
         "Buster" = "mpbjkejclgfgadiemmefgebjfooflfhl";
         "docu.md Markdown Viewer" = "jekhhoflgcfoikceikgeenibinpojaoi";
