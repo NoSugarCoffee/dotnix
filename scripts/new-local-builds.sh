@@ -27,8 +27,16 @@ candidate=$2
 attribute=$3
 
 local_builds() {
-  local dry_run
-  dry_run=$(nix build --dry-run "$1#$attribute" 2>&1 >/dev/null)
+  local dry_run status=0
+  # Called from a command substitution, where set -e does not abort a failed
+  # assignment. Return the dry-run status so a fetch or cache error is not
+  # parsed as an empty build list.
+  dry_run=$(nix build --dry-run "$1#$attribute" 2>&1 >/dev/null) || status=$?
+  if [[ $status -ne 0 ]]; then
+    echo "nix build --dry-run failed for $1#$attribute" >&2
+    printf '%s\n' "$dry_run" >&2
+    return "$status"
+  fi
   awk '/will be built/ { building = 1; next }
        /will be fetched/ { building = 0; next }
        building && $1 ~ "^/nix/store/" { print $1 }' <<<"$dry_run" |
@@ -36,9 +44,13 @@ local_builds() {
     sort -u
 }
 
-new=$(comm -13 <(local_builds "$base") <(local_builds "$candidate"))
+# Capture both lists before comm. A process substitution drops the producer's
+# status, and comm then treats a failed dry-run as "built nothing".
+base_builds=$(local_builds "$base") || exit $?
+candidate_builds=$(local_builds "$candidate") || exit $?
+new=$(comm -13 <(printf '%s\n' "$base_builds") <(printf '%s\n' "$candidate_builds")) || exit $?
 if [[ -n $new ]]; then
-  echo "::error::$candidate builds these locally, but $base fetched them from a cache:"
+  echo "::error::$candidate builds these locally, but $base does not:"
   echo "$new"
   echo "Their binaries aren't cached yet; the next flake update retries."
   exit 1
