@@ -1,4 +1,4 @@
-model = "gpt-6-sol"
+model = "gpt-6.2-sol"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 # Every nix rebuild gives codex a new store path, which the keychain treats as
