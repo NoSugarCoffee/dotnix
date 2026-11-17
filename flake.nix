@@ -4,6 +4,13 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
+    # Package set for macOS. nixos-26.05 advances once the NixOS (Linux) tests
+    # pass, without waiting for Hydra's darwin builds, so it can pin a revision
+    # whose darwin binaries aren't cached yet and every `just switch` compiles
+    # them (#338: gh, docker, bitwarden-cli, nodejs). This branch advances only
+    # after the darwin jobset passes.
+    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-26.05-darwin";
+
     # For packages not yet in the stable release branch (e.g. macshot).
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
@@ -33,6 +40,7 @@
   outputs =
     {
       nixpkgs,
+      nixpkgs-darwin,
       nixpkgs-unstable,
       home-manager,
       pi,
@@ -93,7 +101,7 @@
         };
       mkPkgs =
         system:
-        import nixpkgs {
+        import (if lib.hasSuffix "darwin" system then nixpkgs-darwin else nixpkgs) {
           inherit system;
           config.allowUnfree = true;
           overlays = [
