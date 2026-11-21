@@ -1,2 +1,2 @@
-`sha256: 6980b793613d0f3cc8af52be2249ab6cee21ef3aac6798b726591e95ebe19f44`
-Locks the flake inputs and their transitive nodes for stable and Darwin nixpkgs, nixpkgs-unstable, Home Manager, pi, llm-agents, and nur-packages. The lockfile is updated by the automated flake-update workflow and supplies the exact revisions used by the package overlays and Home Manager outputs.
+`bc78577d0ca5a69c37e8e2893248251195b24a0f50694a0fcbf0857b5b61ba6d`
+Flake lock pins nixpkgs 26.05, nixpkgs-darwin, nixpkgs-unstable, Home Manager release-26.05, pi.nix, llm-agents.nix, NoSugarCoffee/nur-packages, and supporting flake inputs. Current package-source pins include llm-agents, nur-packages, pi, and multiple nixpkgs/bun2nix revisions.

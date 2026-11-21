@@ -1,2 +1,2 @@
-`sha256: 12a8458c3b4e32aede5e2b4b91a5fc97645a70a7341de31b7c3970a053a78e52`
-Reproducible Home Manager dotfiles for Linux and macOS on nixpkgs/Home Manager 26.05. Documents bootstrap, proxy-aware switching, managed packages, platform behavior, commands, automated updates, and managed versus machine-local settings. Current bootstrap guidance uses TUNA and USTC mirrors; the SJTU cache mirror was removed.
+`12a8458c3b4e32aede5e2b4b91a5fc97645a70a7341de31b7c3970a053a78e52`
+README overview: reproducible Home Manager dotfiles for Linux and macOS, pinned to nixpkgs/Home Manager 26.05. Documents macOS bootstrap, existing-Nix first switch commands, daily just recipes, managed package categories, automated flake updates, fork account injection, and boundaries for zsh, git identity, agent settings, asdf, Docker, Tailscale, app placement, and proxy use.
