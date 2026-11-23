@@ -120,8 +120,8 @@ jobs:
             # on nosugarcoffee.cachix.org. Without them CI recompiles albert
             # and refetches vendor release assets, which upstream sometimes
             # deletes (orca v1.4.226).
-            extra-substituters = https://cache.numtide.com https://nosugarcoffee.cachix.org
-            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE=
+            extra-substituters = https://cache.numtide.com https://nosugarcoffee.cachix.org https://pi.cachix.org
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE= pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk=
       # Substituter backed by this repo's GitHub Actions cache. It uploads only
       # paths no other configured cache has -- unfree fetches like
       # google-chrome, i.e. what `nix build` would otherwise re-download on
@@ -148,8 +148,8 @@ jobs:
             # on nosugarcoffee.cachix.org. Without them CI recompiles albert
             # and refetches vendor release assets, which upstream sometimes
             # deletes (orca v1.4.226).
-            extra-substituters = https://cache.numtide.com https://nosugarcoffee.cachix.org
-            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE=
+            extra-substituters = https://cache.numtide.com https://nosugarcoffee.cachix.org https://pi.cachix.org
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g= nosugarcoffee.cachix.org-1:gQkOArBt+myqJZvfmk4L6LqbuScp2LCn2fG1bWRoJhE= pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk=
       - id: user
         run: echo "name=$(nix eval --raw .#username)" >> "$GITHUB_OUTPUT"
       # Only the flake-update bot's PR: a hand-written PR adding a package
