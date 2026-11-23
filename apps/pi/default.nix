@@ -2,6 +2,7 @@
   homeDirectory,
   lib,
   pkgs,
+  piPackage,
   ...
 }:
 let
@@ -44,16 +45,16 @@ let
 in
 {
   home = {
-    packages = [ pkgs.pi-coding-agent ];
+    packages = lib.optional (piPackage != null) piPackage;
     # Pi extensions (the sources in piExtensions above) are installed
     # imperatively via `pi install`. On a fresh machine they are missing entirely.
     # This activation checks `pi list` first, installs only the ones that are
     # absent, and removes any sources listed in piRemovedExtensions, so it is a
     # cheap no-op on every-day switches.
-    activation.piPackages = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    activation.piPackages = lib.mkIf (piPackage != null) (lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       (
         set +e
-        pi="${pkgs.pi-coding-agent}/bin/pi"
+        pi="${piPackage}/bin/pi"
         grep="${pkgs.gnugrep}/bin/grep"
         installed=$($pi list 2>/dev/null)
         for ext in ${lib.concatStringsSep " " piExtensions}; do
@@ -94,11 +95,11 @@ in
         fi
         true
       )
-    '';
-    activation.piManagedSettings = lib.hm.dag.entryAfter [ "piPackages" ] ''
+    '');
+    activation.piManagedSettings = lib.mkIf (piPackage != null) (lib.hm.dag.entryAfter [ "piPackages" ] ''
       $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${../../lib/managed_settings.py} \
         --format json --managed ${./managed.json} \
         --mode 644 "$HOME/.pi/agent/settings.json"
-    '';
+    '');
   };
 }

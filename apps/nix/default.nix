@@ -100,10 +100,9 @@ in
     # /etc/nix/nix.custom.conf only *appends* them (extra-substituters), so
     # the slow upstream is always tried first. This user-level list overrides
     # the order; nix falls back per-path to later entries automatically.
-    # pi.cachix.org serves the lukasl-dev/pi.nix builds (the flake's own
-    # nixConfig is opt-in via --accept-flake-config and never reaches an
-    # unattended switch); nix-community.cachix.org serves its bun2nix
-    # toolchain. Without them pkgs.pi-coding-agent builds from source.
+    # cache.numtide.com serves llm-agents.nix packages (pi, orca, paperclip,
+    # ...), which only hit when the flake's llm-agents pin matches.
+    # nix-community.cachix.org is kept for other community builds.
     # nosugarcoffee.cachix.org serves NoSugarCoffee/nur-packages (albert
     # would otherwise compile from source).
     # HARD PREREQUISITE: the daemon silently ignores user-level substituters

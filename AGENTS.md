@@ -127,8 +127,8 @@ linked into `/usr/local/bin`.
 `~/.config/nix/nix.conf` trusts `cache.nixos.org`, `cache.numtide.com`,
 `nosugarcoffee.cachix.org`, `pi.cachix.org`, and `nix-community.cachix.org`, with
 cache.nixos.org first. `apps/nix/default.nix` prefers the China mirrors on a desktop; those
-are the wrong order from this network. `pi.cachix.org` and `nix-community.cachix.org` are
-what keep `pi-coding-agent` from building Node from source.
+are the wrong order from this network. `cache.numtide.com` is what keeps llm-agents' `pi` (and the other
+pinned agents) from building from source.
 
 - Tests: `nix develop -c just test` from the flake root. `just` is only in the devShell.
   The recipe uses host `python3` and nixpkgs bash, rsync, and coreutils.
