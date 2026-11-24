@@ -19,13 +19,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    pi = {
-      url = "github:lukasl-dev/pi.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Source of prebuilt AI-agent packages that nixpkgs doesn't carry or
-    # carries late (apm, ccstatusline, claude-desktop, grok-bot, orca, paperclip).
+    # carries late (apm, ccstatusline, claude-desktop, grok-bot, orca, paperclip, pi).
     # Intentionally *not* following our nixpkgs: its packages are built
     # against its own nixpkgs-unstable pin and cached on cache.numtide.com,
     # which only hits when the revisions match.
@@ -43,7 +38,6 @@
       nixpkgs-darwin,
       nixpkgs-unstable,
       home-manager,
-      pi,
       llm-agents,
       nur-packages,
       ...
@@ -106,7 +100,6 @@
           config.allowUnfree = true;
           overlays = [
             extraPackagesOverlay
-            pi.overlays.default
           ];
         };
       mkHomeConfiguration =
@@ -129,12 +122,20 @@
               "paperclip"
             ]) llm-agents.packages.${system}
           );
+          # llm-agents only ships pi for aarch64-darwin and Linux; x86_64-darwin
+          # has no package, so the module below is skipped on Intel Macs.
+          piPackage =
+            if (llm-agents.packages ? ${system}) && (llm-agents.packages.${system} ? pi) then
+              llm-agents.packages.${system}.pi
+            else
+              null;
         in
         home-manager.lib.homeManagerConfiguration {
           pkgs = mkPkgs system;
           extraSpecialArgs = {
             inherit
               llmAgentsPackages
+              piPackage
               username
               homeDirectory
               ;
