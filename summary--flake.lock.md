@@ -1,2 +1,3 @@
-`bc78577d0ca5a69c37e8e2893248251195b24a0f50694a0fcbf0857b5b61ba6d`
-Flake lock pins nixpkgs 26.05, nixpkgs-darwin, nixpkgs-unstable, Home Manager release-26.05, pi.nix, llm-agents.nix, NoSugarCoffee/nur-packages, and supporting flake inputs. Current package-source pins include llm-agents, nur-packages, pi, and multiple nixpkgs/bun2nix revisions.
+`sha256: 738d54e36816b57fb7be2560c5b8e82a204babbbcd848720cdc6eb98a6fce10e`
+
+Locks nixpkgs 26.05, nixpkgs-darwin, nixpkgs-unstable, Home Manager, llm-agents, nur-packages, and their transitive revisions. Current lock updates affect the external package source revisions and cache compatibility.
